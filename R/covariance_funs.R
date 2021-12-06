@@ -59,5 +59,5 @@ cov_matern <- function(x, sq_eta, rho, delta = 1e-5, nu05){
 
 #' @describeIn cov_matern alias for fitting squared exponential with
 cov_sq_exp <- function(x, sq_eta, rho, delta = 1e-5){
-  cov_matern(nu05 = 3,...)
+  cov_matern(x = x, sq_eta = sq_eta, rho = rho, delta = delta, nu05 = 3)
 }

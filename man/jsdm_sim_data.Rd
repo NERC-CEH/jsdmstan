@@ -9,7 +9,7 @@
 jsdm_sim_data(
   N,
   S,
-  D,
+  D = NULL,
   K = 0L,
   family,
   method = c("gllvm", "mglmm"),

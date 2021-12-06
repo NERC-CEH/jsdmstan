@@ -1,12 +1,14 @@
 Package: jsdmstan
-Title: What the Package Does (One Line, Title Case)
+Title: Fitting jSDMs in Stan
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"),
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Fiona", "Seaton", , "fseaton@ceh.ac.uk", role = c("aut", "cre"),
+           comment = c(ORCID = "0000-0002-2022-7451"))
+Description: This package is for fitting joint Species Distribution Models 
+   (jSDMs) in Stan, and has functions for simulating jSDM data and fitting jSDM 
+   data according to the generalised linear latent variable model (GLLVM) or 
+   multivariate generalised linear mixed model (MGLMM).
+License: GPL (>= 3)
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
