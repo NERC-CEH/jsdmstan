@@ -76,7 +76,10 @@ stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, intercept = TRUE,
 
 
   # Need to specify pars to ignore
-  ignore_pars <- c("LV_uncor","Lambda_uncor","Lambda","L","L_Rho_preds")
+  ignore_pars <- c("LV_uncor","Lambda_uncor", "L")
+  # if(data_list$K == 1){
+  #   ignore_pars <- c(ignore_pars, "L_Rho_preds", "L_Rho_preds_vect")
+  # }
 
   # Fit models
   model_fit <- rstan::sampling(switch(family,

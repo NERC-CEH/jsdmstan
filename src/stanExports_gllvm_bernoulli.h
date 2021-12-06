@@ -201,7 +201,6 @@ private:
         int K;
         matrix_d X;
         std::vector<std::vector<int> > Y;
-        int K_lower;
         int M;
 public:
     model_gllvm_bernoulli(stan::io::var_context& context__,
@@ -298,20 +297,13 @@ public:
                 }
             }
             // initialize transformed data variables
-            current_statement_begin__ = 49;
-            K_lower = int(0);
-            stan::math::fill(K_lower, std::numeric_limits<int>::min());
             current_statement_begin__ = 52;
             M = int(0);
             stan::math::fill(M, std::numeric_limits<int>::min());
             // execute transformed data statements
             current_statement_begin__ = 53;
             stan::math::assign(M, (((D * (S - D)) + divide((D * (D - 1)), 2)) + D));
-            current_statement_begin__ = 55;
-            stan::math::assign(K_lower, divide((K * (K + 1)), 2));
             // validate transformed data
-            current_statement_begin__ = 49;
-            check_greater_or_equal(function__, "K_lower", K_lower, 1);
             current_statement_begin__ = 52;
             check_greater_or_equal(function__, "M", M, 1);
             // validate, set parameter ranges
@@ -609,11 +601,6 @@ public:
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, Eigen::Dynamic> betas(K, S);
             stan::math::initialize(betas, DUMMY_VAR__);
             stan::math::fill(betas, DUMMY_VAR__);
-            current_statement_begin__ = 82;
-            validate_non_negative_index("L_Rho_preds_vector", "K_lower", K_lower);
-            Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> L_Rho_preds_vector(K_lower);
-            stan::math::initialize(L_Rho_preds_vector, DUMMY_VAR__);
-            stan::math::fill(L_Rho_preds_vector, DUMMY_VAR__);
             current_statement_begin__ = 86;
             validate_non_negative_index("Lambda_uncor", "S", S);
             validate_non_negative_index("Lambda_uncor", "D", D);
@@ -655,8 +642,6 @@ public:
             }
             current_statement_begin__ = 105;
             stan::math::assign(betas, multiply(diag_pre_multiply(sigmas_b, L_Rho_preds), z_species));
-            current_statement_begin__ = 107;
-            stan::math::assign(L_Rho_preds_vector, lt_to_vector(L_Rho_preds, pstream__));
             // validate transformed parameters
             const char* function__ = "validate transformed params";
             (void) function__;  // dummy to suppress unused var warning
@@ -670,15 +655,6 @@ public:
                         msg__ << "Undefined transformed parameter: betas" << "(" << j_1__ << ", " << j_2__ << ")";
                         stan::lang::rethrow_located(std::runtime_error(std::string("Error initializing variable betas: ") + msg__.str()), current_statement_begin__, prog_reader__());
                     }
-                }
-            }
-            current_statement_begin__ = 82;
-            size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                if (stan::math::is_uninitialized(L_Rho_preds_vector(j_1__))) {
-                    std::stringstream msg__;
-                    msg__ << "Undefined transformed parameter: L_Rho_preds_vector" << "(" << j_1__ << ")";
-                    stan::lang::rethrow_located(std::runtime_error(std::string("Error initializing variable L_Rho_preds_vector: ") + msg__.str()), current_statement_begin__, prog_reader__());
                 }
             }
             current_statement_begin__ = 86;
@@ -770,13 +746,10 @@ public:
         names__.push_back("sigma_L");
         names__.push_back("LV_uncor");
         names__.push_back("betas");
-        names__.push_back("L_Rho_preds_vector");
         names__.push_back("Lambda_uncor");
         names__.push_back("log_lik");
         names__.push_back("LV");
         names__.push_back("Lambda");
-        names__.push_back("COV");
-        names__.push_back("Lambda_vect");
     }
     void get_dims(std::vector<std::vector<size_t> >& dimss__) const {
         dimss__.resize(0);
@@ -813,9 +786,6 @@ public:
         dims__.push_back(S);
         dimss__.push_back(dims__);
         dims__.resize(0);
-        dims__.push_back(K_lower);
-        dimss__.push_back(dims__);
-        dims__.resize(0);
         dims__.push_back(S);
         dims__.push_back(D);
         dimss__.push_back(dims__);
@@ -830,13 +800,6 @@ public:
         dims__.resize(0);
         dims__.push_back(S);
         dims__.push_back(D);
-        dimss__.push_back(dims__);
-        dims__.resize(0);
-        dims__.push_back(S);
-        dims__.push_back(S);
-        dimss__.push_back(dims__);
-        dims__.resize(0);
-        dims__.push_back(M);
         dimss__.push_back(dims__);
     }
     template <typename RNG>
@@ -912,11 +875,6 @@ public:
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> betas(K, S);
             stan::math::initialize(betas, DUMMY_VAR__);
             stan::math::fill(betas, DUMMY_VAR__);
-            current_statement_begin__ = 82;
-            validate_non_negative_index("L_Rho_preds_vector", "K_lower", K_lower);
-            Eigen::Matrix<double, Eigen::Dynamic, 1> L_Rho_preds_vector(K_lower);
-            stan::math::initialize(L_Rho_preds_vector, DUMMY_VAR__);
-            stan::math::fill(L_Rho_preds_vector, DUMMY_VAR__);
             current_statement_begin__ = 86;
             validate_non_negative_index("Lambda_uncor", "S", S);
             validate_non_negative_index("Lambda_uncor", "D", D);
@@ -958,8 +916,6 @@ public:
             }
             current_statement_begin__ = 105;
             stan::math::assign(betas, multiply(diag_pre_multiply(sigmas_b, L_Rho_preds), z_species));
-            current_statement_begin__ = 107;
-            stan::math::assign(L_Rho_preds_vector, lt_to_vector(L_Rho_preds, pstream__));
             if (!include_gqs__ && !include_tparams__) return;
             // validate transformed parameters
             const char* function__ = "validate transformed params";
@@ -972,10 +928,6 @@ public:
                     for (size_t j_1__ = 0; j_1__ < betas_j_1_max__; ++j_1__) {
                         vars__.push_back(betas(j_1__, j_2__));
                     }
-                }
-                size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-                for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                    vars__.push_back(L_Rho_preds_vector(j_1__));
                 }
                 size_t Lambda_uncor_j_2_max__ = D;
                 size_t Lambda_uncor_j_1_max__ = S;
@@ -1005,17 +957,6 @@ public:
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> Lambda(S, D);
             stan::math::initialize(Lambda, DUMMY_VAR__);
             stan::math::fill(Lambda, DUMMY_VAR__);
-            current_statement_begin__ = 144;
-            validate_non_negative_index("COV", "S", S);
-            validate_non_negative_index("COV", "S", S);
-            Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> COV(S, S);
-            stan::math::initialize(COV, DUMMY_VAR__);
-            stan::math::fill(COV, DUMMY_VAR__);
-            current_statement_begin__ = 145;
-            validate_non_negative_index("Lambda_vect", "M", M);
-            Eigen::Matrix<double, Eigen::Dynamic, 1> Lambda_vect(M);
-            stan::math::initialize(Lambda_vect, DUMMY_VAR__);
-            stan::math::fill(Lambda_vect, DUMMY_VAR__);
             // generated quantities statements
             current_statement_begin__ = 146;
             for (int d = 1; d <= D; ++d) {
@@ -1044,10 +985,6 @@ public:
                                 "assigning variable LV");
                 }
             }
-            current_statement_begin__ = 155;
-            stan::math::assign(Lambda_vect, lt_to_vector(Lambda, pstream__));
-            current_statement_begin__ = 158;
-            stan::math::assign(COV, multiply_lower_tri_self_transpose(Lambda));
             {
             current_statement_begin__ = 160;
             validate_non_negative_index("linpred", "N", N);
@@ -1092,19 +1029,6 @@ public:
                 for (size_t j_1__ = 0; j_1__ < Lambda_j_1_max__; ++j_1__) {
                     vars__.push_back(Lambda(j_1__, j_2__));
                 }
-            }
-            current_statement_begin__ = 144;
-            size_t COV_j_2_max__ = S;
-            size_t COV_j_1_max__ = S;
-            for (size_t j_2__ = 0; j_2__ < COV_j_2_max__; ++j_2__) {
-                for (size_t j_1__ = 0; j_1__ < COV_j_1_max__; ++j_1__) {
-                    vars__.push_back(COV(j_1__, j_2__));
-                }
-            }
-            current_statement_begin__ = 145;
-            size_t Lambda_vect_j_1_max__ = M;
-            for (size_t j_1__ = 0; j_1__ < Lambda_vect_j_1_max__; ++j_1__) {
-                vars__.push_back(Lambda_vect(j_1__));
             }
         } catch (const std::exception& e) {
             stan::lang::rethrow_located(e, current_statement_begin__, prog_reader__());
@@ -1201,12 +1125,6 @@ public:
                     param_names__.push_back(param_name_stream__.str());
                 }
             }
-            size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "L_Rho_preds_vector" << '.' << j_1__ + 1;
-                param_names__.push_back(param_name_stream__.str());
-            }
             size_t Lambda_uncor_j_2_max__ = D;
             size_t Lambda_uncor_j_1_max__ = S;
             for (size_t j_2__ = 0; j_2__ < Lambda_uncor_j_2_max__; ++j_2__) {
@@ -1244,21 +1162,6 @@ public:
                 param_name_stream__ << "Lambda" << '.' << j_1__ + 1 << '.' << j_2__ + 1;
                 param_names__.push_back(param_name_stream__.str());
             }
-        }
-        size_t COV_j_2_max__ = S;
-        size_t COV_j_1_max__ = S;
-        for (size_t j_2__ = 0; j_2__ < COV_j_2_max__; ++j_2__) {
-            for (size_t j_1__ = 0; j_1__ < COV_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "COV" << '.' << j_1__ + 1 << '.' << j_2__ + 1;
-                param_names__.push_back(param_name_stream__.str());
-            }
-        }
-        size_t Lambda_vect_j_1_max__ = M;
-        for (size_t j_1__ = 0; j_1__ < Lambda_vect_j_1_max__; ++j_1__) {
-            param_name_stream__.str(std::string());
-            param_name_stream__ << "Lambda_vect" << '.' << j_1__ + 1;
-            param_names__.push_back(param_name_stream__.str());
         }
     }
     void unconstrained_param_names(std::vector<std::string>& param_names__,
@@ -1327,12 +1230,6 @@ public:
                     param_names__.push_back(param_name_stream__.str());
                 }
             }
-            size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "L_Rho_preds_vector" << '.' << j_1__ + 1;
-                param_names__.push_back(param_name_stream__.str());
-            }
             size_t Lambda_uncor_j_2_max__ = D;
             size_t Lambda_uncor_j_1_max__ = S;
             for (size_t j_2__ = 0; j_2__ < Lambda_uncor_j_2_max__; ++j_2__) {
@@ -1370,21 +1267,6 @@ public:
                 param_name_stream__ << "Lambda" << '.' << j_1__ + 1 << '.' << j_2__ + 1;
                 param_names__.push_back(param_name_stream__.str());
             }
-        }
-        size_t COV_j_2_max__ = S;
-        size_t COV_j_1_max__ = S;
-        for (size_t j_2__ = 0; j_2__ < COV_j_2_max__; ++j_2__) {
-            for (size_t j_1__ = 0; j_1__ < COV_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "COV" << '.' << j_1__ + 1 << '.' << j_2__ + 1;
-                param_names__.push_back(param_name_stream__.str());
-            }
-        }
-        size_t Lambda_vect_j_1_max__ = M;
-        for (size_t j_1__ = 0; j_1__ < Lambda_vect_j_1_max__; ++j_1__) {
-            param_name_stream__.str(std::string());
-            param_name_stream__ << "Lambda_vect" << '.' << j_1__ + 1;
-            param_names__.push_back(param_name_stream__.str());
         }
     }
 }; // model

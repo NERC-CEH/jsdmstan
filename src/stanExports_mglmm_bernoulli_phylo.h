@@ -328,8 +328,6 @@ private:
         int nu05;
         double delta;
         std::vector<std::vector<int> > Y;
-        int S_lower;
-        int K_lower;
 public:
     model_mglmm_bernoulli_phylo(stan::io::var_context& context__,
         std::ostream* pstream__ = 0)
@@ -447,22 +445,8 @@ public:
                 }
             }
             // initialize transformed data variables
-            current_statement_begin__ = 88;
-            S_lower = int(0);
-            stan::math::fill(S_lower, std::numeric_limits<int>::min());
-            current_statement_begin__ = 89;
-            K_lower = int(0);
-            stan::math::fill(K_lower, std::numeric_limits<int>::min());
             // execute transformed data statements
-            current_statement_begin__ = 90;
-            stan::math::assign(S_lower, divide((S * (S + 1)), 2));
-            current_statement_begin__ = 91;
-            stan::math::assign(K_lower, divide((K * (K + 1)), 2));
             // validate transformed data
-            current_statement_begin__ = 88;
-            check_greater_or_equal(function__, "S_lower", S_lower, 1);
-            current_statement_begin__ = 89;
-            check_greater_or_equal(function__, "K_lower", K_lower, 1);
             // validate, set parameter ranges
             num_params_r__ = 0U;
             param_ranges_i__.clear();
@@ -780,22 +764,12 @@ public:
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, Eigen::Dynamic> betas(K, S);
             stan::math::initialize(betas, DUMMY_VAR__);
             stan::math::fill(betas, DUMMY_VAR__);
-            current_statement_begin__ = 119;
-            validate_non_negative_index("L_Rho_preds_vector", "K_lower", K_lower);
-            Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> L_Rho_preds_vector(K_lower);
-            stan::math::initialize(L_Rho_preds_vector, DUMMY_VAR__);
-            stan::math::fill(L_Rho_preds_vector, DUMMY_VAR__);
             current_statement_begin__ = 120;
             validate_non_negative_index("u", "N", N);
             validate_non_negative_index("u", "S", S);
             Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, Eigen::Dynamic> u(N, S);
             stan::math::initialize(u, DUMMY_VAR__);
             stan::math::fill(u, DUMMY_VAR__);
-            current_statement_begin__ = 121;
-            validate_non_negative_index("L_Rho_spec_vector", "S_lower", S_lower);
-            Eigen::Matrix<local_scalar_t__, Eigen::Dynamic, 1> L_Rho_spec_vector(S_lower);
-            stan::math::initialize(L_Rho_spec_vector, DUMMY_VAR__);
-            stan::math::fill(L_Rho_spec_vector, DUMMY_VAR__);
             current_statement_begin__ = 122;
             validate_non_negative_index("L_Rho_species", "S", S);
             validate_non_negative_index("L_Rho_species", "S", S);
@@ -805,14 +779,10 @@ public:
             // transformed parameters block statements
             current_statement_begin__ = 125;
             stan::math::assign(betas, multiply(diag_pre_multiply(sigmas_b, L_Rho_preds), z_preds));
-            current_statement_begin__ = 127;
-            stan::math::assign(L_Rho_preds_vector, lt_to_vector(L_Rho_preds, pstream__));
             current_statement_begin__ = 130;
             stan::math::assign(L_Rho_species, cholesky_decompose(cov_matern(Dmat, etasq, rho, delta, nu05, pstream__)));
             current_statement_begin__ = 131;
             stan::math::assign(u, multiply(diag_pre_multiply(sigmas_u, L_Rho_species), z_species));
-            current_statement_begin__ = 133;
-            stan::math::assign(L_Rho_spec_vector, lt_to_vector(L_Rho_species, pstream__));
             // validate transformed parameters
             const char* function__ = "validate transformed params";
             (void) function__;  // dummy to suppress unused var warning
@@ -828,15 +798,6 @@ public:
                     }
                 }
             }
-            current_statement_begin__ = 119;
-            size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                if (stan::math::is_uninitialized(L_Rho_preds_vector(j_1__))) {
-                    std::stringstream msg__;
-                    msg__ << "Undefined transformed parameter: L_Rho_preds_vector" << "(" << j_1__ << ")";
-                    stan::lang::rethrow_located(std::runtime_error(std::string("Error initializing variable L_Rho_preds_vector: ") + msg__.str()), current_statement_begin__, prog_reader__());
-                }
-            }
             current_statement_begin__ = 120;
             size_t u_j_1_max__ = N;
             size_t u_j_2_max__ = S;
@@ -847,15 +808,6 @@ public:
                         msg__ << "Undefined transformed parameter: u" << "(" << j_1__ << ", " << j_2__ << ")";
                         stan::lang::rethrow_located(std::runtime_error(std::string("Error initializing variable u: ") + msg__.str()), current_statement_begin__, prog_reader__());
                     }
-                }
-            }
-            current_statement_begin__ = 121;
-            size_t L_Rho_spec_vector_j_1_max__ = S_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_spec_vector_j_1_max__; ++j_1__) {
-                if (stan::math::is_uninitialized(L_Rho_spec_vector(j_1__))) {
-                    std::stringstream msg__;
-                    msg__ << "Undefined transformed parameter: L_Rho_spec_vector" << "(" << j_1__ << ")";
-                    stan::lang::rethrow_located(std::runtime_error(std::string("Error initializing variable L_Rho_spec_vector: ") + msg__.str()), current_statement_begin__, prog_reader__());
                 }
             }
             current_statement_begin__ = 122;
@@ -943,9 +895,7 @@ public:
         names__.push_back("etasq");
         names__.push_back("rho");
         names__.push_back("betas");
-        names__.push_back("L_Rho_preds_vector");
         names__.push_back("u");
-        names__.push_back("L_Rho_spec_vector");
         names__.push_back("L_Rho_species");
         names__.push_back("log_lik");
     }
@@ -986,14 +936,8 @@ public:
         dims__.push_back(S);
         dimss__.push_back(dims__);
         dims__.resize(0);
-        dims__.push_back(K_lower);
-        dimss__.push_back(dims__);
-        dims__.resize(0);
         dims__.push_back(N);
         dims__.push_back(S);
-        dimss__.push_back(dims__);
-        dims__.resize(0);
-        dims__.push_back(S_lower);
         dimss__.push_back(dims__);
         dims__.resize(0);
         dims__.push_back(S);
@@ -1079,22 +1023,12 @@ public:
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> betas(K, S);
             stan::math::initialize(betas, DUMMY_VAR__);
             stan::math::fill(betas, DUMMY_VAR__);
-            current_statement_begin__ = 119;
-            validate_non_negative_index("L_Rho_preds_vector", "K_lower", K_lower);
-            Eigen::Matrix<double, Eigen::Dynamic, 1> L_Rho_preds_vector(K_lower);
-            stan::math::initialize(L_Rho_preds_vector, DUMMY_VAR__);
-            stan::math::fill(L_Rho_preds_vector, DUMMY_VAR__);
             current_statement_begin__ = 120;
             validate_non_negative_index("u", "N", N);
             validate_non_negative_index("u", "S", S);
             Eigen::Matrix<double, Eigen::Dynamic, Eigen::Dynamic> u(N, S);
             stan::math::initialize(u, DUMMY_VAR__);
             stan::math::fill(u, DUMMY_VAR__);
-            current_statement_begin__ = 121;
-            validate_non_negative_index("L_Rho_spec_vector", "S_lower", S_lower);
-            Eigen::Matrix<double, Eigen::Dynamic, 1> L_Rho_spec_vector(S_lower);
-            stan::math::initialize(L_Rho_spec_vector, DUMMY_VAR__);
-            stan::math::fill(L_Rho_spec_vector, DUMMY_VAR__);
             current_statement_begin__ = 122;
             validate_non_negative_index("L_Rho_species", "S", S);
             validate_non_negative_index("L_Rho_species", "S", S);
@@ -1104,14 +1038,10 @@ public:
             // do transformed parameters statements
             current_statement_begin__ = 125;
             stan::math::assign(betas, multiply(diag_pre_multiply(sigmas_b, L_Rho_preds), z_preds));
-            current_statement_begin__ = 127;
-            stan::math::assign(L_Rho_preds_vector, lt_to_vector(L_Rho_preds, pstream__));
             current_statement_begin__ = 130;
             stan::math::assign(L_Rho_species, cholesky_decompose(cov_matern(Dmat, etasq, rho, delta, nu05, pstream__)));
             current_statement_begin__ = 131;
             stan::math::assign(u, multiply(diag_pre_multiply(sigmas_u, L_Rho_species), z_species));
-            current_statement_begin__ = 133;
-            stan::math::assign(L_Rho_spec_vector, lt_to_vector(L_Rho_species, pstream__));
             if (!include_gqs__ && !include_tparams__) return;
             // validate transformed parameters
             const char* function__ = "validate transformed params";
@@ -1125,20 +1055,12 @@ public:
                         vars__.push_back(betas(j_1__, j_2__));
                     }
                 }
-                size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-                for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                    vars__.push_back(L_Rho_preds_vector(j_1__));
-                }
                 size_t u_j_2_max__ = S;
                 size_t u_j_1_max__ = N;
                 for (size_t j_2__ = 0; j_2__ < u_j_2_max__; ++j_2__) {
                     for (size_t j_1__ = 0; j_1__ < u_j_1_max__; ++j_1__) {
                         vars__.push_back(u(j_1__, j_2__));
                     }
-                }
-                size_t L_Rho_spec_vector_j_1_max__ = S_lower;
-                for (size_t j_1__ = 0; j_1__ < L_Rho_spec_vector_j_1_max__; ++j_1__) {
-                    vars__.push_back(L_Rho_spec_vector(j_1__));
                 }
                 size_t L_Rho_species_j_2_max__ = S;
                 size_t L_Rho_species_j_1_max__ = S;
@@ -1284,12 +1206,6 @@ public:
                     param_names__.push_back(param_name_stream__.str());
                 }
             }
-            size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "L_Rho_preds_vector" << '.' << j_1__ + 1;
-                param_names__.push_back(param_name_stream__.str());
-            }
             size_t u_j_2_max__ = S;
             size_t u_j_1_max__ = N;
             for (size_t j_2__ = 0; j_2__ < u_j_2_max__; ++j_2__) {
@@ -1298,12 +1214,6 @@ public:
                     param_name_stream__ << "u" << '.' << j_1__ + 1 << '.' << j_2__ + 1;
                     param_names__.push_back(param_name_stream__.str());
                 }
-            }
-            size_t L_Rho_spec_vector_j_1_max__ = S_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_spec_vector_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "L_Rho_spec_vector" << '.' << j_1__ + 1;
-                param_names__.push_back(param_name_stream__.str());
             }
             size_t L_Rho_species_j_2_max__ = S;
             size_t L_Rho_species_j_1_max__ = S;
@@ -1395,12 +1305,6 @@ public:
                     param_names__.push_back(param_name_stream__.str());
                 }
             }
-            size_t L_Rho_preds_vector_j_1_max__ = K_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_preds_vector_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "L_Rho_preds_vector" << '.' << j_1__ + 1;
-                param_names__.push_back(param_name_stream__.str());
-            }
             size_t u_j_2_max__ = S;
             size_t u_j_1_max__ = N;
             for (size_t j_2__ = 0; j_2__ < u_j_2_max__; ++j_2__) {
@@ -1409,12 +1313,6 @@ public:
                     param_name_stream__ << "u" << '.' << j_1__ + 1 << '.' << j_2__ + 1;
                     param_names__.push_back(param_name_stream__.str());
                 }
-            }
-            size_t L_Rho_spec_vector_j_1_max__ = S_lower;
-            for (size_t j_1__ = 0; j_1__ < L_Rho_spec_vector_j_1_max__; ++j_1__) {
-                param_name_stream__.str(std::string());
-                param_name_stream__ << "L_Rho_spec_vector" << '.' << j_1__ + 1;
-                param_names__.push_back(param_name_stream__.str());
             }
             size_t L_Rho_species_j_2_max__ = S;
             size_t L_Rho_species_j_1_max__ = S;

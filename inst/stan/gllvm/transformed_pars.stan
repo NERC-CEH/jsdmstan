@@ -1,6 +1,6 @@
   // covariance matrix on betas by preds
   matrix[K, S] betas;
-  vector[K_lower] L_Rho_preds_vector;
+  //vector[K_lower] L_Rho_preds_vector;
 
 
   // Construct factor loading matrix
@@ -25,5 +25,5 @@
 
   betas = diag_pre_multiply(sigmas_b, L_Rho_preds) * z_species;
 
-  L_Rho_preds_vector = lt_to_vector(L_Rho_preds);
+  //L_Rho_preds_vector = lt_to_vector(L_Rho_preds);
 

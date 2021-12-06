@@ -71,7 +71,7 @@ stan_mglmm <- function(Y = NULL, X = NULL, intercept = TRUE,
 
 
   # Need to specify pars to ignore
-  ignore_pars <- c("L_Rho_preds","L_Rho_species")
+  # ignore_pars <- c("L_Rho_preds","L_Rho_species")
 
   # Fit models
   model_fit <- rstan::sampling(switch(family,
@@ -79,7 +79,7 @@ stan_mglmm <- function(Y = NULL, X = NULL, intercept = TRUE,
                                       bernoulli = stanmodels$mglmm_bernoulli,
                                       neg_binomial = stanmodels$mglmm_negbin,
                                       poisson = stanmodels$mglmm_poisson),
-                               data = data_list, pars = ignore_pars, include = FALSE,
+                               data = data_list,# pars = ignore_pars, include = FALSE,
                                ...)
 
   return(model_fit)
