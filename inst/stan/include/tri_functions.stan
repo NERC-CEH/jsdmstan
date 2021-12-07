@@ -18,7 +18,7 @@
   vector lt_to_vector(matrix y){
     int nr = rows(y);
     int nc = cols(y);
-    vector[nc*(nr-nc) + min(rows(y),cols(y)) * (min(rows(y),cols(y)) + 1)/2] x;
+    vector[nc*(nr-nc) + min(rows(y),cols(y)) * (min(rows(y),cols(y)) + 1) %/% 2] x;
     int pos = 1;
     // now fill vector with matrix elements
     for(i in 1:nr){

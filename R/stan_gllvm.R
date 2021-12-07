@@ -18,14 +18,14 @@
 #'
 #' @export
 
-stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, intercept = TRUE,
-                       dat_list = NULL, family, ...){
+stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, species_intercept = TRUE,
+                       dat_list = NULL, family, site_intercept = FALSE, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
 
   # do things if data not given as list:
   if(is.null(dat_list)){
-    if(is.null(X) & !intercept)
-      stop("Model requires an intercept if there are no covariates")
+    if(is.null(X) & !species_intercept)
+      stop("Model requires a species intercept if there are no covariates")
 
     if(D<1)
       stop("Must have at least one latent variable")
@@ -36,15 +36,17 @@ stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, intercept = TRUE,
       K <- 1
       X <- matrix(1, nrow = N, ncol = 1)
     } else {
-      K <- ncol(X) + 1*intercept
-      if(intercept)
+      K <- ncol(X) + 1*species_intercept
+      if(species_intercept)
         X <- cbind(matrix(1, nrow = N, ncol = 1), X)
     }
+    site_intercept <- as.integer(site_intercept)
 
-    data_list <- list(Y = Y, D = D, S = S, K = K, X = X)
+    data_list <- list(Y = Y, D = D, S = S, K = K, X = X,
+                      site_intercept = site_intercept)
   } else {
-    if(!all(c("Y","D","K","S","N","X") %in% names(dat_list)))
-      stop("If supplying data as a list must have entries Y, D, K, S, N and X")
+    if(!all(c("Y","D","K","S","N","X","site_intercept") %in% names(dat_list)))
+      stop("If supplying data as a list must have entries Y, D, K, S, N, X and site_intercept")
 
     data_list <- dat_list
 
@@ -100,6 +102,22 @@ stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, intercept = TRUE,
     }
 
   }
+
+  # Turn into jsdmStanFit
+  sites <- if(!is.null(rownames(data_list$Y))) rownames(data_list$Y) else
+    as.character(1:nrow(data_list$Y))
+  species <- if(!is.null(colnames(data_list$Y))) colnames(data_list$Y) else
+    as.character(1:ncol(data_list$Y))
+  preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
+    as.character(1:ncol(data_list$X))
+
+
+  model_output <- new("jsdmStanFit", model_fit,
+                      jsdm_type = "gllvm",
+                      species = species,
+                      sites = sites,
+                      preds = preds,
+                      n_latent = as.integer(round(data_list$D,0)))
 
   return(model_fit)
 }

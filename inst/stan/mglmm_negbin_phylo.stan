@@ -1,4 +1,5 @@
 functions{
+#include /phylo/covariance_functions.stan
 #include /include/tri_functions.stan
 }
 data {
@@ -6,6 +7,10 @@ data {
   int<lower=1> S; // Number of species
   int<lower=0> K; // Number of predictor variables
   matrix[N, K] X; // Predictor matrix
+
+  matrix[S, S] Dmat; // Distance matrix between species
+  int<lower=0,upper=3> nu05; // whether matern cov has nu = 1/2, 3/2 or 5/2
+  real<lower=0> delta; // constant added to diagonal of covariance
 
   int<lower=0,upper=1> site_intercept; // whether to include a site intercept
 
@@ -15,25 +20,35 @@ transformed data{
 #include /mglmm/transformed_data.stan
 }
 parameters {
-#include "/mglmm/pars.stan"
+#include "/phylo/mglmm_pars.stan"
+
+  // kernel parameters
+  real<lower=0> etasq;
+  real<lower=0> rho;
+
+  // Scale parameters
+  real<lower=0> kappa;
+
 }
 transformed parameters {
-#include /mglmm/transformed_pars.stan
+#include /phylo/mglmm_transformed_pars.stan
 }
 model {
-
-  // model
   matrix[N, S] mu;
+  // model
   if(site_intercept == 1){
     matrix[N, S] alpha = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S);
     mu = alpha + (X * betas) + u;
-  } else {
+  } else{
     mu = (X * betas) + u;
+
   }
 
-#include /mglmm/model_priors.stan
+#include /phylo/mglmm_model_priors.stan
 
-  for(i in 1:N) Y[i,] ~ poisson_log(mu[i,]);
+  kappa ~ std_normal();
+
+  for(i in 1:N) Y[i,] ~ neg_binomial_2_log(mu[i,], kappa);
 
 }
 generated quantities {
@@ -46,9 +61,10 @@ generated quantities {
     } else{
       linpred = (X * betas) + u;
     }
+
     for(i in 1:N) {
       for(j in 1:S) {
-        log_lik[i, j] = poisson_log_lpmf(Y[i, j] | linpred[i, j]);
+        log_lik[i, j] = neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa);
       }
     }
   }

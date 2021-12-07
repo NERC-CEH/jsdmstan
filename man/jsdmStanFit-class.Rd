@@ -3,21 +3,40 @@
 \docType{class}
 \name{jsdmStanFit-class}
 \alias{jsdmStanFit-class}
+\alias{show,jsdmStanFit-method}
+\alias{summary,jsdmStanFit-method}
 \title{jsdmStanFit fitted jsdm_stan model}
+\usage{
+\S4method{show}{jsdmStanFit}(object)
+
+\S4method{summary}{jsdmStanFit}(
+  object,
+  digit_summary = 3,
+  prob_quantiles = c(0.15, 0.85),
+  prob_pars_only = TRUE
+)
+}
 \description{
 jsdmStanFit fitted jsdm_stan model
 }
+\section{Methods (by generic)}{
+\itemize{
+\item \code{show}: Print the default summary for the model
+
+\item \code{summary}: Summarise the model fit and data structure and give the
+diagnostics for problematic parameters
+}}
+
 \section{Slots}{
 
 \describe{
 \item{\code{jsdm_type}}{A length one character vector describing type of jSDM}
 
-\item{\code{n_species}}{A length one integer vector representing number of species}
+\item{\code{species}}{A character vector of the species names}
 
-\item{\code{n_site}}{A length one integer vector representing number of sites}
+\item{\code{sites}}{A character vector of the site IDs}
 
-\item{\code{n_preds}}{A length two integer vector representing number of preds then
-whether intercept included}
+\item{\code{preds}}{A character vector of the measured predictors included}
 
 \item{\code{n_latent}}{A length one integer vector representing number of latent
 variables (in gllvm type fits) or NA in all other cases}

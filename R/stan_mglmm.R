@@ -1,29 +1,67 @@
-#' Run mglmm models in Stan
+#'Run mglmm models in Stan
 #'
-#' @details
+#'@details
 #'
-#' @param Y Matrix of species by sites. Rows are assumed to be sites, columns are
-#'   assumed to be species
+#'@param Y Matrix of species by sites. Rows are assumed to be sites, columns are
+#'  assumed to be species
 #'
-#' @param X The covariates matrix, with rows being site and columns being covariates
+#'@param X The covariates matrix, with rows being site and columns being covariates
 #'
-#' @param intercept Whether the model should be fit with an intercept
+#'@param species_intercept Whether the model should be fit with an intercept by
+#'  species, by default TRUE
 #'
-#' @param family The response family for the model, required to be one of "gaussian",
-#'   "bernoulli", "poisson" or "neg_binomial"
+#'@param dat_list Alternatively, data can be given to the model as a list containing
+#'  Y, X, N, S, K, and site_intercept. See output of mglmm_sim_data for an example of
+#'  how this can be formatted.
 #'
-#' @param ... Arguments passed to rstan::sampling
+#'@param family The response family for the model, required to be one of "gaussian",
+#'  "bernoulli", "poisson" or "neg_binomial"
 #'
-#' @export
+#'@param site_intercept Whether the model should be fit with a site intercept, by
+#'  default FALSE
+#'
+#'@param phylo A distance matrix between species (not necessarily phylogenetic). The
+#'  default FALSE does not incorporate phylogenetic information.
+#'
+#'@param covar The covariance function as a character string, options are Matérn
+#'  kernel with \eqn{\nu} 1/2 ("matern_05"), 3/2 ("matern_15"), 5/2 ("matern_25"), or
+#'  infinite ("matern_inf"). Matérn kernel with infinite nu is equivalent to the
+#'  squared exponential kernel ("sq_exponential"), and with \eqn{\nu} = 1/2 the
+#'  exponential kernel ("exponential").
+#'
+#'@param delta The constant added to the diagonal of the covariance matrix in the
+#'  phylogenetic model to keep matrix semipositive definite, by default 1e-5.
+#'
+#'@param ... Arguments passed to rstan::sampling
+#'
+#'@export
 
-stan_mglmm <- function(Y = NULL, X = NULL, intercept = TRUE,
-                       dat_list = NULL, family, ...){
+stan_mglmm <- function(Y = NULL, X = NULL, species_intercept = TRUE,
+                       dat_list = NULL, family, site_intercept = FALSE,
+                       phylo = FALSE, covar = "matern_05", delta = 1e-5, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
+
+  if(!isFALSE(phylo)){
+    if(!is.matrix(phylo)) stop("Phylo must be either FALSE or a matrix")
+    if(!all(dim(phylo) == ncol(Y)))
+      stop("Phylo must be a square matrix with dimensions equal to ncol(Y)")
+    if(!isSymmetric(phylo) | any(eigen(phylo)$values<0))
+      stop("Phylo must be symmetric and semipositive definite")
+
+    covar <- match.arg(covar, c("matern_05","exponential","matern_15","matern_25",
+                                "sq_exponential","matern_inf"))
+    nu05 <- switch(covar, "matern_05" = 0L,
+                   "exponential" = 0L,
+                   "matern_15" = 1L,
+                   "matern_25" = 2L,
+                   "sq_exponential" = 3L,
+                   "matern_inf" = 3L)
+  }
 
   # do things if data not given as list:
   if(is.null(dat_list)){
-    if(is.null(X) & !intercept)
-      stop("Model requires an intercept if there are no covariates")
+    if(is.null(X) & !species_intercept)
+      stop("Model requires a species intercept if there are no covariates")
 
     S <- ncol(Y)
     N <- nrow(Y)
@@ -31,15 +69,30 @@ stan_mglmm <- function(Y = NULL, X = NULL, intercept = TRUE,
       K <- 1
       X <- matrix(1, nrow = N, ncol = 1)
     } else {
-      K <- ncol(X) + 1*intercept
-      if(intercept)
+      K <- ncol(X) + 1*species_intercept
+      if(species_intercept)
         X <- cbind(matrix(1, nrow = N, ncol = 1), X)
     }
+    site_intercept <- as.integer(site_intercept)
 
-    data_list <- list(Y = Y, S = S, K = K, X = X)
+
+    data_list <- list(Y = Y, S = S, K = K, X = X,
+                      site_intercept = site_intercept)
+
+    if(!isFALSE(phylo)){
+      data_list$Dmat <- phylo
+      data_list$nu05 <- nu05
+      data_list$delta <- delta
+    }
+
   } else {
-    if(!all(c("Y","K","S","N","X") %in% names(dat_list)))
-      stop("If supplying data as a list must have entries Y, K, S, N and X")
+    if(!all(c("Y","K","S","N","X","site_intercept") %in% names(dat_list)))
+      stop("If supplying data as a list must have entries Y, K, S, N, X and site_intercept")
+
+    if(!isFALSE(phylo)){
+      if(!all(c("Dmat","nu05","delta") %in% names(dat_list)))
+        stop("Phylo models require Dmat, nu05 and delta in dat_list")
+    }
 
     data_list <- dat_list
 
@@ -74,13 +127,39 @@ stan_mglmm <- function(Y = NULL, X = NULL, intercept = TRUE,
   # ignore_pars <- c("L_Rho_preds","L_Rho_species")
 
   # Fit models
-  model_fit <- rstan::sampling(switch(family,
-                                      gaussian = stanmodels$mglmm_gaussian,
-                                      bernoulli = stanmodels$mglmm_bernoulli,
-                                      neg_binomial = stanmodels$mglmm_negbin,
-                                      poisson = stanmodels$mglmm_poisson),
-                               data = data_list,# pars = ignore_pars, include = FALSE,
-                               ...)
+  if(isFALSE(phylo)){
+    model_fit <- rstan::sampling(switch(family,
+                                        gaussian = stanmodels$mglmm_gaussian,
+                                        bernoulli = stanmodels$mglmm_bernoulli,
+                                        neg_binomial = stanmodels$mglmm_negbin,
+                                        poisson = stanmodels$mglmm_poisson),
+                                 data = data_list,# pars = ignore_pars, include = FALSE,
+                                 ...)
+  } else {
+    model_fit <- rstan::sampling(switch(family,
+                                        gaussian = stanmodels$mglmm_gaussian_phylo,
+                                        bernoulli = stanmodels$mglmm_bernoulli_phylo,
+                                        neg_binomial = stanmodels$mglmm_negbin_phylo,
+                                        poisson = stanmodels$mglmm_poisson_phylo),
+                                 data = data_list,# pars = ignore_pars, include = FALSE,
+                                 ...)
+  }
+  # Turn into jsdmStanFit
+  sites <- if(!is.null(rownames(data_list$Y))) rownames(data_list$Y) else
+    as.character(1:nrow(data_list$Y))
+  species <- if(!is.null(colnames(data_list$Y))) colnames(data_list$Y) else
+    as.character(1:ncol(data_list$Y))
+  preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
+    as.character(1:ncol(data_list$X))
+  if(isTRUE(intercept)){
+    preds <- c("Intercept", preds)
+  }
 
-  return(model_fit)
+  model_output <- new("jsdmStanFit", model_fit,
+                      jsdm_type = "mglmm",
+                      species = species,
+                      sites = sites,
+                      preds = preds)
+
+  return(model_output)
 }

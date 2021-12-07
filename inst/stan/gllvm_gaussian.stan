@@ -8,6 +8,8 @@ data {
   int<lower=0> K; // Number of predictor variables
   matrix[N, K] X; // Predictor matrix
 
+  int<lower=0,upper=1> site_intercept; // whether to include a site intercept
+
   real Y[N, S]; //Species matrix
 }
 transformed data{
@@ -24,10 +26,14 @@ transformed parameters {
 }
 model {
   // model
-  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  matrix[N,S] mu;
   matrix[N, S] LV_sum = ((Lambda_uncor) * sigma_L * LV_uncor)';
-  matrix[N, S] mu = alpha + (X * betas) + LV_sum;
-
+  if(site_intercept == 1){
+    matrix[N, S] alpha = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S);
+    mu = alpha + (X * betas) + LV_sum;
+  } else{
+      mu = (X * betas) + LV_sum;
+  }
 #include /gllvm/model_priors.stan
 
   // Normal distribution sigma parameter
@@ -41,8 +47,13 @@ generated quantities {
   matrix[N, S] log_lik;
 #include /gllvm/sign_correct.stan
   {
-    matrix[N, S] linpred = rep_matrix(a_bar + a * sigma_a, S) + (X * betas) +
-                              ((Lambda_uncor) * sigma_L * LV_uncor)';
+    matrix[N, S] linpred;
+    if(site_intercept == 1){
+      linpred = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S) + (X * betas) +
+                             ((Lambda_uncor) * sigma_L * LV_uncor)';
+    } else{
+      linpred = (X * betas) + ((Lambda_uncor) * sigma_L * LV_uncor)';
+    }
 
     for(i in 1:N) {
       for(j in 1:S) {

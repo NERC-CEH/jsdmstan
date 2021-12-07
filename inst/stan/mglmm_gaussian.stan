@@ -7,6 +7,8 @@ data {
   int<lower=0> K; // Number of predictor variables
   matrix[N, K] X; // Predictor matrix
 
+  int<lower=0,upper=1> site_intercept; // whether to include a site intercept
+
   real Y[N, S]; //Species matrix
 }
 transformed data{
@@ -24,8 +26,13 @@ transformed parameters {
 model {
 
   // model
-  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
-  matrix[N, S] mu = alpha + (X * betas) + u;
+  matrix[N, S] mu;
+  if(site_intercept == 1){
+    matrix[N, S] alpha = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S);
+    mu = alpha + (X * betas) + u;
+  } else {
+    mu = (X * betas) + u;
+  }
 
 #include /mglmm/model_priors.stan
 
@@ -39,8 +46,12 @@ generated quantities {
   // Calculate linear predictor, y_rep, log likelihoods for LOO
   matrix[N, S] log_lik;
   {
-    matrix[N, S] linpred = rep_matrix(a_bar + a * sigma_a, S) + (X * betas) + u;
-
+    matrix[N, S] linpred;
+    if(site_intercept == 1){
+      linpred = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S) + (X * betas) + u;
+    } else{
+      linpred = (X * betas) + u;
+    }
     for(i in 1:N) {
       for(j in 1:S) {
         log_lik[i, j] = normal_lpdf(Y[i, j] | linpred[i, j], sigma);

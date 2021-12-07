@@ -127,10 +127,12 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     J <- 1
   } else if(isTRUE(species_intercept)){
     x <- matrix(rnorm(N*K), ncol = K, nrow = N)
+    colnames(x) <- paste0("V",1:K)
     x <- cbind(Intercept = 1, x)
     J <- K + 1
   } else if(isFALSE(species_intercept)){
     x <- matrix(rnorm(N*K), ncol = K, nrow = N)
+    colnames(x) <- paste0("V",1:K)
     J <- K
   } else stop("K must be an integer value")
 
@@ -228,7 +230,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     pars$L_Rho_sigma <- L_Rho_sigma
     pars$u_ftilde <- u_ftilde
   }
-  output <- list(Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x)
+  output <- list(Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x,
+                 site_intercept = as.integer(site_intercept))
   if(isTRUE(phylo)){
     output$Dmat <- Dmat
     output$delta <- delta

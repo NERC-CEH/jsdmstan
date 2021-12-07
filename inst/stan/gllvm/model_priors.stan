@@ -1,7 +1,9 @@
   // Site-level intercept priors
-  a ~ std_normal();
-  a_bar ~ std_normal();
-  sigma_a ~ std_normal();
+  if(site_intercept == 1){
+    a[1,] ~ std_normal();
+    a_bar[1] ~ std_normal();
+    sigma_a[1] ~ std_normal();
+  }
 
   // Species parameter priors
   sigmas_b ~ std_normal();

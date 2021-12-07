@@ -1,7 +1,7 @@
   // Site intercepts
-  real a_bar;
-  real<lower=0> sigma_a;
-  vector[N] a;
+  real a_bar[site_intercept];
+  real<lower=0> sigma_a[site_intercept];
+  vector[N] a[site_intercept];
 
   // Species parameters
 
