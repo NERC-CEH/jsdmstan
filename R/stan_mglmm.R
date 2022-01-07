@@ -151,15 +151,17 @@ stan_mglmm <- function(Y = NULL, X = NULL, species_intercept = TRUE,
     as.character(1:ncol(data_list$Y))
   preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
     as.character(1:ncol(data_list$X))
-  if(isTRUE(intercept)){
+  if(isTRUE(species_intercept)){
     preds <- c("Intercept", preds)
   }
 
-  model_output <- new("jsdmStanFit", model_fit,
-                      jsdm_type = "mglmm",
-                      species = species,
-                      sites = sites,
-                      preds = preds)
+  model_output <- list(fit = model_fit,
+                       jsdm_type = "mglmm",
+                       species = species,
+                       sites = sites,
+                       preds = preds)
+
+  class(model_output) <- "jsdmStanFit"
 
   return(model_output)
 }

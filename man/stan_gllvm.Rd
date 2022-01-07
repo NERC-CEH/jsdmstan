@@ -8,26 +8,32 @@ stan_gllvm(
   Y = NULL,
   D = NULL,
   X = NULL,
-  intercept = TRUE,
+  species_intercept = TRUE,
   dat_list = NULL,
   family,
+  site_intercept = FALSE,
+  save_data = FALSE,
   ...
 )
 }
 \arguments{
-\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
-assumed to be species}
+\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns
+are assumed to be species}
 
 \item{D}{The number of latent variables}
 
-\item{X}{The covariates matrix, with rows being site and columns being covariates}
+\item{X}{The covariates matrix, with rows being site and columns being
+covariates}
 
-\item{intercept}{Whether the model should be fit with an intercept}
+\item{family}{The response family for the model, required to be one of
+"gaussian", "bernoulli", "poisson" or "neg_binomial"}
 
-\item{family}{The response family for the model, required to be one of "gaussian",
-"bernoulli", "poisson" or "neg_binomial"}
+\item{save_data}{If the data used to fit the model should be saved in the
+model object, by default TRUE.}
 
 \item{...}{Arguments passed to rstan::sampling}
+
+\item{intercept}{Whether the model should be fit with an intercept}
 }
 \description{
 Run gllvm models in Stan

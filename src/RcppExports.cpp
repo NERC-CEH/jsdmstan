@@ -19,8 +19,11 @@ RcppExport SEXP _rcpp_module_boot_stan_fit4gllvm_poisson_mod();
 RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_bernoulli_mod();
 RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_bernoulli_phylo_mod();
 RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_gaussian_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_gaussian_phylo_mod();
 RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_negbin_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_negbin_phylo_mod();
 RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_poisson_mod();
+RcppExport SEXP _rcpp_module_boot_stan_fit4mglmm_poisson_phylo_mod();
 
 static const R_CallMethodDef CallEntries[] = {
     {"_rcpp_module_boot_stan_fit4gllvm_bernoulli_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4gllvm_bernoulli_mod, 0},
@@ -30,8 +33,11 @@ static const R_CallMethodDef CallEntries[] = {
     {"_rcpp_module_boot_stan_fit4mglmm_bernoulli_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_bernoulli_mod, 0},
     {"_rcpp_module_boot_stan_fit4mglmm_bernoulli_phylo_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_bernoulli_phylo_mod, 0},
     {"_rcpp_module_boot_stan_fit4mglmm_gaussian_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_gaussian_mod, 0},
+    {"_rcpp_module_boot_stan_fit4mglmm_gaussian_phylo_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_gaussian_phylo_mod, 0},
     {"_rcpp_module_boot_stan_fit4mglmm_negbin_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_negbin_mod, 0},
+    {"_rcpp_module_boot_stan_fit4mglmm_negbin_phylo_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_negbin_phylo_mod, 0},
     {"_rcpp_module_boot_stan_fit4mglmm_poisson_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_poisson_mod, 0},
+    {"_rcpp_module_boot_stan_fit4mglmm_poisson_phylo_mod", (DL_FUNC) &_rcpp_module_boot_stan_fit4mglmm_poisson_phylo_mod, 0},
     {NULL, NULL, 0}
 };
 

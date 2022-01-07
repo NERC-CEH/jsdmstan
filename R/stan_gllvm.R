@@ -2,32 +2,43 @@
 #'
 #' @details
 #'
-#' @param Y Matrix of species by sites. Rows are assumed to be sites, columns are
-#'   assumed to be species
+#' @param Y Matrix of species by sites. Rows are assumed to be sites, columns
+#'   are assumed to be species
 #'
 #' @param D The number of latent variables
 #'
-#' @param X The covariates matrix, with rows being site and columns being covariates
+#' @param X The covariates matrix, with rows being site and columns being
+#'   covariates
 #'
 #' @param intercept Whether the model should be fit with an intercept
 #'
-#' @param family The response family for the model, required to be one of "gaussian",
-#'   "bernoulli", "poisson" or "neg_binomial"
+#' @param family The response family for the model, required to be one of
+#'   "gaussian", "bernoulli", "poisson" or "neg_binomial"
+#'
+#' @param save_data If the data used to fit the model should be saved in the
+#'   model object, by default TRUE.
 #'
 #' @param ... Arguments passed to rstan::sampling
 #'
 #' @export
 
 stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, species_intercept = TRUE,
-                       dat_list = NULL, family, site_intercept = FALSE, ...){
+                       dat_list = NULL, family, site_intercept = FALSE,
+                       save_data = FALSE, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
+
+  stopifnot(is.logical(species_intercept),
+            is.logical(site_intercept),
+            is.logical(save_data))
 
   # do things if data not given as list:
   if(is.null(dat_list)){
     if(is.null(X) & !species_intercept)
       stop("Model requires a species intercept if there are no covariates")
 
-    if(D<1)
+    if(is.null(D))
+      stop("Must have at least one latent variable")
+    if(D < 1)
       stop("Must have at least one latent variable")
 
     S <- ncol(Y)
@@ -110,14 +121,22 @@ stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, species_intercept = TRUE,
     as.character(1:ncol(data_list$Y))
   preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
     as.character(1:ncol(data_list$X))
+  if(isTRUE(species_intercept)){
+    preds <- c("Intercept", preds)
+  }
 
 
-  model_output <- new("jsdmStanFit", model_fit,
-                      jsdm_type = "gllvm",
-                      species = species,
-                      sites = sites,
-                      preds = preds,
-                      n_latent = as.integer(round(data_list$D,0)))
+  model_output <- list(fit = model_fit,
+                       jsdm_type = "gllvm",
+                       species = species,
+                       sites = sites,
+                       preds = preds,
+                       n_latent = as.integer(round(data_list$D,0)),
+                       phylo = NULL)
+  model_output$data <- if(isTRUE(save_data)) data_list else NULL
 
-  return(model_fit)
+  class(model_output) <- "jsdmStanFit"
+
+  return(model_output)
 }
+

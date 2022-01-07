@@ -10,29 +10,14 @@
 #'
 #' @slot n_latent A length one integer vector representing number of latent
 #'   variables (in gllvm type fits) or NA in all other cases
-setClass("jsdmStanFit",
-         contains = "stanfit",
-         slots = c(
-           jsdm_type = "character",
-           species = "character",
-           sites = "character",
-           preds = "character",
-           n_latent = "integer"
-         ),
-         prototype = list(
-           jsdm_type = NA_character_,
-           species = NA_character_,
-           sites = NA_character_,
-           preds = NA_character_,
-           n_latent = NA_integer_
-         )
-         )
+NULL
 
+# Check if model object is okay
 
 # jsdmstanfit methods
 
 #' @describeIn jsdmStanFit Print the default summary for the model
-setMethod("show", "jsdmStanFit", function(object) {
+print.jsdmStanFit <- function(object) {
   s <- summary(object, prob_pars_only = TRUE)
 
   cat("Model type: ", object@jsdm_type, if(object@jsdm_type == "gllvm"){
@@ -52,10 +37,9 @@ setMethod("show", "jsdmStanFit", function(object) {
 
     print(s)
   }
-})
+}
 
-#' @describeIn jsdmStanFit Summarise the model fit and data structure and give
-#'   information on the parameter estimates
+#' Summarise the model fit and data structure and give summaries for the parameters
 #'
 #' @param object The model object
 #'
@@ -70,11 +54,11 @@ setMethod("show", "jsdmStanFit", function(object) {
 #' @param na_filter Whether to remove parameters with NAs in Rhat - this includes the
 #'   parameters fixed to zero or one, such as the upper triangle of the cholesky
 #'   factor of the correlation matrix. By default TRUE
-setMethod("summary", "jsdmStanFit", function(object,
-                                             prob_quantiles = c(0.15,0.85),
-                                             digit_summary = 3,
-                                             prob_pars_only = FALSE,
-                                             na_filter = TRUE) {
+summary.jsdmStanFit <- function(object,
+                                prob_quantiles = c(0.15,0.85),
+                                digit_summary = 3,
+                                prob_pars_only = FALSE,
+                                na_filter = TRUE) {
   samps <- rstan::extract(object, permuted = FALSE)
   rhat <- apply(samps, 3, rstan::Rhat)
   bulk_ess <- round(apply(samps, 3, rstan::ess_bulk),0)
@@ -96,4 +80,11 @@ setMethod("summary", "jsdmStanFit", function(object,
   s <- round(s, digit_summary)
 
   return(summary = s)
-})
+}
+
+#' @describeIn jsdmStanFit Wrapper for extracting samples from model fit
+extract <- function(object, pars, permuted = FALSE,
+                                inc_warmup = FALSE, include = TRUE){
+  rstan::extract(object$fit, pars, permuted, inc_warmup, include)
+}
+

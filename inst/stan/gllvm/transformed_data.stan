@@ -3,6 +3,6 @@
   // Number of non-zero lower triangular factor loadings
   // Ensures identifiability of the model - no rotation of factors
   int<lower=1> M;
-  M = D * (S - D) + D * (D - 1) %/% 2 + D;
+  M = D * (S - D) + D * (D - 1) / 2 + D;
 
-  //K_lower = K * (K + 1) %/% 2;
+  //K_lower = K * (K + 1) / 2;
