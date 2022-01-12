@@ -25,7 +25,7 @@ transformed parameters {
 }
 model {
   matrix[N,S] mu;
-  matrix[N, S] LV_sum = ((Lambda_uncor) * sigma_L * LV_uncor)';
+  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
   if(site_intercept == 1){
     matrix[N, S] alpha = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S);
     mu = alpha + (X * betas) + LV_sum;
@@ -49,9 +49,9 @@ generated quantities {
     matrix[N, S] linpred;
     if(site_intercept == 1){
       linpred = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S) + (X * betas) +
-                             ((Lambda_uncor) * sigma_L * LV_uncor)';
+                             ((Lambda_uncor * sigma_L) * LV_uncor)';
     } else{
-      linpred = (X * betas) + ((Lambda_uncor) * sigma_L * LV_uncor)';
+      linpred = (X * betas) + ((Lambda_uncor * sigma_L) * LV_uncor)';
     }
 
     for(i in 1:N) {

@@ -24,7 +24,7 @@
 
 stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, species_intercept = TRUE,
                        dat_list = NULL, family, site_intercept = FALSE,
-                       save_data = FALSE, ...){
+                       save_data = TRUE, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
 
   stopifnot(is.logical(species_intercept),
@@ -121,19 +121,26 @@ stan_gllvm <- function(Y = NULL, D = NULL, X = NULL, species_intercept = TRUE,
     as.character(1:ncol(data_list$Y))
   preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
     as.character(1:ncol(data_list$X))
-  if(isTRUE(species_intercept)){
+  if(isTRUE(species_intercept) & !("Intercept" %in% preds)){
     preds <- c("Intercept", preds)
+  }
+
+  if(isTRUE(save_data)){
+    dat <- data_list
+  } else{
+    dat <- list()
   }
 
 
   model_output <- list(fit = model_fit,
                        jsdm_type = "gllvm",
+                       family = family,
                        species = species,
                        sites = sites,
                        preds = preds,
+                       data_list = dat,
                        n_latent = as.integer(round(data_list$D,0)),
                        phylo = NULL)
-  model_output$data <- if(isTRUE(save_data)) data_list else NULL
 
   class(model_output) <- "jsdmStanFit"
 

@@ -183,7 +183,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
       }
     }
 
-    LV <- matrix(rnorm(N * D, 0, 1), nrow = N, ncol = D)
+    L_sigma <- abs(rnorm(1,0,1))
+
+    LV <- matrix(rnorm(N * D, 0, 1), nrow = D, ncol = N)
+
+    LV_sum <- (L * L_sigma) %*% LV
   }
 
   # variance parameters
@@ -195,7 +199,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     for(j in 1:S){
 
       mu_ij <- switch(method,
-                      "gllvm" = a_i[i] + mu_sim[i,j] + as.numeric(LV[i,] %*% L[j,]),
+                      "gllvm" = a_i[i] + mu_sim[i,j] + LV_sum[j,i],
                       "mglmm" = a_i[i] + mu_sim[i,j] + u_ij[i,j])
 
       Y[i, j] <- switch(response,
@@ -224,6 +228,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   if(method == "gllvm"){
     pars$L <- L
     pars$LV <- LV
+    pars$L_sigma <- L_sigma
   }
   if(method == "mglmm"){
     pars$u_sds <- u_sds

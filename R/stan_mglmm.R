@@ -1,5 +1,7 @@
 #'Run mglmm models in Stan
 #'
+#'@export
+#'
 #'@details
 #'
 #'@param Y Matrix of species by sites. Rows are assumed to be sites, columns are
@@ -32,14 +34,20 @@
 #'@param delta The constant added to the diagonal of the covariance matrix in the
 #'  phylogenetic model to keep matrix semipositive definite, by default 1e-5.
 #'
-#'@param ... Arguments passed to rstan::sampling
+#' @param save_data If the data used to fit the model should be saved in the
+#'   model object, by default TRUE.
+#'  @param ... Arguments passed to rstan::sampling
 #'
-#'@export
 
 stan_mglmm <- function(Y = NULL, X = NULL, species_intercept = TRUE,
                        dat_list = NULL, family, site_intercept = FALSE,
-                       phylo = FALSE, covar = "matern_05", delta = 1e-5, ...){
+                       phylo = FALSE, covar = "matern_05", delta = 1e-5,
+                       save_data = TRUE, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
+
+  stopifnot(is.logical(species_intercept),
+            is.logical(site_intercept),
+            is.logical(save_data))
 
   if(!isFALSE(phylo)){
     if(!is.matrix(phylo)) stop("Phylo must be either FALSE or a matrix")
@@ -151,15 +159,21 @@ stan_mglmm <- function(Y = NULL, X = NULL, species_intercept = TRUE,
     as.character(1:ncol(data_list$Y))
   preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
     as.character(1:ncol(data_list$X))
-  if(isTRUE(species_intercept)){
+  if(isTRUE(species_intercept) & !("Intercept" %in% preds)){
     preds <- c("Intercept", preds)
   }
+  dat <- if(isTRUE(save_data)){
+    data_list
+  } else list()
 
   model_output <- list(fit = model_fit,
                        jsdm_type = "mglmm",
+                       family = family,
                        species = species,
                        sites = sites,
-                       preds = preds)
+                       preds = preds,
+                       data_list = dat,
+                       n_latent = NULL)
 
   class(model_output) <- "jsdmStanFit"
 

@@ -1,15 +1,37 @@
-#' jsdmStanFit fitted jsdm_stan model
+#' jsdmStanFit class
 #'
-#' @slot jsdm_type A length one character vector describing type of jSDM
+#' This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 #'
-#' @slot species A character vector of the species names
+#' @name jsdmStanFit
 #'
-#' @slot sites A character vector of the site IDs
-#'
-#' @slot preds A character vector of the measured predictors included
-#'
-#' @slot n_latent A length one integer vector representing number of latent
+#' @section Elements for \code{jsdmStanFit} objects:
+#' \describe{
+#'  \item{\code{jsdm_type}}{
+#'  A length one character vector describing type of jSDM
+#'  }
+#'  \item{\code{family}}{
+#'  A character vector describing response family
+#'  }
+#'  \item{\code{species}}{
+#'  A character vector of the species names
+#'  }
+#'  \item{\code{sites}}{
+#'   character vector of the site IDs
+#'  }
+#'  \item{\code{preds}}{
+#'  A character vector of the measured predictors included
+#'  }
+#'  \item{\code{data_list}}{
+#'  A list containing the original data used to fit the model
+#'   (empty when save_data is set to FALSE)
+#'  }
+#'  \item{\code{n_latent}}{
+#'  A length one integer vector representing number of latent
 #'   variables (in gllvm type fits) or NA in all other cases
+#'  }
+#'  }
+#'
+#'
 NULL
 
 # Check if model object is okay

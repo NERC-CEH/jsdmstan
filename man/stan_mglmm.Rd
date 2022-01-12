@@ -14,6 +14,7 @@ stan_mglmm(
   phylo = FALSE,
   covar = "matern_05",
   delta = 1e-05,
+  save_data = TRUE,
   ...
 )
 }
@@ -48,7 +49,9 @@ exponential kernel ("exponential").}
 \item{delta}{The constant added to the diagonal of the covariance matrix in the
 phylogenetic model to keep matrix semipositive definite, by default 1e-5.}
 
-\item{...}{Arguments passed to rstan::sampling}
+\item{save_data}{If the data used to fit the model should be saved in the
+model object, by default TRUE.
+@param ... Arguments passed to rstan::sampling}
 }
 \description{
 Run mglmm models in Stan

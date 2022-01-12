@@ -12,7 +12,7 @@ stan_gllvm(
   dat_list = NULL,
   family,
   site_intercept = FALSE,
-  save_data = FALSE,
+  save_data = TRUE,
   ...
 )
 }
