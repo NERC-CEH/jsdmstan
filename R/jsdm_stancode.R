@@ -5,12 +5,13 @@
 #' list, family and method.
 #'
 #' @param data_list The data list
-#' @param family The family, one of "gaussian", "bernoulli", "poisson" or
-#'   "neg_binomial"
-#' @param prior The prior, currently only default (i.e. NULL) supported
-#' @param method The method, one of "gllvm" or "mglmm"
-#' @param phylo Whether phylo should be included, only for mglmm
+#' @param family The family, one of "\code{"gaussian"}, \code{"bernoulli"},
+#'   \code{"poisson"} or \code{"neg_binomial"}
+#' @param prior The prior, currently only default (i.e. \code{NULL}) supported
+#' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
+#' @param phylo Whether phylo should be included, only for MGLMM
 #'
+#' @return A character vector of Stan code
 #' @export
 #'
 jsdm_stancode <- function(data_list, family, method, prior = NULL,

@@ -9,14 +9,17 @@ jsdm_stancode(data_list, family, method, prior = NULL, phylo = FALSE)
 \arguments{
 \item{data_list}{The data list}
 
-\item{family}{The family, one of "gaussian", "bernoulli", "poisson" or
-"neg_binomial"}
+\item{family}{The family, one of "\code{"gaussian"}, \code{"bernoulli"},
+\code{"poisson"} or \code{"neg_binomial"}}
 
-\item{method}{The method, one of "gllvm" or "mglmm"}
+\item{method}{The method, one of \code{"gllvm"} or \code{"mglmm"}}
 
-\item{prior}{The prior, currently only default (i.e. NULL) supported}
+\item{prior}{The prior, currently only default (i.e. \code{NULL}) supported}
 
-\item{phylo}{Whether phylo should be included, only for mglmm}
+\item{phylo}{Whether phylo should be included, only for MGLMM}
+}
+\value{
+A character vector of Stan code
 }
 \description{
 This function returns the Stan code used to fit the model as specified by the data

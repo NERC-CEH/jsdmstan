@@ -12,6 +12,7 @@
 #' @aliases jsdmstan
 #' @import Rcpp
 #' @import rstantools
+#' @importFrom bayesplot pp_check nuts_params log_posterior rhat neff_ratio
 #'
 #' @references Stan Development Team (NA). RStan: the R interface to Stan. R
 #'   package version 2.26.1. https://mc-stan.org

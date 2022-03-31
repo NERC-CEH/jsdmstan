@@ -11,26 +11,26 @@
 #' @param D The number of latent variables within a GLLVM model
 #'
 #' @param family The response family for the model, required to be one of
-#'   "gaussian", "bernoulli", "poisson" or "neg_binomial"
+#'   \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}
 #'
 #'@param species_intercept Whether the model should be fit with an intercept by
-#'  species, by default TRUE
+#'  species, by default \code{TRUE}
 #'
 #'@param dat_list Alternatively, data can be given to the model as a list containing
 #'  Y, X, N, S, K, and site_intercept. See output of mglmm_sim_data for an example of
 #'  how this can be formatted.
 #'
 #'@param site_intercept Whether the model should be fit with a site intercept, by
-#'  default FALSE
+#'  default \code{FALSE}
 #'
 #'@param phylo A distance matrix between species (not necessarily phylogenetic). The
-#'  default FALSE does not incorporate phylogenetic information.
+#'  default \code{FALSE} does not incorporate phylogenetic information.
 #'
 #'@param covar The covariance function as a character string, options are Matérn
-#'  kernel with \eqn{\nu} 1/2 ("matern_05"), 3/2 ("matern_15"), 5/2 ("matern_25"), or
-#'  infinite ("matern_inf"). Matérn kernel with infinite nu is equivalent to the
-#'  squared exponential kernel ("sq_exponential"), and with \eqn{\nu} = 1/2 the
-#'  exponential kernel ("exponential").
+#'  kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2 (\code{"matern_25"}), or
+#'  infinite (\code{"matern_inf"}). Matérn kernel with infinite nu is equivalent to the
+#'  squared exponential kernel (\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the
+#'  exponential kernel (\code{"exponential"}).
 #'
 #'@param delta The constant added to the diagonal of the covariance matrix in the
 #'  phylogenetic model to keep matrix semipositive definite, by default 1e-5.
@@ -38,9 +38,9 @@
 #' @param save_data If the data used to fit the model should be saved in the
 #'   model object, by default TRUE.
 
-#' @param ... Arguments passed to rstan::sampling
+#' @param ... Arguments passed to \code{rstan::sampling}
 #'
-#' @return
+#' @return A \code{jsdmStanFit} object
 #' @export
 stan_jsdm <- function(Y = NULL, X = NULL, species_intercept = TRUE, method,
                       dat_list = NULL, family, site_intercept = FALSE, D = NULL,

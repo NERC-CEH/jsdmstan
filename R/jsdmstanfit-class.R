@@ -32,7 +32,17 @@
 #'  }
 #'
 #'
-NULL
+jsdmStanFit_empty <- function(){
+  res <- list(jsdm_type = "None",
+              family = character(),
+              species = character(),
+              sites = character(),
+              preds = character(),
+              data_list = list(),
+              n_latent = integer())
+  class(res) <- "jsdmStanFit"
+  res
+}
 
 # Check if model object is okay
 
@@ -110,3 +120,32 @@ extract <- function(object, pars, permuted = FALSE,
   rstan::extract(object$fit, pars, permuted, inc_warmup, include)
 }
 
+#' @describeIn  jsdmStanFit Get the model parameter names
+get_parnames <- function(x){
+  if(class(x) != "jsdmStanFit")
+    stop("This only works for jsdmStanFit objects")
+  parnames <- names(x$fit)
+  parnames <- parnames[!grepl("log_lik",parnames)]
+  parnames <- parnames[!grepl("_uncor",parnames)]
+  return(parnames)
+}
+
+#' @describeIn jsdmStanFit Get the NUTS parameters
+nuts_params.jsdmStanFit <- function(object, ...){
+  bayesplot::nuts_params(object$fit, ...)
+}
+
+#' @describeIn jsdmStanFit Get the log posterior
+log_posterior.jsdmStanFit <- function(object, ...){
+  bayesplot::log_posterior(object$fit, ...)
+}
+
+#' @describeIn jsdmStanFit Get the R-hat
+rhat.jsdmStanFit <- function(object, ...){
+  bayesplot::rhat(object$fit, ...)
+}
+
+#' @describeIn jsdmStanFit Get the n_eff ratio
+neff_ratio.jsdmStanFit <- function(object, ...){
+  bayesplot::neff_ratio(object$fit, ...)
+}

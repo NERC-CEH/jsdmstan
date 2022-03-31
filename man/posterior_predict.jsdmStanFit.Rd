@@ -16,7 +16,7 @@
 \arguments{
 \item{object}{The model object}
 
-\item{newdata}{New data, by default NULL and uses original data}
+\item{newdata}{New data, by default \code{NULL} and uses original data}
 
 \item{newdata_type}{What form is the new data in, at the moment only
 supplying covariates is supported.}
@@ -28,11 +28,11 @@ posterior}
 draws (default), species, or site.}
 }
 \value{
-A list of linear predictors. If list_index is "draws" (the default)
+A list of linear predictors. If list_index is \code{"draws"} (the default)
 the list will have length equal to the number of draws with each element of
-the list being a site x species matrix. If the list_index is "species" the
+the list being a site x species matrix. If the list_index is \code{"species"} the
 list will have length equal to the number of species with each element of
-the list being a draws x sites matrix. If the list_index is "sites" the
+the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 list will have length equal to the number of sites with each element of
 the list being a draws x species matrix.
 }

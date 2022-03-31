@@ -8,10 +8,10 @@
 #' @param object The model object
 #'
 #' @param transform Should the linear predictor be transformed using the
-#'   inverse-link function. The default is FALSE, in which case the
+#'   inverse-link function. The default is \code{FALSE}, in which case the
 #'   untransformed linear predictor is returned.
 #'
-#' @param newdata New data, by default NULL and uses original data
+#' @param newdata New data, by default \code{NULL} and uses original data
 #'
 #' @param draws Number of draws, by default the number of samples in the
 #'   posterior. Will be sampled randomly from the chains if fewer than the
@@ -24,11 +24,11 @@
 #'   draws (default), species, or site.
 #'
 #' @export
-#' @return A list of linear predictors. If list_index is "draws" (the default)
+#' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'   the list will have length equal to the number of draws with each element of
-#'   the list being a site x species matrix. If the list_index is "species" the
+#'   the list being a site x species matrix. If the list_index is \code{"species"} the
 #'   list will have length equal to the number of species with each element of
-#'   the list being a draws x sites matrix. If the list_index is "sites" the
+#'   the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 #'   list will have length equal to the number of sites with each element of the
 #'   list being a draws x species matrix.
 posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
@@ -143,7 +143,7 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'
 #' @param object The model object
 #'
-#' @param newdata New data, by default NULL and uses original data
+#' @param newdata New data, by default \code{NULL} and uses original data
 #'
 #' @param draws Number of draws, by default the number of samples in the
 #'   posterior
@@ -155,11 +155,11 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'   draws (default), species, or site.
 #'
 #' @export
-#' @return A list of linear predictors. If list_index is "draws" (the default)
+#' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'   the list will have length equal to the number of draws with each element of
-#'   the list being a site x species matrix. If the list_index is "species" the
+#'   the list being a site x species matrix. If the list_index is \code{"species"} the
 #'   list will have length equal to the number of species with each element of
-#'   the list being a draws x sites matrix. If the list_index is "sites" the
+#'   the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 #'   list will have length equal to the number of sites with each element of
 #'   the list being a draws x species matrix.
 posterior_predict.jsdmStanFit <- function(object, newdata = NULL,

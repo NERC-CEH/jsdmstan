@@ -2,13 +2,31 @@
 % Please edit documentation in R/jsdmstanfit-class.R
 \name{jsdmStanFit}
 \alias{jsdmStanFit}
+\alias{jsdmStanFit_empty}
 \alias{print.jsdmStanFit}
 \alias{extract}
+\alias{get_parnames}
+\alias{nuts_params.jsdmStanFit}
+\alias{log_posterior.jsdmStanFit}
+\alias{rhat.jsdmStanFit}
+\alias{neff_ratio.jsdmStanFit}
 \title{jsdmStanFit class}
 \usage{
+jsdmStanFit_empty()
+
 \method{print}{jsdmStanFit}(object)
 
 extract(object, pars, permuted = FALSE, inc_warmup = FALSE, include = TRUE)
+
+get_parnames(x)
+
+\method{nuts_params}{jsdmStanFit}(object, ...)
+
+\method{log_posterior}{jsdmStanFit}(object, ...)
+
+\method{rhat}{jsdmStanFit}(object, ...)
+
+\method{neff_ratio}{jsdmStanFit}(object, ...)
 }
 \description{
 This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
@@ -18,6 +36,16 @@ This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 \item \code{print.jsdmStanFit}: Print the default summary for the model
 
 \item \code{extract}: Wrapper for extracting samples from model fit
+
+\item \code{get_parnames}: Get the model parameter names
+
+\item \code{nuts_params.jsdmStanFit}: Get the NUTS parameters
+
+\item \code{log_posterior.jsdmStanFit}: Get the log posterior
+
+\item \code{rhat.jsdmStanFit}: Get the R-hat
+
+\item \code{neff_ratio.jsdmStanFit}: Get the n_eff ratio
 }}
 
 \section{Elements for \code{jsdmStanFit} objects}{
