@@ -78,7 +78,6 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
                     "to using all iterations"))
       draws <- n_iter
     } else {
-      # draw_id <- seq_len(draws)*(floor(n_iter/draws))
       draw_id <- sample.int(n_iter, draws)
       model_est <- lapply(model_est, function(x){
         switch(length(dim(x)),
@@ -122,15 +121,6 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
                "neg_binomial" = exp(x))
       }
       )
-      # for(i in 1:nrow(mu)){
-      #   for(j in 1:ncol(mu)){
-      #     mu[i,j] <- switch(object$family,
-      #                       "gaussian" = mu[i,j],
-      #                       "bernoulli" = inv_logit(mu[i,j]),
-      #                       "poisson" = exp(mu[i,j]),
-      #                       "neg_binomial" = exp(mu[i,j]))
-      #   }
-      # }
     }
 
     return(mu)
@@ -197,15 +187,6 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
              "neg_binomial" = rnbinom(1, x, mod_kappa))
     }
     )
-    # for(i in 1:nrow(x)){
-    #   for(j in 1:ncol(x)){
-    #     x2[i,j] <- switch(family,
-    #                       "gaussian" = rnorm(1,x[i,j],mod_sigma),
-    #                       "neg_binomial" = rnbinom(1,x[i,j],mod_kappa),
-    #                       "poisson" = rpois(1, x[i,j]),
-    #                       "bernoulli" = rbinom(1,1, x[i,j]))
-    #   }
-    # }
     x2
   })
 

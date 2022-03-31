@@ -25,7 +25,8 @@ untransformed linear predictor is returned.}
 \item{newdata}{New data, by default NULL and uses original data}
 
 \item{draws}{Number of draws, by default the number of samples in the
-posterior. Will be sampled evenly from the chains.}
+posterior. Will be sampled randomly from the chains if fewer than the
+number of samples.}
 
 \item{newdata_type}{What form is the new data in, at the moment only
 supplying covariates is supported.}
@@ -39,8 +40,8 @@ the list will have length equal to the number of draws with each element of
 the list being a site x species matrix. If the list_index is "species" the
 list will have length equal to the number of species with each element of
 the list being a draws x sites matrix. If the list_index is "sites" the
-list will have length equal to the number of sites with each element of
-the list being a draws x species matrix.
+list will have length equal to the number of sites with each element of the
+list being a draws x species matrix.
 }
 \description{
 Extract the posterior draws of the linear predictor, possibly transformed by

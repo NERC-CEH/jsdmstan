@@ -10,12 +10,8 @@
 #' @docType package
 #' @name jsdmstan-package
 #' @aliases jsdmstan
-#' @useDynLib jsdmstan, .registration = TRUE
-#' @import methods
 #' @import Rcpp
 #' @import rstantools
-#' @importFrom rstan sampling
-#' @importFrom RcppParallel RcppParallelLibs CxxFlags
 #'
 #' @references Stan Development Team (NA). RStan: the R interface to Stan. R
 #'   package version 2.26.1. https://mc-stan.org
