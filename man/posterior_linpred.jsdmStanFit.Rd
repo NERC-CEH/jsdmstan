@@ -9,7 +9,8 @@
   object,
   transform = FALSE,
   newdata = NULL,
-  draws = NULL,
+  ndraws = NULL,
+  draw_ids = NULL,
   newdata_type = "X",
   list_index = "draws",
   ...
@@ -24,9 +25,11 @@ untransformed linear predictor is returned.}
 
 \item{newdata}{New data, by default \code{NULL} and uses original data}
 
-\item{draws}{Number of draws, by default the number of samples in the
+\item{ndraws}{Number of draws, by default the number of samples in the
 posterior. Will be sampled randomly from the chains if fewer than the
 number of samples.}
+
+\item{draw_ids}{The IDs of the draws to be used, as a numeric vector}
 
 \item{newdata_type}{What form is the new data in, at the moment only
 supplying covariates is supported.}

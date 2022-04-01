@@ -39,7 +39,8 @@ plot.jsdmStanFit <- function(x, pars = NULL, combo = c("dens","trace"), N = 5L,
   if(!is.wholenumber(sample_n) & is.null(pars))
     stop("If pars is NULL then sample_n must be a positive integer")
   parnames <- get_parnames(x)
-  model_pars <- par_sample(pars = pars, parnames = parnames, sample_n = sample_n)
+  model_pars <- par_sample(pars = pars, parnames = parnames, sample_n = sample_n,
+                           regexp = regexp)
 
   model_est <- rstan::extract(x$fit, pars = model_pars, permuted = FALSE,
                               inc_warmup = inc_warmup, include = include)
@@ -71,7 +72,7 @@ plot.jsdmStanFit <- function(x, pars = NULL, combo = c("dens","trace"), N = 5L,
 
 is.wholenumber <- function(x, tol = .Machine$double.eps^0.5){
   if(is.numeric(x)){
-    abs(x - round(x)) < tol
+    (abs(x - round(x)) < tol) & x >=0
   } else(FALSE)
 }
 par_sample <- function(pars, parnames, sd = c("sigma","kappa"), sample_n, regexp){

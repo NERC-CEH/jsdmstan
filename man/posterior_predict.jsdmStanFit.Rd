@@ -9,7 +9,8 @@
   object,
   newdata = NULL,
   newdata_type = "X",
-  draws = NULL,
+  ndraws = NULL,
+  draw_ids = NULL,
   list_index = "draws"
 )
 }
@@ -21,8 +22,11 @@
 \item{newdata_type}{What form is the new data in, at the moment only
 supplying covariates is supported.}
 
-\item{draws}{Number of draws, by default the number of samples in the
-posterior}
+\item{ndraws}{Number of draws, by default the number of samples in the
+posterior. Will be sampled randomly from the chains if fewer than the
+number of samples.}
+
+\item{draw_ids}{The IDs of the draws to be used, as a numeric vector}
 
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}

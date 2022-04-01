@@ -28,7 +28,7 @@ jsdm_stancode <- function(data_list, family, method, prior = NULL,
 
   scode <- .modelcode(method = method, family = family,
                       phylo = phylo, prior = prior)
-  class(scode) <- c("character","jsdmstan_model")
+  class(scode) <- c("jsdmstan_model","character")
   return(scode)
 
 }
@@ -210,7 +210,14 @@ switch(method,"gllvm" = "
   sigmas_u ~ std_normal();
   to_vector(z_species) ~ std_normal();
   L_Rho_species ~ lkj_corr_cholesky(1);
-"))} else{
+"),
+switch(family, "gaussian" = "
+  //Standard deviation parameters
+  sigma ~ std_normal();
+", "neg_binomial" = "
+  //Scale parameter
+  kappa ~ std_normal();
+", "bern" = "", "poisson" = ""))} else{
   stop("Specifying own priors currently unsupported")
 }
 

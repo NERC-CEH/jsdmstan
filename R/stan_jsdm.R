@@ -225,12 +225,12 @@ validate_data <- function(Y, D, X, species_intercept,
 
   # Check if Y is appropriate given family
   if(identical(family, "bernoulli")){
-    if(!isTRUE(all.equal(data_list$Y,
+    if(!isTRUE(all.equal(unname(data_list$Y),
                          matrix(as.numeric(as.logical(data_list$Y)),
                                 nrow=nrow(data_list$Y)) ) ))
       stop("Y matrix is not binary")
   } else if(family %in% c("poisson","neg_binomial")){
-    if(any(apply(data_list$Y, 1:2, function(x) x%%1 != 0)))
+    if(!any(apply(data_list$Y, 1:2, is.wholenumber)))
       stop("Y matrix is not composed of integers")
   }
 

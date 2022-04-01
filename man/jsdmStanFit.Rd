@@ -4,7 +4,6 @@
 \alias{jsdmStanFit}
 \alias{jsdmStanFit_empty}
 \alias{print.jsdmStanFit}
-\alias{extract}
 \alias{get_parnames}
 \alias{nuts_params.jsdmStanFit}
 \alias{log_posterior.jsdmStanFit}
@@ -15,8 +14,6 @@
 jsdmStanFit_empty()
 
 \method{print}{jsdmStanFit}(object)
-
-extract(object, pars, permuted = FALSE, inc_warmup = FALSE, include = TRUE)
 
 get_parnames(x)
 
@@ -34,8 +31,6 @@ This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 \section{Functions}{
 \itemize{
 \item \code{print.jsdmStanFit}: Print the default summary for the model
-
-\item \code{extract}: Wrapper for extracting samples from model fit
 
 \item \code{get_parnames}: Get the model parameter names
 

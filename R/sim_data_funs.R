@@ -124,6 +124,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   # now do covariates - if K = NULL then do intercept only
   if(K==0){
     x <- matrix(1, nrow = N, ncol = 1)
+    colnames(x) <- "Intercept"
     J <- 1
   } else if(isTRUE(species_intercept)){
     x <- matrix(rnorm(N*K), ncol = K, nrow = N)

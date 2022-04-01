@@ -13,9 +13,11 @@
 #'
 #' @param newdata New data, by default \code{NULL} and uses original data
 #'
-#' @param draws Number of draws, by default the number of samples in the
+#' @param ndraws Number of draws, by default the number of samples in the
 #'   posterior. Will be sampled randomly from the chains if fewer than the
 #'   number of samples.
+#'
+#' @param draw_ids The IDs of the draws to be used, as a numeric vector
 #'
 #' @param newdata_type What form is the new data in, at the moment only
 #'   supplying covariates is supported.
@@ -32,14 +34,21 @@
 #'   list will have length equal to the number of sites with each element of the
 #'   list being a draws x species matrix.
 posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
-                                          newdata = NULL, draws = NULL,
-                                          newdata_type = "X",
+                                          newdata = NULL, ndraws = NULL,
+                                          draw_ids = NULL, newdata_type = "X",
                                           list_index = "draws", ...){
   if(newdata_type != "X")
     stop("Currently only data on covariates is supported.")
   stopifnot(is.logical(transform))
   if(isTRUE(transform) & object$family == "gaussian")
     warning("No inverse-link transform performed for Gaussian response models.")
+  if(!is.null(ndraws) & !is.null(draw_ids))
+    message("Both ndraws and draw_ids have been specified, ignoring ndraws")
+  if(!is.null(draw_ids)){
+    if(any(!is.wholenumber(draw_ids)))
+      stop("draw_ids must be a vector of positive integers")
+  }
+
 
   list_index <- match.arg(list_index, c("draws", "species", "sites"))
 
@@ -72,22 +81,30 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 
   n_iter <- dim(model_est[[1]])[1]
 
-  if(!is.null(draws)){
-    if(n_iter < draws){
-      warning(paste("There are fewer samples than draws specified, defaulting",
-                    "to using all iterations"))
-      draws <- n_iter
-    } else {
-      draw_id <- sample.int(n_iter, draws)
-      model_est <- lapply(model_est, function(x){
-        switch(length(dim(x)),
-               `1` = x[draw_id],
-               `2` = x[draw_id,],
-               `3` =  x[draw_id,,])
-      })
-    }
+  if(!is.null(draw_ids)){
+    if(max(draw_ids)>n_iter)
+      stop(paste("Maximum of draw_ids (",max(draw_ids),
+                 ") is greater than number of iterations (",n_iter,")"))
+
+    draw_id <- draw_ids
   } else{
-    draw_id <- seq_len(n_iter)
+    if(!is.null(ndraws)){
+      if(n_iter < ndraws){
+        warning(paste("There are fewer samples than ndraws specified, defaulting",
+                      "to using all iterations"))
+        ndraws <- n_iter
+      } else {
+        draw_id <- sample.int(n_iter, ndraws)
+        model_est <- lapply(model_est, function(x){
+          switch(length(dim(x)),
+                 `1` = x[draw_id],
+                 `2` = x[draw_id,],
+                 `3` =  x[draw_id,,])
+        })
+      }
+    } else{
+      draw_id <- seq_len(n_iter)
+    }
   }
 
   model_pred_list <- lapply(seq_along(draw_id), function(d){
@@ -108,6 +125,9 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
       alpha <- model_est$a_bar[d,] + model_est$a[d,] * model_est$sigma_a[d]
     } else{
       alpha<- 0
+    }
+    if(is.vector(newdata)){
+      newdata <- matrix(newdata, ncol = 1)
     }
     mu <- switch(method,
                  "gllvm" = LV_sum + newdata %*% model_est$betas[d,,] + alpha,
@@ -141,18 +161,7 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'
 #' @aliases posterior_predict
 #'
-#' @param object The model object
-#'
-#' @param newdata New data, by default \code{NULL} and uses original data
-#'
-#' @param draws Number of draws, by default the number of samples in the
-#'   posterior
-#'
-#' @param newdata_type What form is the new data in, at the moment only
-#'   supplying covariates is supported.
-#'
-#' @param list_index Whether to return the output list indexed by the number of
-#'   draws (default), species, or site.
+#' @inheritParams posterior_linpred.jsdmStanFit
 #'
 #' @export
 #' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
@@ -163,11 +172,13 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'   list will have length equal to the number of sites with each element of
 #'   the list being a draws x species matrix.
 posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
-                                          newdata_type = "X", draws = NULL,
+                                          newdata_type = "X", ndraws = NULL,
+                                          draw_ids = NULL,
                                           list_index = "draws"){
-  post_linpred <- posterior_linpred(object, newdata = newdata, draws = draws,
-                                    newdata_type = newdata_type,
-                                    transform = TRUE, list_index = "draws")
+  transform <- ifelse(object$family == "gaussian", FALSE, TRUE)
+  post_linpred <- posterior_linpred(object, newdata = newdata, ndraws = ndraws,
+                                    newdata_type = newdata_type, draw_ids = draw_ids,
+                                    transform = transform, list_index = "draws")
 
   if(object$family == "gaussian")
     mod_sigma <- rstan::extract(object$fit, pars = "sigma", permuted = FALSE)

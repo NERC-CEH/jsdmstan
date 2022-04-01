@@ -91,7 +91,7 @@ summary.jsdmStanFit <- function(object,
                                 digit_summary = 3,
                                 prob_pars_only = FALSE,
                                 na_filter = TRUE) {
-  samps <- rstan::extract(object, permuted = FALSE)
+  samps <- extract(object, permuted = FALSE)
   rhat <- apply(samps, 3, rstan::Rhat)
   bulk_ess <- round(apply(samps, 3, rstan::ess_bulk),0)
   tail_ess <- round(apply(samps, 3, rstan::ess_tail),0)
@@ -114,11 +114,28 @@ summary.jsdmStanFit <- function(object,
   return(summary = s)
 }
 
-#' @describeIn jsdmStanFit Wrapper for extracting samples from model fit
-extract <- function(object, pars, permuted = FALSE,
+#' Extract samples from jsdmStanFit object
+#'
+#' @rdname extract
+#' @export
+extract <- function(object, ...) {
+  UseMethod("extract")
+}
+
+#' @rdname extract
+#' @export
+extract.default <- function(object, ...) {
+  rstan::extract(object$fit, ...)
+}
+
+#' @rdname extract
+#' @export
+extract.jsdmStanFit <- function(object, pars, permuted = FALSE,
                                 inc_warmup = FALSE, include = TRUE){
   rstan::extract(object$fit, pars, permuted, inc_warmup, include)
 }
+
+
 
 #' @describeIn  jsdmStanFit Get the model parameter names
 get_parnames <- function(x){
