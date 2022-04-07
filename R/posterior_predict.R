@@ -24,8 +24,8 @@
 #'
 #' @param list_index Whether to return the output list indexed by the number of
 #'   draws (default), species, or site.
+#' @param ... Currently unused
 #'
-#' @export
 #' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'   the list will have length equal to the number of draws with each element of
 #'   the list being a site x species matrix. If the list_index is \code{"species"} the
@@ -33,6 +33,12 @@
 #'   the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 #'   list will have length equal to the number of sites with each element of the
 #'   list being a draws x species matrix.
+#'
+#' @seealso [posterior_predict.jsdmStanFit()]
+#'
+#'@importFrom rstantools posterior_linpred
+#'@export posterior_linpred
+#' @export
 posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
                                           newdata = NULL, ndraws = NULL,
                                           draw_ids = NULL, newdata_type = "X",
@@ -51,8 +57,6 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 
 
   list_index <- match.arg(list_index, c("draws", "species", "sites"))
-
-  dots <- list(...)
 
   n_sites <- length(object$sites)
   n_species <- length(object$species)
@@ -77,7 +81,7 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
   if(isTRUE(grep("a_bar", names(object$fit))))
     model_pars <- c(model_pars, "a","sigma_a", "a_bar")
 
-  model_est <- rstan::extract(object$fit, pars = model_pars)
+  model_est <- extract(object, pars = model_pars)
 
   n_iter <- dim(model_est[[1]])[1]
 
@@ -93,15 +97,15 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
         warning(paste("There are fewer samples than ndraws specified, defaulting",
                       "to using all iterations"))
         ndraws <- n_iter
-      } else {
-        draw_id <- sample.int(n_iter, ndraws)
-        model_est <- lapply(model_est, function(x){
-          switch(length(dim(x)),
-                 `1` = x[draw_id],
-                 `2` = x[draw_id,],
-                 `3` =  x[draw_id,,])
-        })
       }
+      draw_id <- sample.int(n_iter, ndraws)
+      model_est <- lapply(model_est, function(x){
+        switch(length(dim(x)),
+               `1` = x[draw_id,drop=FALSE],
+               `2` = x[draw_id,,drop=FALSE],
+               `3` =  x[draw_id,,,drop=FALSE])
+      })
+
     } else{
       draw_id <- seq_len(n_iter)
     }
@@ -163,7 +167,6 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'
 #' @inheritParams posterior_linpred.jsdmStanFit
 #'
-#' @export
 #' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'   the list will have length equal to the number of draws with each element of
 #'   the list being a site x species matrix. If the list_index is \code{"species"} the
@@ -171,10 +174,16 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'   the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 #'   list will have length equal to the number of sites with each element of
 #'   the list being a draws x species matrix.
+#'
+#' @seealso [posterior_linpred.jsdmStanFit()]
+#'
+#'@importFrom rstantools posterior_predict
+#'@export posterior_predict
+#' @export
 posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           newdata_type = "X", ndraws = NULL,
                                           draw_ids = NULL,
-                                          list_index = "draws"){
+                                          list_index = "draws", ...){
   transform <- ifelse(object$family == "gaussian", FALSE, TRUE)
   post_linpred <- posterior_linpred(object, newdata = newdata, ndraws = ndraws,
                                     newdata_type = newdata_type, draw_ids = draw_ids,
@@ -192,10 +201,10 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     x2 <- x
     x2 <- apply(x2, 1:2, function(x) {
       switch(object$family,
-             "gaussian" = rnorm(1, x, mod_sigma),
-             "bernoulli" = rbinom(1, 1, x) ,
-             "poisson" = rpois(1, x),
-             "neg_binomial" = rnbinom(1, x, mod_kappa))
+             "gaussian" = stats::rnorm(1, x, mod_sigma),
+             "bernoulli" = stats::rbinom(1, 1, x) ,
+             "poisson" = stats::rpois(1, x),
+             "neg_binomial" = rgampois(1, x, mod_kappa))
     }
     )
     x2

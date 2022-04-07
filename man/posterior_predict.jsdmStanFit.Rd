@@ -11,7 +11,8 @@
   newdata_type = "X",
   ndraws = NULL,
   draw_ids = NULL,
-  list_index = "draws"
+  list_index = "draws",
+  ...
 )
 }
 \arguments{
@@ -30,6 +31,8 @@ number of samples.}
 
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}
+
+\item{...}{Currently unused}
 }
 \value{
 A list of linear predictors. If list_index is \code{"draws"} (the default)
@@ -42,4 +45,7 @@ the list being a draws x species matrix.
 }
 \description{
 Draw from the posterior predictive distribution of the outcome.
+}
+\seealso{
+\code{\link[=posterior_linpred.jsdmStanFit]{posterior_linpred.jsdmStanFit()}}
 }

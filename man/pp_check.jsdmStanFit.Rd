@@ -2,6 +2,7 @@
 % Please edit documentation in R/pp_check.R
 \name{pp_check.jsdmStanFit}
 \alias{pp_check.jsdmStanFit}
+\alias{pp_check}
 \title{Posterior predictive checks for \code{jsdmStanFit} objects}
 \usage{
 \method{pp_check}{jsdmStanFit}(
@@ -19,23 +20,62 @@
 \item{object}{An object of class \code{jsdmStanFit}}
 
 \item{plotfun}{The ppc plot function to use, given as a character string. The
-default is to call \code{\link[bayesplot:PPC-distributions]{ppc_dens_overlay}}. Can be specified as}
+default is to call \link[bayesplot:PPC-distributions]{ppc_dens_overlay}. Can be
+specified as either the entire name of function as a character string or without
+the ppc_ prefix}
 
 \item{species}{Which species to include in the summary statistic, by default all}
 
 \item{sites}{Which sites to include in the summary statistic, by default all}
 
-\item{summary_stat}{The summary statistic to be used, by default \code{sum} but any
-function can be used.}
+\item{summary_stat}{The summary statistic to be used, by default \code{sum} but
+any function can be used.}
 
 \item{calc_over}{Whether to calculate the summary statistic by site or species, by
 default \code{species}}
 
-\item{...}{Additional arguments passed to \link[jsdmstan]{jsdm_statsummary}.}
+\item{ndraws}{Number of draws, by default the number of samples in the
+posterior. Will be sampled randomly from the chains if fewer than the
+number of samples.}
+
+\item{...}{Additional arguments passed to \code{\link[=jsdm_statsummary]{jsdm_statsummary()}}.}
 }
 \value{
-
+A ggplot object that can be further customised using the \pkg{ggplot2}
+package.
 }
 \description{
-Posterior predictive checks for \code{jsdmStanFit} objects
+This function acts as an interface to \code{\link[bayesplot:pp_check]{bayesplot::pp_check()}}, by
+default calculating summary statistics for each site (i.e. row in the response
+matrix) which are then plotted and compared to the data used to fit the model.
+}
+\details{
+This function takes a \code{jsdmStanFit} object and tries to extract statistics
+that can give useful summaries within a posterior prediction (or retrodiction)
+using the \code{\link[bayesplot:pp_check]{bayesplot::pp_check()}} function. It uses the \code{\link[=jsdm_statsummary]{jsdm_statsummary()}}
+function to get summary statistics and then supplies them to the specified
+\code{ppc_} function from the \pkg{bayesplot} package. For a full list of
+available plotting functions call \code{\link[bayesplot:available_ppc]{bayesplot::available_ppc()}}.
+}
+\examples{
+
+\donttest{
+ # First simulate data and fit the jsdmStan model:
+ mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
+                              family = "gaussian")
+ mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
+                         family = "gaussian")
+
+ # The default is to plot a density overlay:
+ pp_check(mglmm_fit)
+
+ # Other plot functions can be called, such as a ribbon plot:
+ pp_check(mglmm_fit, plotfun = "ribbon")
+
+ # Instead of calculating the sum over sites other statistics can be calculated,
+ # e.g. the mean of each species:
+ pp_check(mglmm_fit, plotfun = "ecdf_overlay", summary_stat = "mean",
+          calc_over = "species", ndraws = 20)
+}
+
 }

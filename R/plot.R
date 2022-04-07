@@ -1,16 +1,23 @@
 #' Plot the traceplots and density plots for parameters within a jsdmStanFit object
 #'
 #' This function takes parameters from the jsdmStanfit object and plots them using
-#' the \code{mcmc_combo} function from the \code{bayesplot} package. These models
-#' have a lot of parameters so selecting a subset is recommended. If pars is set to
-#' \code{NULL} (the default) all parameters with either sigma or kappa in their name
-#' will be plotted along with a random selection of the other parameters (total
-#' number of other parameters set by \code{sample_n}).
+#' the [bayesplot::mcmc_combo()]function from the \pkg{bayesplot} package.
+#'
+#' @details This acts as an interface to the [bayesplot::mcmc_combo()]
+#'   function, with the default being to plot a density plot and a trace plot for
+#'   each parameter specified, although this can be changed by setting the
+#'   \code{combo} argument. These jSDM models have a lot of parameters so selecting a
+#'   subset is recommended. If pars is set to \code{NULL} (the default) all
+#'   parameters with either sigma or kappa in their name will be plotted along with a
+#'   random selection of the other parameters (total number of other parameters set
+#'   by \code{sample_n}). To see the name of the parameters within the model use
+#'   [get_parnames()] - and if you want to plot all parameters (there will be
+#'   hundreds in any reasonably sized model) set \code{pars = get_parnames(x)}.
 #'
 #' @param x The \code{jsdmStanFit} model object
 #' @param pars The parameters to plot, by default a random sample of twenty of the
 #'   parameters fit within the model
-#' @param combo Which combination of plot types within \code{bayesplot::mcmc_combo}
+#' @param combo Which combination of plot types within [bayesplot::mcmc_combo()]
 #'   to use, by default \code{c("dens", "trace")}
 #' @param N The number of plots per page, default \code{5}
 #' @param ask Whether to ask before plotting a new page, default \code{TRUE}
@@ -25,10 +32,32 @@
 #'   parnames, by default \code{FALSE}
 #' @param newpage Whether the first plot should be plotted on a new page, by default
 #'   \code{TRUE}
-#' @param ... Arguments passed to \code{bayesplot::mcmc_combo}
+#' @param ... Arguments passed to [bayesplot::mcmc_combo()]
 #'
-#' @return An invisible list of the plots
+#' @return An invisible list of the plots#
+#'
+#' @examples
+#' \donttest{
+#'  #First simulate data and get model fit:
+#'  mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
+#'                               family = "gaussian")
+#'  mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
+#'                          family = "gaussian")
+#'
+#'  # The default plot:
+#'  plot(mglmm_fit)
+#'
+#'  # Plotting specifically the L_Rho_species parameters:
+#'  plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
+#'
+#'  # Increasing the number of randomly sampled parameters to plot:
+#'  plot(mglmm_fit, sample_n = 20)
+#'
+#' }
+#'
 #' @export
+#'
+#' @seealso [mcmc_plot.jsdmStanFit()] for more plotting options.
 #'
 plot.jsdmStanFit <- function(x, pars = NULL, combo = c("dens","trace"), N = 5L,
                              ask = TRUE, inc_warmup = FALSE, include = TRUE,
@@ -47,9 +76,9 @@ plot.jsdmStanFit <- function(x, pars = NULL, combo = c("dens","trace"), N = 5L,
   variables <- dimnames(model_est)[[3]]
 
   if (plot) {
-    default_ask <- devAskNewPage()
-    on.exit(devAskNewPage(default_ask))
-    devAskNewPage(ask = FALSE)
+    default_ask <- grDevices::devAskNewPage()
+    on.exit(grDevices::devAskNewPage(default_ask))
+    grDevices::devAskNewPage(ask = FALSE)
   }
   n_plots <- ceiling(length(variables) / N)
   plots <- vector(mode = "list", length = n_plots)
@@ -62,7 +91,7 @@ plot.jsdmStanFit <- function(x, pars = NULL, combo = c("dens","trace"), N = 5L,
     if (plot) {
       plot(plots[[i]], newpage = newpage || i > 1)
       if (i == 1) {
-        devAskNewPage(ask = ask)
+        grDevices::devAskNewPage(ask = ask)
       }
     }
   }
@@ -98,12 +127,25 @@ par_sample <- function(pars, parnames, sd = c("sigma","kappa"), sample_n, regexp
 #' MCMC plots implemented in \pkg{bayesplot}
 #'
 #' An interface for calling the MCMC plotting functions implemented in the
-#' \pkg{bayesplot} package
+#' \pkg{bayesplot} package.
+#'
+#' This acts as an interface to the plotting functions prefaced with \code{mcmc_}
+#' within the \link[bayesplot:bayesplot-package]{bayesplot} package. The default is
+#' to plot an interval plot for the parameters specified, for a full list of
+#' available plot options run \code{bayesplot::available_mcmc()} or the error message
+#' when you set plotfun to an unrecognised plot function will give you a list of options.
+#' These jSDM models have a lot of parameters so selecting a subset is recommended.
+#' If pars is set to \code{NULL} (the default) all parameters with either sigma or
+#' kappa in their name will be plotted along with a random selection of the other
+#' parameters (total number of other parameters set by \code{sample_n}). To see the
+#' name of the parameters within the model use [get_parnames()] - and if you want to
+#' plot all parameters (there will be hundreds in any reasonably sized model) set
+#' \code{pars = get_parnames(x)}.
 #'
 #' @param x The jsdmStanFit model object
 #' @param pars The parameters to plot, by default a random sample of twenty of the
 #'   parameters fit within the model
-#' @param type The MCMC plot type to be used
+#' @param plotfun The MCMC plot function from \pkg{bayesplot} to be used
 #' @param sample_n If \code{pars = NULL} then the number of random non-sigma
 #'   parameters to include (details in description)
 #' @param inc_warmup Whether to include the warmup period in the plots, by default
@@ -114,19 +156,46 @@ par_sample <- function(pars, parnames, sd = c("sigma","kappa"), sample_n, regexp
 #'   parnames, by default \code{FALSE}
 #' @param ... Other arguments to be passed to the MCMC plotting function
 #'
-#' @return A \code{\link[ggplot2:ggplot]{ggplot}} object that can be customised using
-#'   the \pkg{ggplot2} package
+#' @return A [ggplot][ggplot2::ggplot] object that can be customised using the
+#'   \pkg{ggplot2} package
+#'
+#' @examples
+#'
+#' \donttest{
+#'  # First simulate data and fit the model:
+#'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
+#'                              family = "bernoulli")
+#'  gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
+#'                         family = "bernoulli")
+#'
+#'  # Default is to plot the intervals:
+#'  mcmc_plot(gllvm_fit)
+#'
+#'  # Other plot types include options to see parameter recovery (if the
+#'  # jsdm_sim_data functions are used the original parameters are saved within the
+#'  # data list)
+#'  mcmc_plot(gllvm_fit, plotfun = "recover_intervals",
+#'            pars = c("LV[2,20]","sigmas_b[1]","sigma_L"),
+#'            true = c(gllvm_data$pars$LV[2,20],
+#'                     gllvm_data$pars$beta_sds,
+#'                     gllvm_data$pars$L_sigma))
+#'
+#' }
+#'
 #' @export
 #'
-mcmc_plot.jsdmStanFit <- function(x, pars = NULL, type = "intervals",
+#' @seealso [plot.jsdmStanFit()]
+#'
+mcmc_plot.jsdmStanFit <- function(x, pars = NULL, plotfun = "intervals",
                                   sample_n = 10, inc_warmup = FALSE, include = TRUE,
                                   regexp = FALSE, ...){
   valid_types <- gsub("^mcmc_","",as.character(bayesplot::available_mcmc()))
-  if(!type %in% valid_types){
-    stop(paste("Invalid plot type. Valid plot types are:",
+  plotfun <- ifelse(grepl("^mcmc_",plotfun),gsub("^mcmc_","",plotfun),plotfun)
+  if(!plotfun %in% valid_types){
+    stop(paste("Invalid plotfun argument. Valid plot functions are:",
                paste(valid_types, collapse = ", ")))
   }
-  mcmc_fun <- get(paste0("mcmc_",type), asNamespace("bayesplot"))
+  mcmc_fun <- get(paste0("mcmc_",plotfun), asNamespace("bayesplot"))
 
   if(!is.wholenumber(sample_n) & is.null(pars))
     stop("If pars is NULL then sample_n must be a positive integer")
@@ -137,16 +206,16 @@ mcmc_plot.jsdmStanFit <- function(x, pars = NULL, type = "intervals",
   mcmc_arg_names <- names(formals(mcmc_fun))
   mcmc_args <- list(...)
   if ("x" %in% mcmc_arg_names) {
-    if (grepl("^nuts_", type)) {
+    if (grepl("^nuts_", plotfun)) {
       # x refers to a molten data.frame of NUTS parameters
       mcmc_args$x <- nuts_params(x)
     } else {
       # x refers to a data.frame of draws
-      draws <- extract(x, pars = model_pars, permuted = FALSE,
-                       inc_warmup = inc_warmup, include = include)
+      draws <- rstan::extract(x$fit, pars = model_pars, permuted = FALSE,
+                              inc_warmup = inc_warmup, include = include)
       sel_variables <- dimnames(draws)[[3]]
-      if (type %in% c("scatter", "hex") && length(sel_variables) != 2L) {
-        stop(paste("Exactly 2 parameters must be selected for this type.",
+      if (plotfun %in% c("scatter", "hex") && length(sel_variables) != 2L) {
+        stop(paste("Exactly 2 parameters must be selected for this plot function.",
                    "\nParameters selected: ", paste(sel_variables, collapse = ", ")))
       }
       mcmc_args$x <- draws
@@ -158,7 +227,7 @@ mcmc_plot.jsdmStanFit <- function(x, pars = NULL, type = "intervals",
   if ("np" %in% mcmc_arg_names) {
     mcmc_args$np <- nuts_params(x, inc_warmup = inc_warmup)
   }
-  interval_type <- type %in% c("intervals", "areas")
+  interval_type <- plotfun %in% c("intervals", "areas")
   if ("rhat" %in% mcmc_arg_names && !interval_type) {
     mcmc_args$rhat <- rhat(x, pars = model_pars)
   }
@@ -173,4 +242,97 @@ mcmc_plot.jsdmStanFit <- function(x, pars = NULL, type = "intervals",
 #' @export
 mcmc_plot <- function(x, ...) {
   UseMethod("mcmc_plot")
+}
+
+
+#' Plotting an ordination plot for a GLLVM model
+#'
+#' This function takes a GLLVM model fit and plots an ordination plot with a random
+#' (or specified) selection of draws
+#'
+#' @param object The jsdmStanFit model object
+#' @param choices Which latent variables to plot as dimensions, by default 1 and 2
+#' @param type Whether to plot sites or species
+#' @param ndraws How many draws to include in plot
+#' @param draw_ids Which draws to include in plot (overrides ndraws)
+#'
+#' @return A ggplot2 object that can be modified using ggplot arguments
+#' @export
+#'
+#' @examples
+#'
+#' \donttest{
+#'  # First simulate data and fit the model:
+#'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 3,
+#'                              family = "bernoulli")
+#'  gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
+#'                         family = "bernoulli")
+#'
+#' ordiplot(gllvm_fit)
+#' # now plot the 1st and 3rd latent variables against each other for the sites:
+#' ordiplot(gllvm_fit, choices = c(1,3), type = "sites")
+#'
+#' }
+ordiplot <- function(object, choices = c(1,2), type = "species",
+                     ndraws = 30, draw_ids = NULL){
+  if(class(object) != "jsdmStanFit")
+    stop("Only objects of class jsdmStanFit are supported")
+  if(object$jsdm_type != "gllvm")
+    stop("Only gllvm models are supported")
+  type <- match.arg(type, c("species","sites"))
+  if(length(choices) != 2L)
+    stop("Only two latent variables can be plotted at once")
+
+  # Extract corrected latent variable scores for species OR sites
+  ext_pars <- switch(type, "species" = "Lambda\\[",
+                     "sites" = "LV\\[")
+  model_est <- extract(object, pars = ext_pars, regexp = TRUE)
+
+  n_iter <- dim(model_est[[1]])[1]
+
+  if(!is.null(draw_ids)){
+    if(max(draw_ids)>n_iter)
+      stop(paste("Maximum of draw_ids (",max(draw_ids),
+                 ") is greater than number of iterations (",n_iter,")"))
+
+    draw_id <- draw_ids
+  } else{
+    if(!is.null(ndraws)){
+      if(n_iter < ndraws){
+        warning(paste("There are fewer samples than ndraws specified, defaulting",
+                      "to using all iterations"))
+        ndraws <- n_iter
+      }
+      draw_id <- sample.int(n_iter, ndraws)
+
+
+    } else{
+      draw_id <- seq_len(n_iter)
+    }
+  }
+  model_est <- lapply(model_est, function(x){
+    switch(length(dim(x)),
+           `1` = x[draw_id,drop=FALSE],
+           `2` = x[draw_id,,drop=FALSE],
+           `3` =  x[draw_id,,,drop=FALSE])
+  })
+  # Turn into long format
+  varnames <- switch(type, "species"= c("draw","S","LV"),
+                     "sites" = c("draw","LV","S"))
+  ord_scores <- reshape2::melt(model_est[[1]],
+                               varnames = varnames)
+  ord_scores <- subset(ord_scores, LV %in% choices)
+  ord_scores[,"LV"] <- paste0("LV",ord_scores[,"LV"])
+  ord_scores <- reshape2::dcast(ord_scores, S + draw ~ LV)
+  ord_scores$S <- as.character(ord_scores$S)
+
+  graph <- ggplot2::ggplot(ord_scores,
+                           ggplot2::aes_string(paste0("LV",choices[1]),
+                                               paste0("LV",choices[2]),
+                                               colour = "S")) +
+    ggplot2::geom_point() + bayesplot::bayesplot_theme_get() +
+    ggplot2::coord_equal()
+
+  graph
+
 }

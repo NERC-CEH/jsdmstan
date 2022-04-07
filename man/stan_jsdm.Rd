@@ -19,6 +19,7 @@ stan_jsdm(
   covar = "matern_05",
   delta = 1e-05,
   save_data = TRUE,
+  iter = 4000,
   ...
 )
 
@@ -33,6 +34,7 @@ stan_mglmm(
   covar = "matern_05",
   delta = 1e-05,
   save_data = TRUE,
+  iter = 4000,
   ...
 )
 
@@ -48,15 +50,15 @@ stan_gllvm(
   covar = "matern_05",
   delta = 1e-05,
   save_data = TRUE,
+  iter = 4000,
   ...
 )
 }
 \arguments{
-\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns
-are assumed to be species}
+\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
+assumed to be species}
 
-\item{X}{The covariates matrix, with rows being site and columns being
-covariates}
+\item{X}{The covariates matrix, with rows being site and columns being covariates}
 
 \item{species_intercept}{Whether the model should be fit with an intercept by
 species, by default \code{TRUE}}
@@ -64,7 +66,7 @@ species, by default \code{TRUE}}
 \item{method}{Whether to fit a GLLVM or MGLMM model, details in description}
 
 \item{dat_list}{Alternatively, data can be given to the model as a list containing
-Y, X, N, S, K, and site_intercept. See output of mglmm_sim_data for an example of
+Y, X, N, S, K, and site_intercept. See output of jsdm_sim_data for an example of
 how this can be formatted.}
 
 \item{family}{The response family for the model, required to be one of
@@ -79,29 +81,58 @@ default \code{FALSE}}
 default \code{FALSE} does not incorporate phylogenetic information.}
 
 \item{covar}{The covariance function as a character string, options are Matérn
-kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2 (\code{"matern_25"}), or
-infinite (\code{"matern_inf"}). Matérn kernel with infinite nu is equivalent to the
-squared exponential kernel (\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the
-exponential kernel (\code{"exponential"}).}
+kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2
+(\code{"matern_25"}), or infinite (\code{"matern_inf"}). Matérn kernel with
+infinite nu is equivalent to the squared exponential kernel
+(\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the exponential kernel
+(\code{"exponential"}).}
 
 \item{delta}{The constant added to the diagonal of the covariance matrix in the
 phylogenetic model to keep matrix semipositive definite, by default 1e-5.}
 
-\item{save_data}{If the data used to fit the model should be saved in the
-model object, by default TRUE.}
+\item{save_data}{If the data used to fit the model should be saved in the model
+object, by default TRUE.}
 
-\item{...}{Arguments passed to \code{rstan::sampling}}
+\item{iter}{A positive integer specifying the number of iterations for each chain,
+default 4000.}
+
+\item{...}{Arguments passed to \code{\link[rstan]{sampling}}}
 }
 \value{
-A \code{jsdmStanFit} object
+A \code{jsdmStanFit} object, comprising a list including the StanFit
+object, the data used to fit the model plus a few other bits of information. See
+\link{jsdmStanFit} for details.
 }
 \description{
-Fit jsdm models in Stan
+This function fits joint Species Distribution models in Stan, using either a
+generalised linear latent variable model approach (\code{method = "gllvm"}), or a
+multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 }
 \section{Functions}{
 \itemize{
-\item \code{stan_mglmm}: Alias for stan_jsdm with method = "mglmm"
+\item \code{stan_mglmm}: Alias for \code{stan_jsdm} with \code{method = "mglmm"}
 
-\item \code{stan_gllvm}: Alias for stan_jsdm with method = "gllvm"
+\item \code{stan_gllvm}: Alias for \code{stan_jsdm} with \code{method = "gllvm"}
 }}
 
+\examples{
+
+\donttest{
+ # MGLMM - specified by using the mglmm aliases and with direct reference to Y and
+ # X matrices:
+ mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
+                              family = "gaussian")
+ mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
+                         family = "gaussian")
+ mglmm_fit
+
+ # You can also run a model by supplying the data as a list:
+ gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
+                             family = "bernoulli")
+ gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
+                        family = "bernoulli")
+ gllvm_fit
+
+
+}
+}

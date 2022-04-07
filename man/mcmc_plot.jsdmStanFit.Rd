@@ -8,7 +8,7 @@
 \method{mcmc_plot}{jsdmStanFit}(
   x,
   pars = NULL,
-  type = "intervals",
+  plotfun = "intervals",
   sample_n = 10,
   inc_warmup = FALSE,
   include = TRUE,
@@ -24,7 +24,7 @@ mcmc_plot(x, ...)
 \item{pars}{The parameters to plot, by default a random sample of twenty of the
 parameters fit within the model}
 
-\item{type}{The MCMC plot type to be used}
+\item{plotfun}{The MCMC plot function from \pkg{bayesplot} to be used}
 
 \item{sample_n}{If \code{pars = NULL} then the number of random non-sigma
 parameters to include (details in description)}
@@ -41,10 +41,51 @@ parnames, by default \code{FALSE}}
 \item{...}{Other arguments to be passed to the MCMC plotting function}
 }
 \value{
-A \code{\link[ggplot2:ggplot]{ggplot}} object that can be customised using
-the \pkg{ggplot2} package
+A \link[ggplot2:ggplot]{ggplot} object that can be customised using the
+\pkg{ggplot2} package
 }
 \description{
 An interface for calling the MCMC plotting functions implemented in the
-\pkg{bayesplot} package
+\pkg{bayesplot} package.
+}
+\details{
+This acts as an interface to the plotting functions prefaced with \code{mcmc_}
+within the \link[bayesplot:bayesplot-package]{bayesplot} package. The default is
+to plot an interval plot for the parameters specified, for a full list of
+available plot options run \code{bayesplot::available_mcmc()} or the error message
+when you set plotfun to an unrecognised plot function will give you a list of options.
+These jSDM models have a lot of parameters so selecting a subset is recommended.
+If pars is set to \code{NULL} (the default) all parameters with either sigma or
+kappa in their name will be plotted along with a random selection of the other
+parameters (total number of other parameters set by \code{sample_n}). To see the
+name of the parameters within the model use \code{\link[=get_parnames]{get_parnames()}} - and if you want to
+plot all parameters (there will be hundreds in any reasonably sized model) set
+\code{pars = get_parnames(x)}.
+}
+\examples{
+
+\donttest{
+ # First simulate data and fit the model:
+ gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
+                             family = "bernoulli")
+ gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
+                        family = "bernoulli")
+
+ # Default is to plot the intervals:
+ mcmc_plot(gllvm_fit)
+
+ # Other plot types include options to see parameter recovery (if the
+ # jsdm_sim_data functions are used the original parameters are saved within the
+ # data list)
+ mcmc_plot(gllvm_fit, plotfun = "recover_intervals",
+           pars = c("LV[2,20]","sigmas_b[1]","sigma_L"),
+           true = c(gllvm_data$pars$LV[2,20],
+                    gllvm_data$pars$beta_sds,
+                    gllvm_data$pars$L_sigma))
+
+}
+
+}
+\seealso{
+\code{\link[=plot.jsdmStanFit]{plot.jsdmStanFit()}}
 }

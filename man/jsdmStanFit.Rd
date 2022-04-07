@@ -3,19 +3,20 @@
 \name{jsdmStanFit}
 \alias{jsdmStanFit}
 \alias{jsdmStanFit_empty}
-\alias{print.jsdmStanFit}
 \alias{get_parnames}
 \alias{nuts_params.jsdmStanFit}
+\alias{nuts_params}
 \alias{log_posterior.jsdmStanFit}
+\alias{log_posterior}
 \alias{rhat.jsdmStanFit}
+\alias{rhat}
 \alias{neff_ratio.jsdmStanFit}
+\alias{neff_ratio}
 \title{jsdmStanFit class}
 \usage{
 jsdmStanFit_empty()
 
-\method{print}{jsdmStanFit}(object)
-
-get_parnames(x)
+get_parnames(object)
 
 \method{nuts_params}{jsdmStanFit}(object, ...)
 
@@ -25,13 +26,17 @@ get_parnames(x)
 
 \method{neff_ratio}{jsdmStanFit}(object, ...)
 }
+\arguments{
+\item{object}{The jsdmStanFit model object}
+
+\item{...}{Arguments passed on to the \pkg{bayesplot} equivalent for stanFit
+objects}
+}
 \description{
 This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 }
 \section{Functions}{
 \itemize{
-\item \code{print.jsdmStanFit}: Print the default summary for the model
-
 \item \code{get_parnames}: Get the model parameter names
 
 \item \code{nuts_params.jsdmStanFit}: Get the NUTS parameters

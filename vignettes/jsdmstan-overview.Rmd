@@ -1,0 +1,212 @@
+---
+title: "An overview of jsdmstan"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{jsdmstan-overview}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(jsdmstan)
+library(ggplot2)
+set.seed(8267317)
+```
+
+# Joint Species Distribution Models
+
+Joint Species Distibution Models, or jSDMs, are models that model an entire community of species simultaneously. The idea behind these is that they allow information to be borrowed across species, such that the covariance between species can be used to inform the predictions of distributions of related or commonly co-occurring species. 
+
+These models can be difficult to fit as they involve fitting some type of covariance relationship between species at the same time as modelling responses to covariates etc. The original way of running jSDMs was to model the entire covariance matrix between species in a multivariate generalised linear mixed model (MGLMM). However, more recently there have been methods developed that involve representing the covariance matrix with a set of linear latent variables - known as generalised linear latent variable models (GLLVM).
+
+The jsdmstan package aims to provide an interface for fitting these models in [Stan](https://mc-stan.org/) using the Stan Hamiltonian Monte Carlo sampling as a robust Bayesian methodology.
+
+## Multivariate Generalised Linear Mixed Models
+
+
+$$ g(m_{ij}) = \beta_{0j} + \mathbf{x}_i^\intercal\beta_j + u_{ij} $$
+
+where $g(\cdot)$ is the link function, $\mathbf{x}_i^\intercal$ is the transpose of vector $\mathbf{x}$, and for each taxon $j$, $\beta_{0j}$ is an intercept and $beta_j$ is a vector of regression coefficients related to measured predictors.
+
+A site effect $\alpha_{i}$ can also be added to adjust for total abundance or richness:
+
+$$ g(m_{ij}) = \alpha_{i} + \beta_{0j} + \mathbf{x}_i^\intercal\beta_j + u_{ij} $$
+
+$$ u_{ij} \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma}) $$
+
+
+## Generalised Linear Latent Variable Models
+
+$$ g(m_{ij}) = \alpha_{i} + \beta_{0j} + \mathbf{x}_i^\intercal\beta_j + \mathbf{u}_{ij} $$
+
+This is the same as above, however $u_{ij}$ is now specified as a linear function of a set of latent variables $\mathbf{z_i}$:
+
+$$ y_{ij}|\mathbf{u}_i \sim \mathrm{F}(m_{ij},\phi_j) $$
+$$ u_{ij} = \mathbf{z}_i^\intercal \lambda_j $$
+
+The latent variables $\mathbf{z_i}$ are treated as random by assuming:
+
+$$y_{ij}|\mathbf{z_i} \sim \mathrm{F}(m_{ij},\phi_j)) $$
+$$\mathbf{z_i} \sim \mathrm{N}(\mathbf{0},\mathbf{1}) $$
+
+# Fitting a MGLMM
+
+First we can use the in-built functions for simulating data according to the MGLMM model - we'll choose to simulate 15 species over 200 sites with 2 environmental covariates. The species are assumed to follow a Poisson distribution (with a log-link), and we use the defaults of including a species-specific intercept but no site-specific intercept. At the moment only default priors (standard normal distribution) are supported. We can do this using either the `jsdm_sim_data` function with `method = "mglmm"` or with the `mglmm_sim_data` function which just calls `jsdm_sim_data` in the background.
+
+```{r}
+nsites <- 200
+nspecies <- 9
+ncovar <- 2
+mglmm_test_data <- mglmm_sim_data(N = nsites, S = nspecies, 
+                                  K = ncovar, family = "pois")
+```
+
+This returns a list, which includes the Y matrix, the X matrix, plus also the exact parameters used to create the data:
+
+```{r}
+names(mglmm_test_data)
+```
+
+Now, to fit the model we can use the `stan_jsdm` function, which interfaces to Stan through the [rstan package](https://mc-stan.org/rstan/). There are two ways to supply data to the `stan_jsdm` function, one is to supply the data as a list with the appropriate named components (the `jsdm_sim_data` functions supply data in the correct format already) and the other is to specify the Y and X matrices directly, which is what we'll use here:
+
+```{r}
+mglmm_fit <- stan_jsdm(Y = mglmm_test_data$Y, X = mglmm_test_data$X,
+                       family = "pois", method = "mglmm", refresh = 0)
+mglmm_fit
+```
+
+If we print the model object we will get a brief overview of the type of jSDM and the data, plus if there are any parameters with Rhat > 1.01 or effective sample size (ESS) < 500 then they will be printed:
+
+```{r}
+mglmm_fit
+```
+
+To get a summary of all the model parameters we can use `summary`, there are many parameters in these models so we just include a few here:
+```{r}
+mglmm_summ <- summary(mglmm_fit)
+head(mglmm_summ[order(mglmm_summ[,"Bulk.ESS"]),])
+```
+
+To get a better overview of the R-hat and effective sample size we can use the `mcmc_plot` function to plot histograms of R-hat and ESS.
+
+```{r}
+mcmc_plot(mglmm_fit, plotfun = "rhat_hist")
+```
+
+```{r}
+mcmc_plot(mglmm_fit, plotfun = "neff_hist")
+```
+
+These plots highlight any problematic parameters, which do not seem to occur in our model fit.
+
+We can also examine the output for each parameter visually using a traceplot combined with a density plot, which is given by the default `plot` command:
+
+```{r}
+plot(mglmm_fit, ask = FALSE)
+```
+
+By default the `plot` command plots all of the parameters with sigma or kappa in their name plus a random selection of 20 other parameters, but this can be overridden by either specifying the parameters by name (with or without regular expression matching) or changing the number of parameters to be randomly sampled. Use the `get_parnames` function to get the names of parameters within a model - and the `jsdm_stancode` function can also be used to see the underlying structure of the model.
+
+All the mcmc plot types within bayesplot are supported by the `mcmc_plot` function, and to see a full list either use `bayesplot::available_mcmc` or run `mcmc_plot` with an incorrect type and the options will be printed.
+
+Posterior predictions can be extracted from the models using either `posterior_linpred` or `posterior_predict`, where the linpred function extracts the linear predictor for the community composition within each draw and the predict function combines this linear predictor extraction with a random generation based on the predicted probability for the family. Both functions by default return a list of length equal to the number of draws extracted, where each element of the list is a sites by species matrix. 
+
+```{r}
+mglmm_pp <- posterior_predict(mglmm_fit)
+length(mglmm_pp)
+dim(mglmm_pp[[1]])
+```
+
+
+As well as the MCMC plotting functions within bayesplot the ppc_ family of functions is also supported through the `pp_check` function. This family of functions provides a graphical way to check your posterior against the data used within the model to evaluate model fit - called a posterior retrodictive check (or posterior predictive historically and when the prior only has been sampled from). To use these you need to have set `save_data = TRUE` within the `stan_jsdm` call. Unlike in other packages by default `pp_check` for `jsdmStanFit` objects extracts the posterior predictions then calculates summary statistics over the rows and plots those summary statistics against the same for the original data.
+
+```{r}
+pp_check(mglmm_fit) +
+  scale_x_continuous(limits = c(0,100))
+```
+
+The summary statistic can be changed, as can whether it is calculated for every species or every site:
+
+```{r}
+pp_check(mglmm_fit, summary_stat = "mean", calc_over = "species") +
+  scale_x_continuous(limits = c(0,50))
+```
+
+
+As we have run the above model on simulated data and the original data list contains the parameters used to simulate the data we can use the `mcmc_recover_` functions from `bayesplot` to see how the model did:
+
+```{r}
+mcmc_plot(mglmm_fit, plotfun = "recover_hist",
+          pars = c("sigmas_b[1]","sigmas_b[2]",
+                   "sigmas_b[3]"),
+          true = mglmm_test_data$pars$beta_sds)
+```
+```{r}
+mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
+          pars = paste0("sigmas_u[",1:nspecies,"]"),
+          true = mglmm_test_data$pars$u_sds)
+```
+```{r}
+mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
+          pars = paste0("L_Rho_species[",rep(1:nspecies, nspecies),",",
+                        rep(1:nspecies, each = nspecies),"]"),
+          true = c(mglmm_test_data$pars$L_Rho_sigma)) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+...and the answer is while it isn't particularly wrong, it also isn't particularly helpful.
+
+
+# Fitting a GLLVM
+
+The model fitting workflow for latent variable models is very similar to that above, with the addition of specifying the number of latent variables (D) in the data simulation and model fit:
+
+```{r}
+gllvm_test_data <- gllvm_sim_data(N = 25, S = 6, D = 2, family = "neg_binomial")
+```
+
+
+```{r}
+gllvm_fit <- stan_jsdm(Y = gllvm_test_data$Y, X = gllvm_test_data$X,
+                       D = gllvm_test_data$D,  
+                       family = "neg_binomial",
+                       method = "gllvm", refresh = 0)
+gllvm_fit
+```
+
+Again, the diagnostic statistics seem reasonable:
+
+```{r}
+mcmc_plot(gllvm_fit, plotfun = "rhat_hist")
+```
+
+```{r}
+mcmc_plot(gllvm_fit, plotfun = "neff_hist")
+```
+
+For brevity's sake we will not go into the detail of the different functions here, however there is one plotting function specifically for GLLVM models - `ordiplot`. This plots the species or sites scores against the latent variables from a random selection of draws:
+
+```{r}
+ordiplot(gllvm_fit)
+```
+
+```{r}
+ordiplot(gllvm_fit, type = "sites")
+```
+
+You can change the latent variables selected by specifying the `choices` argument, and alter the number of draws or whether you want to plot species or sites with the other arguments.
+
+
+
+# Further Reading
+
+Warton et al (2015) So many variables: joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779. DOI: [10.1016/j.tree.2015.09.007](http:://doi.org/10.1016/j.tree.2015.09.007).
+
+Wilkinson et al (2021) Defining and evaluating predictions of joint species distribution models. Methods in Ecology and Evolution, 12:394-404. DOI: [10.1111/2041-210X.13518](http:://doi.org/10.1111/2041-210X.13518).

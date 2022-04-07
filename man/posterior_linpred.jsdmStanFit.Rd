@@ -36,6 +36,8 @@ supplying covariates is supported.}
 
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}
+
+\item{...}{Currently unused}
 }
 \value{
 A list of linear predictors. If list_index is \code{"draws"} (the default)
@@ -49,4 +51,7 @@ list being a draws x species matrix.
 \description{
 Extract the posterior draws of the linear predictor, possibly transformed by
 the inverse-link function.
+}
+\seealso{
+\code{\link[=posterior_predict.jsdmStanFit]{posterior_predict.jsdmStanFit()}}
 }

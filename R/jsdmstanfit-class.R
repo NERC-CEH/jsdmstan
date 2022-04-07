@@ -48,30 +48,45 @@ jsdmStanFit_empty <- function(){
 
 # jsdmstanfit methods
 
-#' @describeIn jsdmStanFit Print the default summary for the model
-print.jsdmStanFit <- function(object) {
-  s <- summary(object, prob_pars_only = TRUE)
+#' Print the default summary for the model
+#'
+#' This prints out a summary for the models which includes the type of model fit, the
+#' number of species, sites and predictors as well as a summary of any parameters
+#' with Rhat > 1.01 or ESS < 500
+#'
+#' @param x The \code{jsdmStanFit} model object
+#' @param ... Other arguments passed to [summary.jsdmStanFit]
+#'
+#' @export
+print.jsdmStanFit <- function(x, ...) {
+  s <- summary(x, prob_pars_only = TRUE, ...)
 
-  cat("Model type: ", object@jsdm_type, if(object@jsdm_type == "gllvm"){
-    paste0(" with ", object@n_latent, " latent variables")
+  cat("Model type: ", x$jsdm_type, if(x$jsdm_type == "gllvm"){
+    paste0(" with ", x$n_latent, " latent variables")
   }, "\n",
-  "  Number of species: ", length(object@species), "\n",
-  "  Number of sites: ", length(object@sites), "\n",
-  "  Number of predictors: ", length(object@preds), "\n",
+  "  Number of species: ", length(x$species), "\n",
+  "  Number of sites: ", length(x$sites), "\n",
+  "  Number of predictors: ", length(x$preds), "\n",
   "\n",
-  "Model run on ", length(object@stan_args), " chains with ",
-  object@stan_args[[1]]$iter, " iterations per chain (",
-  object@stan_args[[1]]$warmup," warmup).\n\n",
+  "Model run on ", length(x$fit@stan_args), " chains with ",
+  x$fit@stan_args[[1]]$iter, " iterations per chain (",
+  x$fit@stan_args[[1]]$warmup," warmup).\n\n",
   sep = ""
   )
   if(nrow(s)>0){
     cat("Parameters with Rhat > 1.01, or ESS < 500:\n")
 
     print(s)
+  } else{
+    cat("No parameters with Rhat > 1.01 or ESS < 500")
   }
 }
 
 #' Summarise the model fit and data structure and give summaries for the parameters
+#'
+#' This returns a matrix of parameter summaries including a summary of the parameter
+#' estimates, R-hat, bulk ESS and tail ESS. This can be limited to parameters with
+#' Rhat > 1.01 or ESS < 500 by setting \code{prob_pars_only = TRUE}.
 #'
 #' @param object The model object
 #'
@@ -86,19 +101,38 @@ print.jsdmStanFit <- function(object) {
 #' @param na_filter Whether to remove parameters with NAs in Rhat - this includes the
 #'   parameters fixed to zero or one, such as the upper triangle of the cholesky
 #'   factor of the correlation matrix. By default TRUE
+#'
+#' @param ... Currently unused
+#'
+#' @examples
+#'
+#' \donttest{
+#'
+#'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
+#'                              family = "bernoulli")
+#'  gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
+#'                         family = "bernoulli")
+#'  gllvm_summ <- summary(gllvm_fit)
+#'  head(gllvm_summ, Bulk.ESS)
+#'
+#'  summary(gllvm_fit, prob_quantiles = c(0.05,0.5,0.95))
+#'
+#' }
+#'
+#' @export
 summary.jsdmStanFit <- function(object,
                                 prob_quantiles = c(0.15,0.85),
                                 digit_summary = 3,
                                 prob_pars_only = FALSE,
-                                na_filter = TRUE) {
-  samps <- extract(object, permuted = FALSE)
+                                na_filter = TRUE, ...) {
+  samps <- rstan::extract(object$fit, permuted = FALSE)
   rhat <- apply(samps, 3, rstan::Rhat)
   bulk_ess <- round(apply(samps, 3, rstan::ess_bulk),0)
   tail_ess <- round(apply(samps, 3, rstan::ess_tail),0)
 
   mean <- apply(samps, 3, mean)
   sd <- apply(samps, 3, sd)
-  quants <- t(apply(samps, 3, quantile, probs = prob_quantiles))
+  quants <- t(apply(samps, 3, stats::quantile, probs = prob_quantiles))
 
   s <- cbind(mean = mean, sd = sd, quants, Rhat = rhat,
              Bulk.ESS = bulk_ess, Tail.ESS = tail_ess)
@@ -116,53 +150,120 @@ summary.jsdmStanFit <- function(object,
 
 #' Extract samples from jsdmStanFit object
 #'
-#' @rdname extract
+#' This function extracts named parameters from a jsdmStanFit object, with optional
+#' regular expression matching.
+#'
+#' @param object The jsdmStanFit model object
+#' @param pars A character vector of parameter names
+#' @param permuted Whether the draws should be randomly permuted, by default
+#'   \code{FALSE}
+#' @param inc_warmup Whether the warmup period should be included, by default
+#'   \code{FALSE}
+#' @param include Whether the parameters specified by \code{pars} should be included
+#'   or excluded from the result, by default \code{TRUE} for inclusion
+#' @param regexp Whether regular expression matching should be used to match the
+#'   contents of \code{pars} to the parameter names, by default \code{FALSE}
+#'
+#' @return Returns a N by P matrix where N is the number of iterations and P is the
+#'   number of parameters. The different chains are appended.
+#'
 #' @export
+extract.jsdmStanFit <- function(object, pars, permuted = FALSE,
+                                inc_warmup = FALSE, include = TRUE, regexp = FALSE){
+  if(regexp){
+    full_pars <- get_parnames(object)
+    pars <- grep(paste(pars, collapse = "|"), full_pars, value = TRUE)
+  }
+  pexp <- rstan::extract(object$fit, pars, permuted, inc_warmup, include)
+
+  if(isFALSE(permuted)){
+    pexp2 <- matrix(pexp, prod(dim(pexp)[1:2]), dim(pexp)[3])
+    colnames(pexp2) <- dimnames(pexp)[[3]]
+    rownames(pexp2) <- paste0("Chain",rep(seq(1,dim(pexp)[2],1),each = dim(pexp)[1]),
+                              "_Iter",rep(seq(1,dim(pexp)[1],1),dim(pexp)[2]))
+
+
+    pexp <- pars_indexes(pexp2)
+  }
+
+  pexp
+
+}
+
 extract <- function(object, ...) {
   UseMethod("extract")
 }
 
-#' @rdname extract
-#' @export
-extract.default <- function(object, ...) {
-  rstan::extract(object$fit, ...)
+pars_indexes <- function(x){
+  pars_unique <- unique(sapply(strsplit(colnames(x), "\\["),"[",1))
+  x_list <- lapply(pars_unique, function(y) x[,grepl(y,colnames(x))])
+  x_list <- lapply(x_list, function(y){
+    if(class(y)[1] == "numeric"){
+      val <- array(y, dim = length(y))
+    } else{
+      ynames <- colnames(y)
+      ninit <- nrow(y)
+      ndim <- sum(grepl(",",ynames[1]))+1
+      dims <- apply(sapply(
+        strsplit(unlist(regmatches(ynames,
+                                   gregexpr("\\[\\K\\d+,\\d+(?=\\])",
+                                            ynames, perl=TRUE))),
+                 ","),as.numeric),1,max)
+      val <- array(y, dim = c(ninit,dims))
+    }
+    val
+  })
+  names(x_list) <- pars_unique
+  x_list
 }
-
-#' @rdname extract
-#' @export
-extract.jsdmStanFit <- function(object, pars, permuted = FALSE,
-                                inc_warmup = FALSE, include = TRUE){
-  rstan::extract(object$fit, pars, permuted, inc_warmup, include)
-}
-
 
 
 #' @describeIn  jsdmStanFit Get the model parameter names
-get_parnames <- function(x){
-  if(class(x) != "jsdmStanFit")
+#' @export
+get_parnames <- function(object){
+  if(class(object) != "jsdmStanFit")
     stop("This only works for jsdmStanFit objects")
-  parnames <- names(x$fit)
+  parnames <- names(object$fit)
   parnames <- parnames[!grepl("log_lik",parnames)]
   parnames <- parnames[!grepl("_uncor",parnames)]
   return(parnames)
 }
 
 #' @describeIn jsdmStanFit Get the NUTS parameters
+#' @aliases nuts_params
+#' @param object The jsdmStanFit model object
+#' @param ... Arguments passed on to the \pkg{bayesplot} equivalent for stanFit
+#'   objects
+#' @importFrom bayesplot nuts_params
+#' @export nuts_params
+#' @export
 nuts_params.jsdmStanFit <- function(object, ...){
   bayesplot::nuts_params(object$fit, ...)
 }
 
 #' @describeIn jsdmStanFit Get the log posterior
+#' @aliases log_posterior
+#' @importFrom bayesplot log_posterior
+#' @export log_posterior
+#' @export
 log_posterior.jsdmStanFit <- function(object, ...){
   bayesplot::log_posterior(object$fit, ...)
 }
 
 #' @describeIn jsdmStanFit Get the R-hat
+#' @aliases rhat
+#' @importFrom bayesplot rhat
+#' @export rhat
+#' @export
 rhat.jsdmStanFit <- function(object, ...){
   bayesplot::rhat(object$fit, ...)
 }
 
 #' @describeIn jsdmStanFit Get the n_eff ratio
+#' @aliases neff_ratio
+#' @importFrom bayesplot neff_ratio
+#' @export neff_ratio
+#' @export
 neff_ratio.jsdmStanFit <- function(object, ...){
   bayesplot::neff_ratio(object$fit, ...)
 }

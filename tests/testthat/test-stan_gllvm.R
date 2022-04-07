@@ -18,28 +18,31 @@ test_that("stan_gllvm returns right type of object", {
   set.seed(04012022)
   gllvm_data <- gllvm_sim_data(N = 500, S = 16, D = 2, K = 5,
                                site_intercept = TRUE, family = "bern")
-  gllvm_fit <- stan_gllvm(dat_list = gllvm_data, iter = 500, refresh = 0,
-                          site_intercept = TRUE, family = "bern")
+  gllvm_fit <- stan_jsdm(dat_list = gllvm_data, refresh = 0,
+                         method = "gllvm", site_intercept = TRUE, family = "bern")
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
   # gaussian
   gllvm_data <- gllvm_sim_data(N = 100, S = 9, D = 2, K = 2, family = "gauss")
-  gllvm_fit <- stan_gllvm(dat_list = gllvm_data, iter = 500, refresh = 0,
+  gllvm_fit <- stan_gllvm(Y = gllvm_data$Y, X = gllvm_data$X,
+                          D = gllvm_data$D, refresh = 0,
                           family = "gauss")
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
   # poisson
-  gllvm_data <- gllvm_sim_data(N = 200, S = 12, D = 3, K = 3, family = "pois")
-  gllvm_fit <- stan_gllvm(dat_list = gllvm_data, iter = 500, refresh = 0,
+  gllvm_data <- jsdm_sim_data(N = 200, S = 12, D = 3, K = 3, family = "pois",
+                              method = "gllvm")
+  gllvm_fit <- stan_gllvm(dat_list = gllvm_data, refresh = 0,
                           family = "pois")
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
   # neg binomial
   gllvm_data <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "neg_bin")
-  gllvm_fit <- stan_gllvm(dat_list = gllvm_data, iter = 500, refresh = 0,
+  gllvm_fit <- stan_gllvm(Y = gllvm_data$Y, X = gllvm_data$X,
+                          D = gllvm_data$D, refresh = 0,
                           family = "neg_b")
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")

@@ -25,7 +25,7 @@
 \item{pars}{The parameters to plot, by default a random sample of twenty of the
 parameters fit within the model}
 
-\item{combo}{Which combination of plot types within \code{bayesplot::mcmc_combo}
+\item{combo}{Which combination of plot types within \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}
 to use, by default \code{c("dens", "trace")}}
 
 \item{N}{The number of plots per page, default \code{5}}
@@ -49,16 +49,47 @@ parnames, by default \code{FALSE}}
 \item{newpage}{Whether the first plot should be plotted on a new page, by default
 \code{TRUE}}
 
-\item{...}{Arguments passed to \code{bayesplot::mcmc_combo}}
+\item{...}{Arguments passed to \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}}
 }
 \value{
-An invisible list of the plots
+An invisible list of the plots#
 }
 \description{
 This function takes parameters from the jsdmStanfit object and plots them using
-the \code{mcmc_combo} function from the \code{bayesplot} package. These models
-have a lot of parameters so selecting a subset is recommended. If pars is set to
-\code{NULL} (the default) all parameters with either sigma or kappa in their name
-will be plotted along with a random selection of the other parameters (total
-number of other parameters set by \code{sample_n}).
+the \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}function from the \pkg{bayesplot} package.
+}
+\details{
+This acts as an interface to the \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}
+function, with the default being to plot a density plot and a trace plot for
+each parameter specified, although this can be changed by setting the
+\code{combo} argument. These jSDM models have a lot of parameters so selecting a
+subset is recommended. If pars is set to \code{NULL} (the default) all
+parameters with either sigma or kappa in their name will be plotted along with a
+random selection of the other parameters (total number of other parameters set
+by \code{sample_n}). To see the name of the parameters within the model use
+\code{\link[=get_parnames]{get_parnames()}} - and if you want to plot all parameters (there will be
+hundreds in any reasonably sized model) set \code{pars = get_parnames(x)}.
+}
+\examples{
+\donttest{
+ #First simulate data and get model fit:
+ mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
+                              family = "gaussian")
+ mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
+                         family = "gaussian")
+
+ # The default plot:
+ plot(mglmm_fit)
+
+ # Plotting specifically the L_Rho_species parameters:
+ plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
+
+ # Increasing the number of randomly sampled parameters to plot:
+ plot(mglmm_fit, sample_n = 20)
+
+}
+
+}
+\seealso{
+\code{\link[=mcmc_plot.jsdmStanFit]{mcmc_plot.jsdmStanFit()}} for more plotting options.
 }

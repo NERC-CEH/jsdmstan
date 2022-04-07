@@ -34,18 +34,18 @@ mglmm_sim_data(...)
 
 \item{K}{is number of covariates, by default 0}
 
-\item{family}{is the response family, must be one of "gaussian",
-"neg_binomial", "poisson" or "bernoulli"}
+\item{family}{is the response family, must be one of "gaussian", "neg_binomial",
+"poisson" or "bernoulli"}
 
 \item{method}{is the jSDM method to use, currently either GLLVM or MGLMM - see
 details for more information.}
 
-\item{phylo}{is whether to randomly generate a phylogenetic tree that will be
-used to constrain beta estimates. Can be given as TRUE, FALSE or as a given
-distance matrix.}
+\item{phylo}{is whether to randomly generate a phylogenetic tree that will be used
+to constrain beta estimates. Can be given as TRUE, FALSE or as a given distance
+matrix.}
 
-\item{species_intercept}{Whether to include an intercept in the predictors,
-must be TRUE if K is 0. Defaults to TRUE.}
+\item{species_intercept}{Whether to include an intercept in the predictors, must be
+TRUE if K is 0. Defaults to TRUE.}
 
 \item{site_intercept}{Whether to include a site intercept. Defaults to FALSE.}
 
@@ -53,46 +53,49 @@ must be TRUE if K is 0. Defaults to TRUE.}
 definite}
 
 \item{nu05}{Must be an integer in range 0-3. Indicates what type of covariance
-function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn
-with nu = 2.5 and 3 is the squared exponential.}
+function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
+nu = 2.5 and 3 is the squared exponential.}
 
 \item{eta}{Shape parameter in random generation of LKJ matrix, defaults to 1.}
 
 \item{...}{Arguments passed to jsdm_sim_data}
 }
 \description{
-The jsdm_sim_data function can simulate data with either a multivariate
+The \code{jsdm_sim_data} function can simulate data with either a multivariate
 generalised mixed model (MGLMM) or a generalised linear latent variable model
-(GLLVM). The gllvm_sim_data and mglmm_sim_data are aliases for jsdm_sim_data
-that set method to gllvm and mglmm respectively.
+(GLLVM). The \code{gllvm_sim_data} and \code{mglmm_sim_data} are aliases for
+\code{jsdm_sim_data} that set \code{method} to \code{"gllvm"} and \code{"mglmm"}
+respectively.
 }
 \details{
-This simulates data based on a joint species distribution model where
-the covariance matrix between species is modelled in its entirety.
+This simulates data based on a joint species distribution model with
+either a generalised linear latent variable model approach or a multivariate
+generalised linear mixed model approach.
 
 Models can be fit with or without "measured predictors", and if measured
 predictors are included then the species have species-specific parameter
 estimates. These can either be simulated completely independently, or have
-information pooled across species. If information is pooled this can be
-modelled as either a random draw from some mean and standard deviation or
-species covariance can be modelled together (this will be the covariance
-used in the overall model if the method used has covariance).
+information pooled across species. If information is pooled this can be modelled
+as either a random draw from some mean and standard deviation or species
+covariance can be modelled together (this will be the covariance used in the
+overall model if the method used has covariance).
 
 It makes a whole load of assumptions, incl that all parameters and measured
-predictors are normally distributed with mean 0 and standard deviation 1,
-with variance parameters being the absolute of this distribution. The
-exceptions are that if there is a Matern (or exponential quadratic) kernel
-being fit the etasq and rho parameters are either simulated as an inverse
-gamma with shape 10 and scale 0.1 if the invgamma package is installed or as
-an absolute value of a normal distribution with mean 1 and standard
-deviation 0.2. If no phylogenetic matrix is supplied the correlations
-between species are simulated as a random draw from a LKJ correlation matrix
-with eta = 1.
+predictors are normally distributed with mean 0 and standard deviation 1, with
+variance parameters being the absolute of this distribution. The exceptions are
+that if there is a Matern (or exponential quadratic) kernel being fit the etasq
+and rho parameters are either simulated as an inverse gamma with shape 10 and
+scale 0.1 if the invgamma package is installed or as an absolute value of a
+normal distribution with mean 1 and standard deviation 0.2. If no phylogenetic
+matrix is supplied the correlations between species are simulated as a random
+draw from a LKJ correlation matrix with eta = 1.
 }
 \section{Functions}{
 \itemize{
-\item \code{gllvm_sim_data}: 
+\item \code{gllvm_sim_data}: Alias for \code{jsdm_sim_data} with \code{method =
+"gllvm"}
 
-\item \code{mglmm_sim_data}: 
+\item \code{mglmm_sim_data}: Alias for \code{jsdm_sim_data} with \code{method =
+"mglmm"}
 }}
 

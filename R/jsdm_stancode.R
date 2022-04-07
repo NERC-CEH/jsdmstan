@@ -4,24 +4,27 @@
 #' This function returns the Stan code used to fit the model as specified by the data
 #' list, family and method.
 #'
-#' @param data_list The data list
+#' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
 #' @param family The family, one of "\code{"gaussian"}, \code{"bernoulli"},
 #'   \code{"poisson"} or \code{"neg_binomial"}
 #' @param prior The prior, currently only default (i.e. \code{NULL}) supported
-#' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
 #' @param phylo Whether phylo should be included, only for MGLMM
 #'
-#' @return A character vector of Stan code
+#' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
 #'
-jsdm_stancode <- function(data_list, family, method, prior = NULL,
+#' @examples
+#' jsdm_stancode(family = "gaussian", method = "gllvm")
+#' jsdm_stancode(family = "poisson", method = "mglmm", phylo = TRUE)
+#'
+jsdm_stancode <- function(method, family, prior = NULL,
                           phylo = FALSE){
   # checks
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
   method <- match.arg(method, c("gllvm","mglmm"))
 
-  if(!all(c("Y","K","S","N","X","site_intercept") %in% names(data_list)))
-    stop("Data list must have entries Y, K, S, N, X and site_intercept")
+  # if(!all(c("Y","K","S","N","X","site_intercept") %in% names(data_list)))
+  #   stop("Data list must have entries Y, K, S, N, X and site_intercept")
 
 
   # data processing steps
@@ -51,25 +54,6 @@ jsdm_stancode <- function(data_list, family, method, prior = NULL,
     }
     return y;
   }
-
-  vector lt_to_vector(matrix y){
-    int nr = rows(y);
-    int nc = cols(y);
-    vector[nc*(nr-nc) + min(rows(y),cols(y)) * (min(rows(y),cols(y)) + 1) / 2] x;
-    int pos = 1;
-    // now fill vector with matrix elements
-    for(i in 1:nr){
-      for(j in 1:nc){
-        if(i < j) continue;
-
-        x[pos] = y[i,j];
-        pos += 1;
-
-      }
-    }
-    return x;
-  }
-
 "
   data <- paste("
   int<lower=1> N; // Number of samples
@@ -89,7 +73,7 @@ jsdm_stancode <- function(data_list, family, method, prior = NULL,
   transformed_data <- ifelse(method == "gllvm","
   // Ensures identifiability of the model - no rotation of factors
   int<lower=1> M;
-  M = D * (S - D) + D * (D - 1) / 2 + D;
+  M = D * (S - D) + choose(D, 2) + D;
 ","")
 
 
@@ -220,6 +204,13 @@ switch(family, "gaussian" = "
 ", "bern" = "", "poisson" = ""))} else{
   stop("Specifying own priors currently unsupported")
 }
+  model_pt2 <- paste("
+  for(i in 1:N) Y[i,] ~ ",
+  switch(family,
+         "gaussian" = "normal(mu[i,], sigma);",
+         "bernoulli" = "bernoulli_logit(mu[i,]);",
+         "neg_binomial" = "neg_binomial_2_log_lpmf(mu[i,], kappa);",
+         "poisson" = "poisson(mu[i,]);"))
 
   generated_quantities <- paste("
   // Calculate linear predictor, y_rep, log likelihoods for LOO
@@ -342,7 +333,7 @@ matrix cov_matern(matrix x, real sq_eta, real rho, real delta, int nu05){
                "\n}\ntransformed parameters{\n",
                transformed_pars,
                "\n}\nmodel{\n",
-               model,"\n",model_priors,"\n",
+               model,"\n",model_priors,"\n",model_pt2,"\n",
                "\n}\ngenerated quantities{\n",
                generated_quantities,
                "\n}\n\n")
@@ -351,6 +342,10 @@ matrix cov_matern(matrix x, real sq_eta, real rho, real delta, int nu05){
 
 }
 
-print.jsdmstan_model <- function(x){
+#' @export
+#' @describeIn jsdm_stancode A printing function for jsdmstan_model objects
+#' @param x The jsdm_stancode object
+#' @param ... Currently unused
+print.jsdmstan_model <- function(x, ...){
   cat(x)
 }

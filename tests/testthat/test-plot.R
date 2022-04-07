@@ -16,4 +16,9 @@ test_that("plot errors when expected", {
                "If pars is NULL then sample_n must be a positive integer")
 })
 
-
+test_that("mcmc_plot errors when expected", {
+  expect_error(mcmc_plot(test_fit, plotfun = "fiona"),
+               "Invalid plotfun argument")
+  expect_error(mcmc_plot(test_fit, pars = NULL, sample_n = 8.6),
+               "If pars is NULL then sample_n must be a positive integer")
+})
