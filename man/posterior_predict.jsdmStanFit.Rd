@@ -9,33 +9,43 @@
   object,
   newdata = NULL,
   newdata_type = "X",
-  draws = NULL,
-  list_index = "draws"
+  ndraws = NULL,
+  draw_ids = NULL,
+  list_index = "draws",
+  ...
 )
 }
 \arguments{
 \item{object}{The model object}
 
-\item{newdata}{New data, by default NULL and uses original data}
+\item{newdata}{New data, by default \code{NULL} and uses original data}
 
 \item{newdata_type}{What form is the new data in, at the moment only
 supplying covariates is supported.}
 
-\item{draws}{Number of draws, by default the number of samples in the
-posterior}
+\item{ndraws}{Number of draws, by default the number of samples in the
+posterior. Will be sampled randomly from the chains if fewer than the
+number of samples.}
+
+\item{draw_ids}{The IDs of the draws to be used, as a numeric vector}
 
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}
+
+\item{...}{Currently unused}
 }
 \value{
-A list of linear predictors. If list_index is "draws" (the default)
+A list of linear predictors. If list_index is \code{"draws"} (the default)
 the list will have length equal to the number of draws with each element of
-the list being a site x species matrix. If the list_index is "species" the
+the list being a site x species matrix. If the list_index is \code{"species"} the
 list will have length equal to the number of species with each element of
-the list being a draws x sites matrix. If the list_index is "sites" the
+the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 list will have length equal to the number of sites with each element of
 the list being a draws x species matrix.
 }
 \description{
 Draw from the posterior predictive distribution of the outcome.
+}
+\seealso{
+\code{\link[=posterior_linpred.jsdmStanFit]{posterior_linpred.jsdmStanFit()}}
 }

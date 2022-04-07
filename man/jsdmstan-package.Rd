@@ -6,14 +6,16 @@
 \alias{jsdmstan}
 \title{The 'jsdmstan' package.}
 \description{
-A package for fitting joint species distribution models (jSDMs)
-in Stan.
+A package for fitting joint species distribution models (jSDMs) in
+Stan.
 
 This package can be used to both simulate and fit data according to a
 multivariate generalised linear mixed model (MGLMM) or a generalised linear
-latent variable model (GLLVM).
+latent variable model (GLLVM). All models are fit using the \pkg{rstan} package.
+Summary functions are provided, as are interfaces to the \pkg{bayesplot}
+plotting functions
 }
 \references{
-Stan Development Team (NA). RStan: the R interface to Stan. R
-package version 2.26.1. https://mc-stan.org
+Stan Development Team (NA). RStan: the R interface to Stan. R package
+version 2.26.1. https://mc-stan.org
 }

@@ -1,31 +1,32 @@
 #'Generate simulated data within a variety of jSDM methodologies
 #'
-#'The jsdm_sim_data function can simulate data with either a multivariate
+#'The \code{jsdm_sim_data} function can simulate data with either a multivariate
 #'generalised mixed model (MGLMM) or a generalised linear latent variable model
-#'(GLLVM). The gllvm_sim_data and mglmm_sim_data are aliases for jsdm_sim_data
-#'that set method to gllvm and mglmm respectively.
+#'(GLLVM). The \code{gllvm_sim_data} and \code{mglmm_sim_data} are aliases for
+#'\code{jsdm_sim_data} that set \code{method} to \code{"gllvm"} and \code{"mglmm"}
+#'respectively.
 #'
-#'@details This simulates data based on a joint species distribution model where
-#'  the covariance matrix between species is modelled in its entirety.
+#'@details This simulates data based on a joint species distribution model with
+#'  either a generalised linear latent variable model approach or a multivariate
+#'  generalised linear mixed model approach.
 #'
 #'  Models can be fit with or without "measured predictors", and if measured
 #'  predictors are included then the species have species-specific parameter
 #'  estimates. These can either be simulated completely independently, or have
-#'  information pooled across species. If information is pooled this can be
-#'  modelled as either a random draw from some mean and standard deviation or
-#'  species covariance can be modelled together (this will be the covariance
-#'  used in the overall model if the method used has covariance).
+#'  information pooled across species. If information is pooled this can be modelled
+#'  as either a random draw from some mean and standard deviation or species
+#'  covariance can be modelled together (this will be the covariance used in the
+#'  overall model if the method used has covariance).
 #'
 #'  It makes a whole load of assumptions, incl that all parameters and measured
-#'  predictors are normally distributed with mean 0 and standard deviation 1,
-#'  with variance parameters being the absolute of this distribution. The
-#'  exceptions are that if there is a Matern (or exponential quadratic) kernel
-#'  being fit the etasq and rho parameters are either simulated as an inverse
-#'  gamma with shape 10 and scale 0.1 if the invgamma package is installed or as
-#'  an absolute value of a normal distribution with mean 1 and standard
-#'  deviation 0.2. If no phylogenetic matrix is supplied the correlations
-#'  between species are simulated as a random draw from a LKJ correlation matrix
-#'  with eta = 1.
+#'  predictors are normally distributed with mean 0 and standard deviation 1, with
+#'  variance parameters being the absolute of this distribution. The exceptions are
+#'  that if there is a Matern (or exponential quadratic) kernel being fit the etasq
+#'  and rho parameters are either simulated as an inverse gamma with shape 10 and
+#'  scale 0.1 if the invgamma package is installed or as an absolute value of a
+#'  normal distribution with mean 1 and standard deviation 0.2. If no phylogenetic
+#'  matrix is supplied the correlations between species are simulated as a random
+#'  draw from a LKJ correlation matrix with eta = 1.
 #'
 #'@export
 #'
@@ -37,18 +38,18 @@
 #'
 #'@param K is number of covariates, by default 0
 #'
-#'@param family is the response family, must be one of "gaussian",
-#'  "neg_binomial", "poisson" or "bernoulli"
+#'@param family is the response family, must be one of "gaussian", "neg_binomial",
+#'  "poisson" or "bernoulli"
 #'
 #'@param method is the jSDM method to use, currently either GLLVM or MGLMM - see
 #'  details for more information.
 #'
-#'@param phylo is whether to randomly generate a phylogenetic tree that will be
-#'  used to constrain beta estimates. Can be given as TRUE, FALSE or as a given
-#'  distance matrix.
+#'@param phylo is whether to randomly generate a phylogenetic tree that will be used
+#'  to constrain beta estimates. Can be given as TRUE, FALSE or as a given distance
+#'  matrix.
 #'
-#'@param species_intercept Whether to include an intercept in the predictors,
-#'  must be TRUE if K is 0. Defaults to TRUE.
+#'@param species_intercept Whether to include an intercept in the predictors, must be
+#'  TRUE if K is 0. Defaults to TRUE.
 #'
 #'@param site_intercept Whether to include a site intercept. Defaults to FALSE.
 #'
@@ -56,8 +57,8 @@
 #'  definite
 #'
 #'@param nu05 Must be an integer in range 0-3. Indicates what type of covariance
-#'  function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn
-#'  with nu = 2.5 and 3 is the squared exponential.
+#'  function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
+#'  nu = 2.5 and 3 is the squared exponential.
 #'
 #'@param eta Shape parameter in random generation of LKJ matrix, defaults to 1.
 
@@ -101,12 +102,12 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
       sq_eta <- invgamma::rinvgamma(1,10,scale = 0.1)
       rho <- invgamma::rinvgamma(1,10,scale = 0.1)
     } else{
-      sq_eta <- abs(rnorm(1,1,0.2))
-      rho <- abs(rnorm(1,1,0.2))
+      sq_eta <- abs(stats::rnorm(1,1,0.2))
+      rho <- abs(stats::rnorm(1,1,0.2))
     }
 
     if(isTRUE(phylo)){
-      Dmat <- cophenetic(ape::rtree(S))
+      Dmat <- stats::cophenetic(ape::rtree(S))
     } else if(is.matrix(phylo)){
       if(all(dim(phylo)==S) & isSymmetric(phylo)){
         Dmat <- phylo
@@ -124,21 +125,22 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   # now do covariates - if K = NULL then do intercept only
   if(K==0){
     x <- matrix(1, nrow = N, ncol = 1)
+    colnames(x) <- "Intercept"
     J <- 1
   } else if(isTRUE(species_intercept)){
-    x <- matrix(rnorm(N*K), ncol = K, nrow = N)
+    x <- matrix(stats::rnorm(N*K), ncol = K, nrow = N)
     colnames(x) <- paste0("V",1:K)
     x <- cbind(Intercept = 1, x)
     J <- K + 1
   } else if(isFALSE(species_intercept)){
-    x <- matrix(rnorm(N*K), ncol = K, nrow = N)
+    x <- matrix(stats::rnorm(N*K), ncol = K, nrow = N)
     colnames(x) <- paste0("V",1:K)
     J <- K
   } else stop("K must be an integer value")
 
   # covariate parameters
-  beta_sds <- abs(rnorm(J))
-  z_betas <- matrix(rnorm(S*J), ncol = S, nrow = J)
+  beta_sds <- abs(stats::rnorm(J))
+  z_betas <- matrix(stats::rnorm(S*J), ncol = S, nrow = J)
   if(K == 0){
     beta_sim <- beta_sds %*% z_betas
     } else{
@@ -151,9 +153,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
 
   ## site intercept
   if(isTRUE(site_intercept)){
-    a_bar <- rnorm(1)
-    sigma_a <- abs(rnorm(1))
-    a <- rnorm(N)
+    a_bar <- stats::rnorm(1)
+    sigma_a <- abs(stats::rnorm(1))
+    a <- stats::rnorm(N)
     a_i <- a_bar + a * sigma_a
   } else{
     a_i <- rep(0, N)
@@ -161,16 +163,16 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
 
   if(method == "mglmm"){
     # u covariance
-    u_sds <- abs(rnorm(S))
-    u_ftilde <- matrix(rnorm(S*N), nrow = S, ncol = N)
+    u_sds <- abs(stats::rnorm(S))
+    u_ftilde <- matrix(stats::rnorm(S*N), nrow = S, ncol = N)
     u_ij <- t((diag(u_sds) %*% L_Rho_sigma) %*% u_ftilde)
   }
 
   if(method == "gllvm"){
     M <- D * (S - D) + D * (D - 1) / 2
 
-    L_l <- rnorm(M, 0, 1)
-    L_d <- abs(rnorm(D, 0, 1))
+    L_l <- stats::rnorm(M, 0, 1)
+    L_d <- abs(stats::rnorm(D, 0, 1))
     L <- matrix(nrow = S, ncol = D)
 
     idx2 = 0;
@@ -183,16 +185,16 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
       }
     }
 
-    L_sigma <- abs(rnorm(1,0,1))
+    L_sigma <- abs(stats::rnorm(1,0,1))
 
-    LV <- matrix(rnorm(N * D, 0, 1), nrow = D, ncol = N)
+    LV <- matrix(stats::rnorm(N * D, 0, 1), nrow = D, ncol = N)
 
     LV_sum <- (L * L_sigma) %*% LV
   }
 
   # variance parameters
   if(response %in% c("neg_binomial", "gaussian"))
-    sigma <- abs(rnorm(1))
+    sigma <- abs(stats::rnorm(1))
 
   Y <-  matrix(nrow = N, ncol = S)
   for(i in 1:N) {
@@ -203,10 +205,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
                       "mglmm" = a_i[i] + mu_sim[i,j] + u_ij[i,j])
 
       Y[i, j] <- switch(response,
-                        "neg_binomial" = rgampois(1, mu = exp(mu_ij), scale = sigma),
-                        "gaussian" = rnorm(1, mu_ij, sigma),
-                        "poisson" = rpois(1, exp(mu_ij)),
-                        "bernoulli" = rbinom(1, 1, inv_logit(mu_ij)))
+                        "neg_binomial" = rgampois(1, mu = exp(mu_ij),
+                                                  scale = sigma),
+                        "gaussian" = stats::rnorm(1, mu_ij, sigma),
+                        "poisson" = stats::rpois(1, exp(mu_ij)),
+                        "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)))
     }
   }
 
@@ -235,6 +238,13 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     pars$L_Rho_sigma <- L_Rho_sigma
     pars$u_ftilde <- u_ftilde
   }
+  if(isTRUE(species_intercept)){
+    if(K > 0){
+      x <- x[,2:ncol(x)]
+    } else{
+      x <- NULL
+    }
+  }
   output <- list(Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x,
                  site_intercept = as.integer(site_intercept))
   if(isTRUE(phylo)){
@@ -254,7 +264,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
 #'
 #'
 #' @export
-#' @describeIn jsdm_sim_data
+#' @describeIn jsdm_sim_data Alias for \code{jsdm_sim_data} with \code{method =
+#'  "gllvm"}
 #'
 #'@param ... Arguments passed to jsdm_sim_data
 gllvm_sim_data <- function(...){
@@ -262,22 +273,57 @@ gllvm_sim_data <- function(...){
 }
 
 #'
-#' @export
-#' @describeIn jsdm_sim_data
+#'@export
+#'@describeIn jsdm_sim_data Alias for \code{jsdm_sim_data} with \code{method =
+#'  "mglmm"}
 #'
 #'@param ... Arguments passed to jsdm_sim_data
 mglmm_sim_data <- function(...){
   jsdm_sim_data(method = "mglmm", ...)
 }
 
-# Helper function for generating random draw
+#' Helper functions for simulating data
+#'
+#' The \code{rlkj} function is for generating random LKJ correlation matrices and the
+#' \code{rgampois} function generates random draws from the Stan's alternative
+#' parameterisation of the negative binomial distribution.
+#'
+#' The Lewandowski-Kurowicka-Joe (LKJ) distribution is a prior distribution for
+#' correlation matrices, with the shape parameter eta. If eta is 1 then the density
+#' is uniform over the correlation matrix, ith eta > 1 then the the probability
+#' concentrates around the identity matrix while is 0 < eta < 1 the probability
+#' concentrates away from the identity matrix.
+#'
+#' The alternative parameterisation of the negative binomial distribution is:
+#'
+#' \deqn{NegBinomial2(y | mu, scale) = binom(y+scale-1,y) (mu/mu+scale)^y (scale/mu + scale)^scale}
+#'
+#' Where the mean of the distribution is mu and the variance is \eqn{mu + (mu^2/scale)}
+#'
+#' The \code{rlkj} function are sourced from Ben Goodrich's response on the Stan
+#' google mailing list. (see link
+#' \url{https://groups.google.com/g/stan-users/c/3gDvAs_qwN8/m/Xpgi2rPlx68J)}). The
+#' `rgampois` function is sourced from the rethinking package by Richard McElreath.
+#'
+#' @param n The number of samples to create/dimension of correlation matrix
+#' @param mu The mean of the negative binomial parameterisation
+#' @param scale The phi parameter that controls overdispersion of the negative
+#'   binomial distribution (see details for description)
+#' @param eta The shape parameter of the LKJ distribution
+#' @param cholesky Whether the correlation matrix should be returned as the Cholesky
+#'   decomposition, by default \code{FALSE}
+#'
+#' @name sim_helpers
+NULL
+
+#' @rdname sim_helpers
+#' @export
 rgampois <- function(n, mu, scale) {
-  shape <- mu/scale
-  prob <- 1/(1 + scale)
-  rnbinom(n, size = shape, prob = prob)
+  # shape <- mu/scale
+  prob <- scale/(mu + scale)
+  stats::rnbinom(n, size = scale, prob = prob)
 }
 
-# Helper function for inv_logit
 inv_logit <- function(x){
   1/(1 + exp(x))
 }
@@ -287,13 +333,15 @@ inv_logit <- function(x){
 # (see link https://groups.google.com/g/stan-users/c/3gDvAs_qwN8/m/Xpgi2rPlx68J)
 
 rgbeta <-
-  function(num, shape) {
-    if(shape == Inf)     rep(0, num)
-    else if(shape > 0)  -1 + 2 * rbeta(num, shape, shape)
-    else if(shape == 0) -1 + 2 * rbinom(num, 1, 0.5)
+  function(n, shape) {
+    if(shape == Inf)     rep(0, n)
+    else if(shape > 0)  -1 + 2 * stats::rbeta(n, shape, shape)
+    else if(shape == 0) -1 + 2 * stats::rbinom(n, 1, 0.5)
     else stop("shape must be non-negative")
   }
 
+#' @rdname sim_helpers
+#' @export
 rlkj <-
   function(n, eta = 1, cholesky = FALSE) {
     if (n < 2){
@@ -310,10 +358,7 @@ rlkj <-
       L[2,2] <- sqrt(1 - L[2,1]^2)
       if(cholesky) return(L)
       Sigma <- tcrossprod(L)
-      if(permute) {
-        ord <- sample(n)
-        Sigma <- Sigma[ord,ord]
-      }
+
       return(Sigma)
     }
     W <- log(1 - partials^2)
@@ -329,6 +374,10 @@ rlkj <-
     L[n,n] <- exp(0.5 * W[n-1])
     if(cholesky) return(L)
     Sigma <- tcrossprod(L)
+    if(!cholesky) {
+      ord <- sample(n)
+      Sigma <- Sigma[ord,ord]
+    }
     return(Sigma)
   }
 

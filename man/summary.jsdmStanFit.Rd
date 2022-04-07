@@ -9,7 +9,8 @@
   prob_quantiles = c(0.15, 0.85),
   digit_summary = 3,
   prob_pars_only = FALSE,
-  na_filter = TRUE
+  na_filter = TRUE,
+  ...
 )
 }
 \arguments{
@@ -26,7 +27,27 @@ effective sample size < 500, by default FALSE}
 \item{na_filter}{Whether to remove parameters with NAs in Rhat - this includes the
 parameters fixed to zero or one, such as the upper triangle of the cholesky
 factor of the correlation matrix. By default TRUE}
+
+\item{...}{Currently unused}
 }
 \description{
-Summarise the model fit and data structure and give summaries for the parameters
+This returns a matrix of parameter summaries including a summary of the parameter
+estimates, R-hat, bulk ESS and tail ESS. This can be limited to parameters with
+Rhat > 1.01 or ESS < 500 by setting \code{prob_pars_only = TRUE}.
+}
+\examples{
+
+\donttest{
+
+ gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
+                             family = "bernoulli")
+ gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
+                        family = "bernoulli")
+ gllvm_summ <- summary(gllvm_fit)
+ head(gllvm_summ, Bulk.ESS)
+
+ summary(gllvm_fit, prob_quantiles = c(0.05,0.5,0.95))
+
+}
+
 }

@@ -2,22 +2,50 @@
 % Please edit documentation in R/jsdmstanfit-class.R
 \name{jsdmStanFit}
 \alias{jsdmStanFit}
-\alias{print.jsdmStanFit}
-\alias{extract}
+\alias{jsdmStanFit_empty}
+\alias{get_parnames}
+\alias{nuts_params.jsdmStanFit}
+\alias{nuts_params}
+\alias{log_posterior.jsdmStanFit}
+\alias{log_posterior}
+\alias{rhat.jsdmStanFit}
+\alias{rhat}
+\alias{neff_ratio.jsdmStanFit}
+\alias{neff_ratio}
 \title{jsdmStanFit class}
 \usage{
-\method{print}{jsdmStanFit}(object)
+jsdmStanFit_empty()
 
-extract(object, pars, permuted = FALSE, inc_warmup = FALSE, include = TRUE)
+get_parnames(object)
+
+\method{nuts_params}{jsdmStanFit}(object, ...)
+
+\method{log_posterior}{jsdmStanFit}(object, ...)
+
+\method{rhat}{jsdmStanFit}(object, ...)
+
+\method{neff_ratio}{jsdmStanFit}(object, ...)
+}
+\arguments{
+\item{object}{The jsdmStanFit model object}
+
+\item{...}{Arguments passed on to the \pkg{bayesplot} equivalent for stanFit
+objects}
 }
 \description{
 This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 }
 \section{Functions}{
 \itemize{
-\item \code{print.jsdmStanFit}: Print the default summary for the model
+\item \code{get_parnames}: Get the model parameter names
 
-\item \code{extract}: Wrapper for extracting samples from model fit
+\item \code{nuts_params.jsdmStanFit}: Get the NUTS parameters
+
+\item \code{log_posterior.jsdmStanFit}: Get the log posterior
+
+\item \code{rhat.jsdmStanFit}: Get the R-hat
+
+\item \code{neff_ratio.jsdmStanFit}: Get the n_eff ratio
 }}
 
 \section{Elements for \code{jsdmStanFit} objects}{
