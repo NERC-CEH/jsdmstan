@@ -2,13 +2,15 @@
 % Please edit documentation in R/stan_jsdm.R
 \name{stan_jsdm}
 \alias{stan_jsdm}
-\alias{stan_mglmm}
-\alias{stan_gllvm}
+\alias{stan_jsdm.default}
+\alias{stan_jsdm.formula}
 \title{Fit jsdm models in Stan}
 \usage{
-stan_jsdm(
-  Y = NULL,
+stan_jsdm(X, ...)
+
+\method{stan_jsdm}{default}(
   X = NULL,
+  Y = NULL,
   species_intercept = TRUE,
   method,
   dat_list = NULL,
@@ -23,42 +25,15 @@ stan_jsdm(
   ...
 )
 
-stan_mglmm(
-  Y = NULL,
-  X = NULL,
-  species_intercept = TRUE,
-  dat_list = NULL,
-  family,
-  site_intercept = FALSE,
-  phylo = FALSE,
-  covar = "matern_05",
-  delta = 1e-05,
-  save_data = TRUE,
-  iter = 4000,
-  ...
-)
-
-stan_gllvm(
-  Y = NULL,
-  X = NULL,
-  D = NULL,
-  species_intercept = TRUE,
-  dat_list = NULL,
-  family,
-  site_intercept = FALSE,
-  phylo = FALSE,
-  covar = "matern_05",
-  delta = 1e-05,
-  save_data = TRUE,
-  iter = 4000,
-  ...
-)
+\method{stan_jsdm}{formula}(formula, data = list(), ...)
 }
 \arguments{
+\item{X}{The covariates matrix, with rows being site and columns being covariates}
+
+\item{...}{Arguments passed to \code{\link[rstan]{sampling}}}
+
 \item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
 assumed to be species}
-
-\item{X}{The covariates matrix, with rows being site and columns being covariates}
 
 \item{species_intercept}{Whether the model should be fit with an intercept by
 species, by default \code{TRUE}}
@@ -95,8 +70,6 @@ object, by default TRUE.}
 
 \item{iter}{A positive integer specifying the number of iterations for each chain,
 default 4000.}
-
-\item{...}{Arguments passed to \code{\link[rstan]{sampling}}}
 }
 \value{
 A \code{jsdmStanFit} object, comprising a list including the StanFit
@@ -108,11 +81,11 @@ This function fits joint Species Distribution models in Stan, using either a
 generalised linear latent variable model approach (\code{method = "gllvm"}), or a
 multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 }
-\section{Functions}{
+\section{Methods (by class)}{
 \itemize{
-\item \code{stan_mglmm}: Alias for \code{stan_jsdm} with \code{method = "mglmm"}
+\item \code{default}: this is the default way of doing things
 
-\item \code{stan_gllvm}: Alias for \code{stan_jsdm} with \code{method = "gllvm"}
+\item \code{formula}: Formula interface
 }}
 
 \examples{
