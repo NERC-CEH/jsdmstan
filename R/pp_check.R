@@ -66,7 +66,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
     if(is.null(ndraws)){
       draw_ids <- seq(1,nsamps,1)
     } else{
-      draw_ids <- sample.int(nsamps, ndraws_given)
+      draw_ids <- sample.int(nsamps, ndraws)
     }
   } else{
     aps_plotfuns <- c(
@@ -101,8 +101,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
   # Extract all data
   yrep <- jsdm_statsummary(object, species = species, sites = sites,
                            summary_stat = summary_stat, calc_over = calc_over,
-                           draw_ids = draw_ids, post_type = "predict",
-                           ndraws = ndraws, ...)
+                           draw_ids = draw_ids, post_type = "predict", ...)
 
   # prepare plotting arguments
   ppc_args <- list(y = y, yrep = yrep)

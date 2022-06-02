@@ -226,15 +226,15 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
 
 validate_newdata <- function(newdata, preds, newdata_type){
 
-  preds_nointercept <- preds[preds != "Intercept"]
+  preds_nointercept <- preds[preds != "(Intercept)"]
 
   if(!all(preds_nointercept %in% colnames(newdata)))
     stop(paste("New data does not have matching column names to model fit.\n",
                "Model has column names:",paste0(preds_nointercept),"\n"))
 
   newdata <- newdata[,preds_nointercept]
-  if("Intercept" %in% preds){
-    newdata <- cbind(Intercept = 1, newdata)
+  if("(Intercept)" %in% preds){
+    newdata <- cbind(`(Intercept)` = 1, newdata)
     newdata <- newdata[,preds]
   }
   return(newdata)

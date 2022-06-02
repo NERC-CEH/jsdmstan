@@ -4,10 +4,15 @@
 #'generalised linear latent variable model approach (\code{method = "gllvm"}), or a
 #'multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 #'
+#'@param formula The formula of covariates that the species means are modelled from
+#'
+#'@param data Dataframe or list of covariates.
+#'
 #'@param Y Matrix of species by sites. Rows are assumed to be sites, columns are
 #'  assumed to be species
 #'
-#'@param X The covariates matrix, with rows being site and columns being covariates
+#'@param X The covariates matrix, with rows being site and columns being covariates.
+#'  Ignored in favour of data when formula approach is used to specify model.
 #'
 #'@param method Whether to fit a GLLVM or MGLMM model, details in description
 #'
@@ -72,7 +77,11 @@
 #'
 #'}
 #'@export
-stan_jsdm <- function(Y = NULL, X = NULL, species_intercept = TRUE, method,
+stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
+
+#' @describeIn stan_jsdm this is the default way of doing things
+#' @export
+stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
                       dat_list = NULL, family, site_intercept = FALSE, D = NULL,
                       phylo = FALSE, covar = "matern_05", delta = 1e-5,
                       save_data = TRUE, iter = 4000, ...){
@@ -116,8 +125,17 @@ stan_jsdm <- function(Y = NULL, X = NULL, species_intercept = TRUE, method,
   # Compile model
   model_comp <- rstan::stan_model(model_code = model_code)
 
+  model_args <- list(...)
+  if(any(c("pars","include") %in% names(model_args)))
+    warning("Specified pars and include arguments are ignored")
+  model_args$object <- model_comp
+  model_args$data <- data_list
+  model_args$iter <- iter
+  model_args$pars <- if(method == "gllvm") c("L","LV_uncor","Lambda_uncor") else NA
+  model_args$include <- ifelse(method == "gllvm",FALSE,TRUE)
+
   # Fit model
-  model_fit <- rstan::sampling(model_comp, data = data_list, iter = iter, ...)
+  model_fit <- do.call(rstan::sampling, model_args)
 
   # upper triangle of factor loadings
   if(method == "gllvm"){
@@ -138,8 +156,8 @@ stan_jsdm <- function(Y = NULL, X = NULL, species_intercept = TRUE, method,
     as.character(1:ncol(data_list$Y))
   preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
     as.character(1:ncol(data_list$X))
-  if(isTRUE(species_intercept) & !("Intercept" %in% preds)){
-    preds <- c("Intercept", preds)
+  if(isTRUE(species_intercept) & !("(Intercept)" %in% preds)){
+    preds <- c("(Intercept)", preds)
   }
   dat <- if(isTRUE(save_data)){
     data_list
@@ -160,31 +178,65 @@ stan_jsdm <- function(Y = NULL, X = NULL, species_intercept = TRUE, method,
   return(model_output)
 }
 
-#'@describeIn stan_jsdm Alias for \code{stan_jsdm} with \code{method = "mglmm"}
+#' @describeIn stan_jsdm Formula interface
+#' @export
+stan_jsdm.formula <- function(formula, data = list(), ...){
+  mf <- stats::model.frame(formula = formula, data = data)
+  X <- stats::model.matrix(attr(mf, "terms"), data = mf)
+  if(!is.null(stats::model.response(mf)))
+    warning("Response variable in formula is ignored")
+
+  est <- stan_jsdm.default(X, species_intercept = FALSE, ...)
+  est$call <- match.call()
+  est$formula <- formula
+  est
+}
+
+#'Alias for \code{stan_jsdm} with \code{method = "mglmm"}
+#'@inheritParams stan_jsdm
 #'@export
-stan_mglmm <- function(Y = NULL, X = NULL, species_intercept = TRUE,
+stan_mglmm <- function(X, ...) UseMethod("stan_mglmm")
+
+#' @describeIn stan_mglmm Default
+#' @export
+stan_mglmm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE,
+                               dat_list = NULL, family, site_intercept = FALSE,
+                               phylo = FALSE, covar = "matern_05", delta = 1e-5,
+                               save_data = TRUE, iter = 4000, ...){
+  stan_jsdm.default(X = X, Y = Y, species_intercept = species_intercept, method = "mglmm",
+                    dat_list = dat_list, family, site_intercept = site_intercept,
+                    phylo = phylo, covar = covar, delta = delta,
+                    save_data = save_data, iter = iter, ...)
+}
+#' @describeIn stan_mglmm Formula interface
+#' @export
+stan_mglmm.formula <- function(formula, data = list(), ...){
+  stan_jsdm.formula(formula, data = data, method = "mglmm", ...)
+}
+
+
+#'Alias for \code{stan_jsdm} with \code{method = "gllvm"}
+#'@inheritParams stan_jsdm
+#'@export
+stan_gllvm <- function(X, ...) UseMethod("stan_gllvm")
+
+#' @describeIn stan_gllvm Default
+#' @export
+stan_gllvm.default <- function(X = NULL, Y = NULL, D = NULL, species_intercept = TRUE,
                        dat_list = NULL, family, site_intercept = FALSE,
                        phylo = FALSE, covar = "matern_05", delta = 1e-5,
                        save_data = TRUE, iter = 4000, ...){
-  stan_jsdm(Y = Y, X = X, species_intercept = species_intercept, method = "mglmm",
-            dat_list = dat_list, family, site_intercept = site_intercept,
-            phylo = phylo, covar = covar, delta = delta,
-            save_data = save_data, iter = iter, ...)
+  stan_jsdm.default(X = X, Y = Y, D = D, species_intercept = species_intercept,
+                    method = "gllvm",
+                    dat_list = dat_list, family, site_intercept = site_intercept,
+                    phylo = phylo, covar = covar, delta = delta,
+                    save_data = save_data, iter = iter, ...)
 }
-
-#'@describeIn stan_jsdm Alias for \code{stan_jsdm} with \code{method = "gllvm"}
-#'@export
-stan_gllvm <- function(Y = NULL, X = NULL, D = NULL, species_intercept = TRUE,
-                       dat_list = NULL, family, site_intercept = FALSE,
-                       phylo = FALSE, covar = "matern_05", delta = 1e-5,
-                       save_data = TRUE, iter = 4000, ...){
-  stan_jsdm(Y = Y, X = X, D = D, species_intercept = species_intercept,
-            method = "gllvm",
-            dat_list = dat_list, family, site_intercept = site_intercept,
-            phylo = phylo, covar = covar, delta = delta,
-            save_data = save_data, iter = iter, ...)
+#' @describeIn stan_gllvm Formula interface
+#' @export
+stan_gllvm.formula <- function(formula, data = list(), ...){
+  stan_jsdm.formula(formula, data = data, method = "gllvm", ...)
 }
-
 
 
 validate_data <- function(Y, D, X, species_intercept,
@@ -209,12 +261,12 @@ validate_data <- function(Y, D, X, species_intercept,
     if(is.null(X)){
       K <- 1
       X <- matrix(1, nrow = N, ncol = 1)
-      colnames(X) <- "Intercept"
+      colnames(X) <- "(Intercept)"
     } else {
       K <- ncol(X) + 1*species_intercept
       if(isTRUE(species_intercept)){
         X <- cbind(matrix(1, nrow = N, ncol = 1), X)
-        colnames(X)[1] <- "Intercept"
+        colnames(X)[1] <- "(Intercept)"
       }
     }
     site_intercept <- as.integer(site_intercept)
@@ -246,7 +298,7 @@ validate_data <- function(Y, D, X, species_intercept,
 
     if(isTRUE(species_intercept)){
       dat_list$X <- cbind(matrix(1, nrow = dat_list$N, ncol = 1), dat_list$X)
-      colnames(dat_list$X)[1] <- "Intercept"
+      colnames(dat_list$X)[1] <- "(Intercept)"
     }
 
     data_list <- dat_list

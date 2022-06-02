@@ -128,15 +128,13 @@ dim(mglmm_pp[[1]])
 As well as the MCMC plotting functions within bayesplot the ppc_ family of functions is also supported through the `pp_check` function. This family of functions provides a graphical way to check your posterior against the data used within the model to evaluate model fit - called a posterior retrodictive check (or posterior predictive historically and when the prior only has been sampled from). To use these you need to have set `save_data = TRUE` within the `stan_jsdm` call. Unlike in other packages by default `pp_check` for `jsdmStanFit` objects extracts the posterior predictions then calculates summary statistics over the rows and plots those summary statistics against the same for the original data.
 
 ```{r}
-pp_check(mglmm_fit) +
-  scale_x_continuous(limits = c(0,100))
+pp_check(mglmm_fit)
 ```
 
 The summary statistic can be changed, as can whether it is calculated for every species or every site:
 
 ```{r}
-pp_check(mglmm_fit, summary_stat = "mean", calc_over = "species") +
-  scale_x_continuous(limits = c(0,50))
+pp_check(mglmm_fit, summary_stat = "mean", calc_over = "species")
 ```
 
 
@@ -161,7 +159,35 @@ mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
   theme(axis.text.x = element_text(angle = 90))
 ```
 
-...and the answer is while it isn't particularly wrong, it also isn't particularly helpful.
+
+## Model comparison
+
+The loo package can be used to perform leave-one-out (LOO) cross-validation on `jsdmstan` models, which enables us to compare models in their predictive ability. For further information on the LOO method you can go to the loo package [website](http://mc-stan.org/loo/).
+
+To calculate a loo object all you have to do is:
+
+```{r}
+library(loo)
+mglmm_loo <- loo(mglmm_fit)
+mglmm_loo
+```
+
+To compare with another model we can try
+
+```{r}
+mglmm_fit2 <- stan_jsdm(Y = mglmm_test_data$Y, X = cbind(mglmm_test_data$X,
+                                                        V3 = rnorm(nsites)),
+                       family = "pois", method = "mglmm", refresh = 0)
+mglmm_fit2
+```
+
+```{r}
+mglmm_loo2 <- loo(mglmm_fit2)
+```
+
+```{r}
+loo::loo_compare(mglmm_loo, mglmm_loo2)
+```
 
 
 # Fitting a GLLVM
@@ -169,14 +195,14 @@ mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
 The model fitting workflow for latent variable models is very similar to that above, with the addition of specifying the number of latent variables (D) in the data simulation and model fit:
 
 ```{r}
-gllvm_test_data <- gllvm_sim_data(N = 25, S = 6, D = 2, family = "neg_binomial")
+gllvm_test_data <- gllvm_sim_data(N = 250, S = 6, D = 2, family = "gaussian")
 ```
 
 
 ```{r}
 gllvm_fit <- stan_jsdm(Y = gllvm_test_data$Y, X = gllvm_test_data$X,
                        D = gllvm_test_data$D,  
-                       family = "neg_binomial",
+                       family = "gaussian",
                        method = "gllvm", refresh = 0)
 gllvm_fit
 ```
@@ -191,18 +217,18 @@ mcmc_plot(gllvm_fit, plotfun = "rhat_hist")
 mcmc_plot(gllvm_fit, plotfun = "neff_hist")
 ```
 
-For brevity's sake we will not go into the detail of the different functions here, however there is one plotting function specifically for GLLVM models - `ordiplot`. This plots the species or sites scores against the latent variables from a random selection of draws:
+For brevity's sake we will not go into the detail of the different functions again here, however there is one plotting function specifically for GLLVM models - `ordiplot`. This plots the species or sites scores against the latent variables from a random selection of draws:
 
 ```{r}
 ordiplot(gllvm_fit)
 ```
 
 ```{r}
-ordiplot(gllvm_fit, type = "sites")
+ordiplot(gllvm_fit, type = "sites", ndraws = 1) +
+  theme(legend.position = "none")
 ```
 
 You can change the latent variables selected by specifying the `choices` argument, and alter the number of draws or whether you want to plot species or sites with the other arguments.
-
 
 
 # Further Reading
@@ -210,3 +236,5 @@ You can change the latent variables selected by specifying the `choices` argumen
 Warton et al (2015) So many variables: joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779. DOI: [10.1016/j.tree.2015.09.007](http:://doi.org/10.1016/j.tree.2015.09.007).
 
 Wilkinson et al (2021) Defining and evaluating predictions of joint species distribution models. Methods in Ecology and Evolution, 12:394-404. DOI: [10.1111/2041-210X.13518](http:://doi.org/10.1111/2041-210X.13518).
+
+Vehtari, A., Gelman, A., and Gabry, J. (2017). Practical Bayesian model evaluation using leave-one-out cross-validation and WAIC. Statistics and Computing. 27(5), 1413–1432. DOI: [10.1007/s11222-016-9696-4](http::doi.org/10.1007/s11222-016-9696-4).

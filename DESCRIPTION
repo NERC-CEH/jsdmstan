@@ -22,7 +22,8 @@ Imports:
     rstan (>= 2.18.1),
     rstantools (>= 2.1.1),
     bayesplot,
-    reshape2
+    reshape2,
+    loo
 SystemRequirements: GNU make
 Suggests: 
     testthat (>= 3.0.0),

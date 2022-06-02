@@ -19,7 +19,8 @@ test_that("stan_gllvm returns right type of object", {
   gllvm_data <- gllvm_sim_data(N = 500, S = 16, D = 2, K = 5,
                                site_intercept = TRUE, family = "bern")
   gllvm_fit <- stan_jsdm(dat_list = gllvm_data, refresh = 0,
-                         method = "gllvm", site_intercept = TRUE, family = "bern")
+                         method = "gllvm", site_intercept = TRUE, family = "bern",
+                         control = list(adapt_delta = 0.99))
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
@@ -27,7 +28,7 @@ test_that("stan_gllvm returns right type of object", {
   gllvm_data <- gllvm_sim_data(N = 100, S = 9, D = 2, K = 2, family = "gauss")
   gllvm_fit <- stan_gllvm(Y = gllvm_data$Y, X = gllvm_data$X,
                           D = gllvm_data$D, refresh = 0,
-                          family = "gauss")
+                          family = "gauss", control = list(adapt_delta = 0.99))
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 

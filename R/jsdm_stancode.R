@@ -209,8 +209,8 @@ switch(family, "gaussian" = "
   switch(family,
          "gaussian" = "normal(mu[i,], sigma);",
          "bernoulli" = "bernoulli_logit(mu[i,]);",
-         "neg_binomial" = "neg_binomial_2_log_lpmf(mu[i,], kappa);",
-         "poisson" = "poisson(mu[i,]);"))
+         "neg_binomial" = "neg_binomial_2_log(mu[i,], kappa);",
+         "poisson" = "poisson_log(mu[i,]);"))
 
   generated_quantities <- paste("
   // Calculate linear predictor, y_rep, log likelihoods for LOO

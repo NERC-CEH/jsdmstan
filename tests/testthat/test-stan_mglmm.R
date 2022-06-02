@@ -29,7 +29,7 @@ test_that("stan_mglmm returns right type of object", {
   # poisson
   mglmm_data <- jsdm_sim_data(method = "mglmm", N = 200, S = 8, K = 3,
                               family = "poisson")
-  mglmm_fit <- stan_jsdm(dat_list = mglmm_data, family = "poisson",
+  mglmm_fit <- stan_jsdm(X = NULL, dat_list = mglmm_data, family = "poisson",
                           refresh = 0, method = "mglmm")
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
