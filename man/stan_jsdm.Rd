@@ -28,7 +28,8 @@ stan_jsdm(X, ...)
 \method{stan_jsdm}{formula}(formula, data = list(), ...)
 }
 \arguments{
-\item{X}{The covariates matrix, with rows being site and columns being covariates}
+\item{X}{The covariates matrix, with rows being site and columns being covariates.
+Ignored in favour of data when formula approach is used to specify model.}
 
 \item{...}{Arguments passed to \code{\link[rstan]{sampling}}}
 
@@ -70,6 +71,10 @@ object, by default TRUE.}
 
 \item{iter}{A positive integer specifying the number of iterations for each chain,
 default 4000.}
+
+\item{formula}{The formula of covariates that the species means are modelled from}
+
+\item{data}{Dataframe or list of covariates.}
 }
 \value{
 A \code{jsdmStanFit} object, comprising a list including the StanFit

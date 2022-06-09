@@ -137,43 +137,10 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   # Fit model
   model_fit <- do.call(rstan::sampling, model_args)
 
-  # upper triangle of factor loadings
-  if(method == "gllvm"){
-    if(data_list$D>1){
-      nr <- data_list$D
-      upper_trinames <- character()
-      while(nr>1){
-        upper_trinames <- c(upper_trinames, paste0("[",1:(nr-1),",",nr,"]"))
-        nr <- nr-1
-      }
-    }
-  }
-
-  # Turn into jsdmStanFit
-  sites <- if(!is.null(rownames(data_list$Y))) rownames(data_list$Y) else
-    as.character(1:nrow(data_list$Y))
-  species <- if(!is.null(colnames(data_list$Y))) colnames(data_list$Y) else
-    as.character(1:ncol(data_list$Y))
-  preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
-    as.character(1:ncol(data_list$X))
-  if(isTRUE(species_intercept) & !("(Intercept)" %in% preds)){
-    preds <- c("(Intercept)", preds)
-  }
-  dat <- if(isTRUE(save_data)){
-    data_list
-  } else list()
-
-  model_output <- list(fit = model_fit,
-                       jsdm_type = method,
-                       family = family,
-                       species = species,
-                       sites = sites,
-                       preds = preds,
-                       data_list = dat,
-                       n_latent = ifelse(method == "gllvm",
-                                         as.integer(round(data_list$D,0)),integer()))
-
-  class(model_output) <- "jsdmStanFit"
+  model_output <- model_to_jsdmstanfit(model_fit = model_fit, method = method,
+                                       data_list = data_list,
+                                       species_intercept = species_intercept,
+                                       family = family, save_data = save_data)
 
   return(model_output)
 }
@@ -330,4 +297,47 @@ validate_data <- function(Y, D, X, species_intercept,
   }
 
   return(data_list)
+}
+
+model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept,
+                                 family, save_data){
+  # upper triangle of factor loadings
+  # if(method == "gllvm"){
+  #   if(data_list$D>1){
+  #     nr <- data_list$D
+  #     upper_trinames <- character()
+  #     while(nr>1){
+  #       upper_trinames <- c(upper_trinames, paste0("[",1:(nr-1),",",nr,"]"))
+  #       nr <- nr-1
+  #     }
+  #   }
+  # }
+
+  # Turn into jsdmStanFit
+  sites <- if(!is.null(rownames(data_list$Y))) rownames(data_list$Y) else
+    as.character(1:nrow(data_list$Y))
+  species <- if(!is.null(colnames(data_list$Y))) colnames(data_list$Y) else
+    as.character(1:ncol(data_list$Y))
+  preds <- if(!is.null(colnames(data_list$X))) colnames(data_list$X) else
+    as.character(1:ncol(data_list$X))
+  if(isTRUE(species_intercept) & !("(Intercept)" %in% preds)){
+    preds <- c("(Intercept)", preds)
+  }
+  dat <- if(isTRUE(save_data)){
+    data_list
+  } else list()
+
+  model_output <- list(fit = model_fit,
+                       jsdm_type = method,
+                       family = family,
+                       species = species,
+                       sites = sites,
+                       preds = preds,
+                       data_list = dat,
+                       n_latent = ifelse(method == "gllvm",
+                                         as.integer(round(data_list$D,0)),integer()))
+
+  class(model_output) <- "jsdmStanFit"
+
+  return(model_output)
 }

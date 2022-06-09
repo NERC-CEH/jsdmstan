@@ -72,14 +72,14 @@ This returns a list, which includes the Y matrix, the X matrix, plus also the ex
 
 ```{r}
 names(mglmm_test_data)
+dat <- as.data.frame(mglmm_test_data$X)
 ```
 
 Now, to fit the model we can use the `stan_jsdm` function, which interfaces to Stan through the [rstan package](https://mc-stan.org/rstan/). There are two ways to supply data to the `stan_jsdm` function, one is to supply the data as a list with the appropriate named components (the `jsdm_sim_data` functions supply data in the correct format already) and the other is to specify the Y and X matrices directly, which is what we'll use here:
 
 ```{r}
-mglmm_fit <- stan_jsdm(Y = mglmm_test_data$Y, X = mglmm_test_data$X,
+mglmm_fit <- stan_jsdm(~ V1 + V2, data = dat, Y = mglmm_test_data$Y, 
                        family = "pois", method = "mglmm", refresh = 0)
-mglmm_fit
 ```
 
 If we print the model object we will get a brief overview of the type of jSDM and the data, plus if there are any parameters with Rhat > 1.01 or effective sample size (ESS) < 500 then they will be printed:
@@ -175,9 +175,9 @@ mglmm_loo
 To compare with another model we can try
 
 ```{r}
-mglmm_fit2 <- stan_jsdm(Y = mglmm_test_data$Y, X = cbind(mglmm_test_data$X,
-                                                        V3 = rnorm(nsites)),
-                       family = "pois", method = "mglmm", refresh = 0)
+mglmm_fit2 <- update(mglmm_fit, newX = cbind(mglmm_test_data$X,
+                                             V3 = rnorm(nsites)),
+                     refresh = 0)
 mglmm_fit2
 ```
 

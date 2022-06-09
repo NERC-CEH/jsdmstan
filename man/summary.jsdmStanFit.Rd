@@ -44,7 +44,7 @@ Rhat > 1.01 or ESS < 500 by setting \code{prob_pars_only = TRUE}.
  gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
                         family = "bernoulli")
  gllvm_summ <- summary(gllvm_fit)
- head(gllvm_summ, Bulk.ESS)
+ head(gllvm_summ, 20)
 
  summary(gllvm_fit, prob_quantiles = c(0.05,0.5,0.95))
 
