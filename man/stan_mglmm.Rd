@@ -29,7 +29,7 @@ stan_mglmm(X, ...)
 \item{X}{The covariates matrix, with rows being site and columns being covariates.
 Ignored in favour of data when formula approach is used to specify model.}
 
-\item{...}{Arguments passed to \code{\link[rstan]{sampling}}}
+\item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 
 \item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
 assumed to be species}

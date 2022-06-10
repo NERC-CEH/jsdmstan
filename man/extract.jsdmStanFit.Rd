@@ -2,6 +2,7 @@
 % Please edit documentation in R/jsdmstanfit-class.R
 \name{extract.jsdmStanFit}
 \alias{extract.jsdmStanFit}
+\alias{extract}
 \title{Extract samples from jsdmStanFit object}
 \usage{
 \method{extract}{jsdmStanFit}(
@@ -12,6 +13,8 @@
   include = TRUE,
   regexp = FALSE
 )
+
+extract(object, ...)
 }
 \arguments{
 \item{object}{The jsdmStanFit model object}
@@ -38,3 +41,8 @@ number of parameters. The different chains are appended.
 This function extracts named parameters from a jsdmStanFit object, with optional
 regular expression matching.
 }
+\section{Functions}{
+\itemize{
+\item \code{extract}: Generic method
+}}
+

@@ -116,10 +116,10 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
 
 
     # return matern covariance
-    L_Rho_sigma <- t(chol(cov_matern(Dmat, sq_eta = sq_eta, rho = rho, delta = delta,
+    L_Rho_species <- t(chol(cov_matern(Dmat, sq_eta = sq_eta, rho = rho, delta = delta,
                                      nu05 = nu05)))
   } else if(isFALSE(phylo) & method=="mglmm"){
-    L_Rho_sigma <- rlkj(S, cholesky = TRUE, eta = eta)
+    L_Rho_species <- rlkj(S, cholesky = TRUE, eta = eta)
   }
 
   # now do covariates - if K = NULL then do intercept only
@@ -165,7 +165,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     # u covariance
     u_sds <- abs(stats::rnorm(S))
     u_ftilde <- matrix(stats::rnorm(S*N), nrow = S, ncol = N)
-    u_ij <- t((diag(u_sds) %*% L_Rho_sigma) %*% u_ftilde)
+    u_ij <- t((diag(u_sds) %*% L_Rho_species) %*% u_ftilde)
   }
 
   if(method == "gllvm"){
@@ -214,7 +214,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   }
 
 
-  pars =  list(beta_sim = beta_sim,
+  pars =  list(betas = beta_sim,
                beta_sds = beta_sds,
                z_betas = z_betas)
   if(isTRUE(phylo) | is.matrix(phylo)){
@@ -235,7 +235,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   }
   if(method == "mglmm"){
     pars$u_sds <- u_sds
-    pars$L_Rho_sigma <- L_Rho_sigma
+    pars$L_Rho_species <- L_Rho_species
     pars$u_ftilde <- u_ftilde
   }
   if(isTRUE(species_intercept)){

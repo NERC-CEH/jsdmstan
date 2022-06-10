@@ -5,7 +5,7 @@
 \alias{print.jsdmstan_model}
 \title{Make stancode for the jsdm model}
 \usage{
-jsdm_stancode(method, family, prior = NULL, phylo = FALSE)
+jsdm_stancode(method, family, prior = NULL, phylo = FALSE, log_lik = TRUE)
 
 \method{print}{jsdmstan_model}(x, ...)
 }
@@ -18,6 +18,9 @@ jsdm_stancode(method, family, prior = NULL, phylo = FALSE)
 \item{prior}{The prior, currently only default (i.e. \code{NULL}) supported}
 
 \item{phylo}{Whether phylo should be included, only for MGLMM}
+
+\item{log_lik}{Whether the log likelihood should be calculated in the generated
+quantities (by default TRUE), required for loo}
 
 \item{x}{The jsdm_stancode object}
 

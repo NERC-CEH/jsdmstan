@@ -22,6 +22,7 @@ stan_jsdm(X, ...)
   delta = 1e-05,
   save_data = TRUE,
   iter = 4000,
+  log_lik = TRUE,
   ...
 )
 
@@ -31,7 +32,7 @@ stan_jsdm(X, ...)
 \item{X}{The covariates matrix, with rows being site and columns being covariates.
 Ignored in favour of data when formula approach is used to specify model.}
 
-\item{...}{Arguments passed to \code{\link[rstan]{sampling}}}
+\item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 
 \item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
 assumed to be species}
@@ -71,6 +72,9 @@ object, by default TRUE.}
 
 \item{iter}{A positive integer specifying the number of iterations for each chain,
 default 4000.}
+
+\item{log_lik}{Whether the log likelihood should be calculated in the generated
+quantities (by default TRUE), required for loo}
 
 \item{formula}{The formula of covariates that the species means are modelled from}
 

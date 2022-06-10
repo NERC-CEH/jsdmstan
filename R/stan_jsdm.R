@@ -50,7 +50,10 @@
 #'@param iter A positive integer specifying the number of iterations for each chain,
 #'  default 4000.
 #'
-#'@param ... Arguments passed to \code{\link[rstan]{sampling}}
+#' @param log_lik Whether the log likelihood should be calculated in the generated
+#'   quantities (by default TRUE), required for loo
+#'
+#'@param ... Arguments passed to [rstan::sampling()]
 #'
 #'@return A \code{jsdmStanFit} object, comprising a list including the StanFit
 #'  object, the data used to fit the model plus a few other bits of information. See
@@ -84,7 +87,7 @@ stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
 stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
                       dat_list = NULL, family, site_intercept = FALSE, D = NULL,
                       phylo = FALSE, covar = "matern_05", delta = 1e-5,
-                      save_data = TRUE, iter = 4000, ...){
+                      save_data = TRUE, iter = 4000, log_lik = TRUE, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
 
   stopifnot(is.logical(species_intercept),
@@ -120,7 +123,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 
   # Create stancode
   model_code <- jsdm_stancode(family = family,
-                              method = method, prior = NULL, phylo = phylo)
+                              method = method, prior = NULL, phylo = phylo,
+                              log_lik = log_lik)
 
   # Compile model
   model_comp <- rstan::stan_model(model_code = model_code)

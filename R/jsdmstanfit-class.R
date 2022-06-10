@@ -124,8 +124,13 @@ summary.jsdmStanFit <- function(object,
                                 prob_quantiles = c(0.15,0.85),
                                 digit_summary = 3,
                                 prob_pars_only = FALSE,
+                                pars = NULL,
                                 na_filter = TRUE, ...) {
-  samps <- rstan::extract(object$fit, permuted = FALSE)
+  if(is.null(pars)){
+    samps <- rstan::extract(object$fit, permuted = FALSE)
+  } else{
+    samps <- rstan::extract(object$fit, pars = pars, permuted = FALSE)
+  }
   rhat <- apply(samps, 3, rstan::Rhat)
   bulk_ess <- round(apply(samps, 3, rstan::ess_bulk),0)
   tail_ess <- round(apply(samps, 3, rstan::ess_tail),0)
@@ -189,7 +194,8 @@ extract.jsdmStanFit <- function(object, pars, permuted = FALSE,
   pexp
 
 }
-
+#' @export
+#' @describeIn extract.jsdmStanFit Generic method
 extract <- function(object, ...) {
   UseMethod("extract")
 }

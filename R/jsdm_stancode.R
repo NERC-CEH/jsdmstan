@@ -9,6 +9,8 @@
 #'   \code{"poisson"} or \code{"neg_binomial"}
 #' @param prior The prior, currently only default (i.e. \code{NULL}) supported
 #' @param phylo Whether phylo should be included, only for MGLMM
+#' @param log_lik Whether the log likelihood should be calculated in the generated
+#'   quantities (by default TRUE), required for loo
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
@@ -18,7 +20,7 @@
 #' jsdm_stancode(family = "poisson", method = "mglmm", phylo = TRUE)
 #'
 jsdm_stancode <- function(method, family, prior = NULL,
-                          phylo = FALSE){
+                          phylo = FALSE, log_lik = TRUE){
   # checks
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
   method <- match.arg(method, c("gllvm","mglmm"))
@@ -30,14 +32,14 @@ jsdm_stancode <- function(method, family, prior = NULL,
   # data processing steps
 
   scode <- .modelcode(method = method, family = family,
-                      phylo = phylo, prior = prior)
+                      phylo = phylo, prior = prior, log_lik = log_lik)
   class(scode) <- c("jsdmstan_model","character")
   return(scode)
 
 }
 
 
-.modelcode <- function(method, family, phylo = NULL, prior = NULL){
+.modelcode <- function(method, family, phylo = NULL, prior = NULL, log_lik){
   model_functions <- "
   matrix to_lower_tri(vector x, int nr, int nc){
     matrix[nr,nc] y;
@@ -212,10 +214,10 @@ switch(family, "gaussian" = "
          "neg_binomial" = "neg_binomial_2_log(mu[i,], kappa);",
          "poisson" = "poisson_log(mu[i,]);"))
 
-  generated_quantities <- paste("
+  generated_quantities <- paste(ifelse(isTRUE(log_lik),"
   // Calculate linear predictor, y_rep, log likelihoods for LOO
   matrix[N, S] log_lik;
-  ",
+  ",""),
   ifelse(method == "gllvm","
   // Sign correct factor loadings and factors
   matrix[D, N] LV;
@@ -230,7 +232,7 @@ switch(family, "gaussian" = "
       Lambda[,d] = Lambda_uncor[,d];
       LV[d,] = LV_uncor[d,];
     }
-  }",""),"
+  }",""),ifelse(isTRUE(log_lik),paste("
   {
     matrix[N, S] linpred;
     if(site_intercept == 1){
@@ -259,7 +261,7 @@ switch(family, "gaussian" = "
       }
     }
   }
-  ")
+  "),""))
 
 
   if(isTRUE(phylo)){
