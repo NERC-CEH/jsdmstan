@@ -14,8 +14,8 @@ bern_sim_data <- mglmm_sim_data(N = 300, S = 9, K = 2, family = "bern")
 colnames(bern_sim_data$Y) <- LETTERS[1:9]
 rownames(bern_sim_data$Y) <- paste0("Site",1:300)
 rownames(bern_sim_data$X) <- paste0("Site",1:300)
-bern_fit <- stan_mglmm(dat_list = bern_sim_data, family = "bern",
-                       refresh = 0)
+suppressWarnings(bern_fit <- stan_mglmm(dat_list = bern_sim_data, family = "bern",
+                                        refresh = 0))
 
 test_that("jsdm_statsummary errors with wrong names", {
   expect_error(jsdm_statsummary(bern_fit, species = LETTERS[7:12]),
@@ -29,8 +29,8 @@ test_that("jsdm_statsummary errors with wrong names", {
 gauss_sim_data <- gllvm_sim_data(N = 150, D = 2, S = 16, family = "gaussian")
 colnames(gauss_sim_data$Y) <- LETTERS[1:16]
 rownames(gauss_sim_data$Y) <- paste0("Site",1:150)
-gauss_fit <- stan_gllvm(dat_list = gauss_sim_data, family = "gaussian",
-                        refresh = 0)
+suppressWarnings(gauss_fit <- stan_gllvm(dat_list = gauss_sim_data, family = "gaussian",
+                                         refresh = 0))
 
 
 test_that("jsdm_statsummary returns correct form of output", {

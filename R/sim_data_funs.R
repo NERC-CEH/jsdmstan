@@ -36,22 +36,23 @@
 #'
 #'@param D is number of latent variables, used within gllvm method
 #'
-#'@param K is number of covariates, by default 0
+#'@param K is number of covariates, by default \code{0}
 #'
-#'@param family is the response family, must be one of "gaussian", "neg_binomial",
-#'  "poisson" or "bernoulli"
+#'@param family is the response family, must be one of \code{"gaussian"},
+#'  \code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular expression
+#'  matching is supported.
 #'
-#'@param method is the jSDM method to use, currently either GLLVM or MGLMM - see
-#'  details for more information.
+#'@param method is the jSDM method to use, currently either \code{"gllvm"} or
+#'  \code{"mglmm"} - see details for more information.
 #'
 #'@param phylo is whether to randomly generate a phylogenetic tree that will be used
-#'  to constrain beta estimates. Can be given as TRUE, FALSE or as a given distance
-#'  matrix.
+#'  to constrain beta estimates. Can be given as \code{TRUE}, \code{FALSE} or as a
+#'  given distance matrix.
 #'
 #'@param species_intercept Whether to include an intercept in the predictors, must be
-#'  TRUE if K is 0. Defaults to TRUE.
+#'  \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
 #'
-#'@param site_intercept Whether to include a site intercept. Defaults to FALSE.
+#'@param site_intercept Whether to include a site intercept. Defaults to \code{FALSE}.
 #'
 #'@param delta Nugget added to diagonal of resulting matrix to keep it positive
 #'  definite
@@ -117,7 +118,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
 
     # return matern covariance
     L_Rho_species <- t(chol(cov_matern(Dmat, sq_eta = sq_eta, rho = rho, delta = delta,
-                                     nu05 = nu05)))
+                                       nu05 = nu05)))
   } else if(isFALSE(phylo) & method=="mglmm"){
     L_Rho_species <- rlkj(S, cholesky = TRUE, eta = eta)
   }
@@ -143,7 +144,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   z_betas <- matrix(stats::rnorm(S*J), ncol = S, nrow = J)
   if(K == 0){
     beta_sim <- beta_sds %*% z_betas
-    } else{
+  } else{
     L_Rho_preds <- rlkj(J, cholesky = TRUE, eta = eta)
     beta_sim <- (diag(beta_sds) %*% L_Rho_preds) %*% z_betas
   }

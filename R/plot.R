@@ -250,13 +250,28 @@ mcmc_plot <- function(x, ...) {
 #' This function takes a GLLVM model fit and plots an ordination plot with a random
 #' (or specified) selection of draws
 #'
-#' @param object The jsdmStanFit model object
-#' @param choices Which latent variables to plot as dimensions, by default 1 and 2
-#' @param type Whether to plot sites or species
-#' @param ndraws How many draws to include in plot
-#' @param draw_ids Which draws to include in plot (overrides ndraws)
+#' @param object The \code{jsdmStanFit} model object
+#' @param choices Which latent variables to plot as dimensions, by default
+#'   \code{c(1,2)}
+#' @param type Whether to plot sites or species, default \code{"species"}.
+#' @param summary_stat The summary statistic used to plot overall averages of the
+#'   posterior sample. By default this is \code{"mean"}, and \code{NULL} will result
+#'   in no summary being included
+#' @param ndraws How many individual draws to include in plot, by default \code{20}. Setting
+#'   this to \code{0} will result in no individual draws being included
+#' @param draw_ids Which draws to include in plot (overrides \code{ndraws})
+#' @param size The size of the points in the graph, specified as a two-element vector
+#'   with the first being used for the summary points and the second the individual
+#'   draws, default \code{c(2,1)}
+#' @param alpha The transparency/alpha of the points in the graph, specified as a
+#'   two-element vector with the first being used for the summary points and the
+#'   second the individual draws, default \code{c(1,0.5)}
+#' @param shape The shape of the points in the graph, specified as a two-element
+#'   vector with the first being used for the summary points and the second the
+#'   individual draws, default \code{c(18,16)}
 #'
-#' @return A ggplot2 object that can be modified using ggplot arguments
+#' @return A [ggplot][ggplot2::ggplot] object that can be customised using the
+#'   \pkg{ggplot2} package
 #' @export
 #'
 #' @examples
@@ -274,7 +289,8 @@ mcmc_plot <- function(x, ...) {
 #'
 #' }
 ordiplot <- function(object, choices = c(1,2), type = "species",
-                     ndraws = 30, draw_ids = NULL){
+                     summary_stat = "mean", ndraws = 20, draw_ids = NULL,
+                     size = c(2,1), alpha = c(1,0.5), shape = c(18,16)){
   if(class(object) != "jsdmStanFit")
     stop("Only objects of class jsdmStanFit are supported")
   if(object$jsdm_type != "gllvm")
@@ -289,50 +305,87 @@ ordiplot <- function(object, choices = c(1,2), type = "species",
   model_est <- extract(object, pars = ext_pars, regexp = TRUE)
 
   n_iter <- dim(model_est[[1]])[1]
-
-  if(!is.null(draw_ids)){
-    if(max(draw_ids)>n_iter)
-      stop(paste("Maximum of draw_ids (",max(draw_ids),
-                 ") is greater than number of iterations (",n_iter,")"))
-
-    draw_id <- draw_ids
-  } else{
-    if(!is.null(ndraws)){
-      if(n_iter < ndraws){
-        warning(paste("There are fewer samples than ndraws specified, defaulting",
-                      "to using all iterations"))
-        ndraws <- n_iter
-      }
-      draw_id <- sample.int(n_iter, ndraws)
-
-
-    } else{
-      draw_id <- seq_len(n_iter)
-    }
-  }
-  model_est <- lapply(model_est, function(x){
-    switch(length(dim(x)),
-           `1` = x[draw_id,drop=FALSE],
-           `2` = x[draw_id,,drop=FALSE],
-           `3` =  x[draw_id,,,drop=FALSE])
-  })
-  # Turn into long format
   varnames <- switch(type, "species"= c("draw","S","LV"),
                      "sites" = c("draw","LV","S"))
-  ord_scores <- reshape2::melt(model_est[[1]],
-                               varnames = varnames)
-  ord_scores <- subset(ord_scores, LV %in% choices)
-  ord_scores[,"LV"] <- paste0("LV",ord_scores[,"LV"])
-  ord_scores <- reshape2::dcast(ord_scores, S + draw ~ LV)
-  ord_scores$S <- as.character(ord_scores$S)
 
-  graph <- ggplot2::ggplot(ord_scores,
-                           ggplot2::aes_string(paste0("LV",choices[1]),
-                                               paste0("LV",choices[2]),
-                                               colour = "S")) +
-    ggplot2::geom_point() + bayesplot::bayesplot_theme_get() +
+
+  if(!is.null(summary_stat)){
+    model_est_copy <- model_est
+  }
+
+  if(ndraws > 0 | !is.null(draw_ids)){
+    if(!is.null(draw_ids)){
+      if(max(draw_ids)>n_iter)
+        stop(paste("Maximum of draw_ids (",max(draw_ids),
+                   ") is greater than number of iterations (",n_iter,")"))
+
+      draw_id <- draw_ids
+    } else{
+      if(!is.null(ndraws)){
+        if(n_iter < ndraws){
+          warning(paste("There are fewer samples than ndraws specified, defaulting",
+                        "to using all iterations"))
+          ndraws <- n_iter
+        }
+        draw_id <- sample.int(n_iter, ndraws)
+
+
+      } else{
+        draw_id <- seq_len(n_iter)
+      }
+    }
+    model_est <- lapply(model_est, function(x){
+      switch(length(dim(x)),
+             `1` = x[draw_id,drop=FALSE],
+             `2` = x[draw_id,,drop=FALSE],
+             `3` =  x[draw_id,,,drop=FALSE])
+    })
+    # Turn into long format
+    ord_scores <- reshape2::melt(model_est[[1]],
+                                 varnames = varnames)
+    ord_scores <- subset(ord_scores, LV %in% choices)
+    ord_scores[,"LV"] <- paste0("LV",ord_scores[,"LV"])
+    ord_scores <- reshape2::dcast(ord_scores, S + draw ~ LV)
+    ord_scores$S <- as.factor(ord_scores$S)
+  }
+
+  if(!is.null(summary_stat)){
+    if(is.character(summary_stat)){
+      stat_fun <- get(summary_stat)
+    } else if(class(summary_stat) == "function"){
+      stat_fun <- summary_stat
+    }
+
+    ord_scores_summary <- reshape2::melt(model_est_copy[[1]],
+                                         varnames = varnames)
+    ord_scores_summary <- subset(ord_scores_summary, LV %in% choices)
+    ord_scores_summary[,"LV"] <- paste0("LV",ord_scores_summary[,"LV"])
+    ord_scores_summary$S <- as.factor(ord_scores_summary$S)
+    ord_scores_summary <- stats::aggregate(value ~ S + LV, ord_scores_summary, stat_fun)
+    ord_scores_summary <- reshape2::dcast(ord_scores_summary, S ~ LV)
+  }
+
+  graph <- ggplot2::ggplot() +
+    bayesplot::bayesplot_theme_get() +
     ggplot2::coord_equal()
 
+  if(!is.null(summary_stat)){
+    graph <- graph +
+      ggplot2::geom_point(data = ord_scores_summary,
+                          ggplot2::aes_string(paste0("LV",choices[1]),
+                                              paste0("LV",choices[2]),
+                                              colour = "S"),
+                          size = size[1], alpha = alpha[1], shape = shape[1])
+  }
+
+  if(ndraws > 0 | !is.null(draw_ids)){
+    graph <- graph +
+      ggplot2::geom_point(data = ord_scores,
+                          ggplot2::aes_string(paste0("LV",choices[1]),
+                                              paste0("LV",choices[2]),
+                                              colour = "S"),
+                          size = size[2], alpha = alpha[2], shape = shape[2])
+  }
   graph
 
 }

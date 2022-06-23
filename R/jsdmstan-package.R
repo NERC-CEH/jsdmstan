@@ -18,3 +18,7 @@
 #'   version 2.26.1. https://mc-stan.org
 #'
 NULL
+
+# Suppress R CMD check note
+#' @importFrom RcppParallel CxxFlags
+NULL

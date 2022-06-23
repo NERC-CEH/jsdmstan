@@ -23,11 +23,11 @@
 #'  }
 #'  \item{\code{data_list}}{
 #'  A list containing the original data used to fit the model
-#'   (empty when save_data is set to FALSE)
+#'   (empty when save_data is set to \code{FALSE})
 #'  }
 #'  \item{\code{n_latent}}{
 #'  A length one integer vector representing number of latent
-#'   variables (in gllvm type fits) or NA in all other cases
+#'   variables (in gllvm type fits) or \code{NA} in all other cases
 #'  }
 #'  }
 #'
@@ -96,13 +96,19 @@ print.jsdmStanFit <- function(x, ...) {
 #' @param digit_summary The number of digits to round the results to
 #'
 #' @param prob_pars_only Whether to limit output to parameters with Rhat > 1.01 or
-#'   effective sample size < 500, by default FALSE
+#'   effective sample size < 500, by default \code{FALSE}
 #'
 #' @param na_filter Whether to remove parameters with NAs in Rhat - this includes the
 #'   parameters fixed to zero or one, such as the upper triangle of the cholesky
-#'   factor of the correlation matrix. By default TRUE
+#'   factor of the correlation matrix. By default \code{TRUE}
 #'
-#' @param ... Currently unused
+#' @param pars Parameters to compute the summary of, by default \code{NULL} i.e. all
+#'   parameters included
+#'
+#' @param log_lik Whether the log_lik parameters should be included, default
+#'   \code{FALSE}
+#'
+#' @param ... Arguments passed to [extract()]
 #'
 #' @examples
 #'
@@ -125,11 +131,12 @@ summary.jsdmStanFit <- function(object,
                                 digit_summary = 3,
                                 prob_pars_only = FALSE,
                                 pars = NULL,
-                                na_filter = TRUE, ...) {
+                                na_filter = TRUE, log_lik = FALSE, ...) {
   if(is.null(pars)){
-    samps <- rstan::extract(object$fit, permuted = FALSE)
+    full_pars <- get_parnames(object, log_lik = log_lik)
+    samps <- extract(object, pars = full_pars,return_array = TRUE, ...)
   } else{
-    samps <- rstan::extract(object$fit, pars = pars, permuted = FALSE)
+    samps <- extract(object, pars = pars, return_array = TRUE, ...)
   }
   rhat <- apply(samps, 3, rstan::Rhat)
   bulk_ess <- round(apply(samps, 3, rstan::ess_bulk),0)
@@ -168,25 +175,37 @@ summary.jsdmStanFit <- function(object,
 #'   or excluded from the result, by default \code{TRUE} for inclusion
 #' @param regexp Whether regular expression matching should be used to match the
 #'   contents of \code{pars} to the parameter names, by default \code{FALSE}
+#' @param return_array Whether to return the output as a 3 dimensional array
+#'   (\code{TRUE}) or a named list (\code{FALSE}, the default)
+#' @param ... Arguments passed to [get_parnames()]
 #'
-#' @return Returns a N by P matrix where N is the number of iterations and P is the
-#'   number of parameters. The different chains are appended.
+#' @return If \code{return_array = FALSE} returns a named list with each parameter
+#'   group being an element of the list. Each list element is an array with the first
+#'   dimension being the iteration (all chains are appended) and the other dimensions
+#'   coming from the parameter dimensions. If \code{return_array = TRUE} then a 3
+#'   dimensional array is returned with the first dimension being the iterations, the
+#'   second the chains and the third the parameters.
 #'
 #' @export
-extract.jsdmStanFit <- function(object, pars, permuted = FALSE,
-                                inc_warmup = FALSE, include = TRUE, regexp = FALSE){
-  if(regexp){
+extract.jsdmStanFit <- function(object, pars = NULL, permuted = FALSE,
+                                inc_warmup = FALSE, include = TRUE, regexp = FALSE,
+                                return_array = FALSE, ...){
+  if(isTRUE(return_array) & isTRUE(permuted)){
+    warning("If return_array is TRUE then permuted is set to FALSE")
+    permuted <- FALSE
+  }
+  if(is.null(pars)){
+    pars <- get_parnames(object, ...)
+  } else if(regexp){
     full_pars <- get_parnames(object)
     pars <- grep(paste(pars, collapse = "|"), full_pars, value = TRUE)
   }
   pexp <- rstan::extract(object$fit, pars, permuted, inc_warmup, include)
-
-  if(isFALSE(permuted)){
+  if(isFALSE(permuted) & isFALSE(return_array)){
     pexp2 <- matrix(pexp, prod(dim(pexp)[1:2]), dim(pexp)[3])
     colnames(pexp2) <- dimnames(pexp)[[3]]
     rownames(pexp2) <- paste0("Chain",rep(seq(1,dim(pexp)[2],1),each = dim(pexp)[1]),
                               "_Iter",rep(seq(1,dim(pexp)[1],1),dim(pexp)[2]))
-
 
     pexp <- pars_indexes(pexp2)
   }
@@ -210,12 +229,16 @@ pars_indexes <- function(x){
       ynames <- colnames(y)
       ninit <- nrow(y)
       ndim <- sum(grepl(",",ynames[1]))+1
-      dims <- apply(sapply(
-        strsplit(unlist(regmatches(ynames,
-                                   gregexpr("\\[\\K\\d+,\\d+(?=\\])",
-                                            ynames, perl=TRUE))),
-                 ","),as.numeric),1,max)
-      val <- array(y, dim = c(ninit,dims))
+      if(ndim == 1){
+        val <- y
+      } else{
+        dims <- apply(sapply(
+          strsplit(unlist(regmatches(ynames,
+                                     gregexpr("\\[\\K\\d+,\\d+(?=\\])",
+                                              ynames, perl=TRUE))),
+                   ","),as.numeric),1,max)
+        val <- array(y, dim = c(ninit,dims))
+      }
     }
     val
   })
@@ -223,21 +246,48 @@ pars_indexes <- function(x){
   x_list
 }
 
+#' Extract quantities useful for model summaries
+#'
+#' These are methdos for extracting various useful summaries from models, including
+#' the model parameter names, NUTS parameters, the log posterior, r-hat and n-eff
+#' ratio.
+#'
+#' @name jsdmstan-extractors
+#'
+#' @return{
+#' \code{get_parnames()} returns a character vector of model parameter names.
+#'
+#' \code{nuts_params()} returns a molten data frame (see [reshape2::melt()]). The
+#' data frame should have columns "Parameter" (factor), "Iteration" (integer),
+#' "Chain" (integer), and "Value" (numeric).
+#'
+#' \code{log_posterior()} returns a molten data frame (see [reshape2::melt()]). The
+#' data frame should have columns "Chain" (integer), "Iteration" (integer),
+#' and "Value" (numeric).
+#'
+#' \code{rhat()}, \code{neff_ratio()} both return named numeric vectors.
+#' }
+NULL
 
-#' @describeIn  jsdmStanFit Get the model parameter names
+#' @describeIn jsdmstan-extractors Get the model parameter names
+#' @param log_lik Whether the log_lik parameters should be included in the parameter
+#'   list
+#'
 #' @export
-get_parnames <- function(object){
+get_parnames <- function(object, log_lik = FALSE){
   if(class(object) != "jsdmStanFit")
     stop("This only works for jsdmStanFit objects")
   parnames <- names(object$fit)
-  parnames <- parnames[!grepl("log_lik",parnames)]
+  if(isFALSE(log_lik)){
+    parnames <- parnames[!grepl("log_lik",parnames)]
+  }
   parnames <- parnames[!grepl("_uncor",parnames)]
   return(parnames)
 }
 
-#' @describeIn jsdmStanFit Get the NUTS parameters
+#' @describeIn jsdmstan-extractors Get the NUTS parameters
 #' @aliases nuts_params
-#' @param object The jsdmStanFit model object
+#' @param object The \code{jsdmStanFit} model object
 #' @param ... Arguments passed on to the \pkg{bayesplot} equivalent for stanFit
 #'   objects
 #' @importFrom bayesplot nuts_params
@@ -247,7 +297,7 @@ nuts_params.jsdmStanFit <- function(object, ...){
   bayesplot::nuts_params(object$fit, ...)
 }
 
-#' @describeIn jsdmStanFit Get the log posterior
+#' @describeIn jsdmstan-extractors Get the log posterior
 #' @aliases log_posterior
 #' @importFrom bayesplot log_posterior
 #' @export log_posterior
@@ -256,7 +306,7 @@ log_posterior.jsdmStanFit <- function(object, ...){
   bayesplot::log_posterior(object$fit, ...)
 }
 
-#' @describeIn jsdmStanFit Get the R-hat
+#' @describeIn jsdmstan-extractors Get the R-hat
 #' @aliases rhat
 #' @importFrom bayesplot rhat
 #' @export rhat
@@ -265,7 +315,7 @@ rhat.jsdmStanFit <- function(object, ...){
   bayesplot::rhat(object$fit, ...)
 }
 
-#' @describeIn jsdmStanFit Get the n_eff ratio
+#' @describeIn jsdmstan-extractors Get the n_eff ratio
 #' @aliases neff_ratio
 #' @importFrom bayesplot neff_ratio
 #' @export neff_ratio

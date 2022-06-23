@@ -3,51 +3,13 @@
 \name{jsdmStanFit}
 \alias{jsdmStanFit}
 \alias{jsdmStanFit_empty}
-\alias{get_parnames}
-\alias{nuts_params.jsdmStanFit}
-\alias{nuts_params}
-\alias{log_posterior.jsdmStanFit}
-\alias{log_posterior}
-\alias{rhat.jsdmStanFit}
-\alias{rhat}
-\alias{neff_ratio.jsdmStanFit}
-\alias{neff_ratio}
 \title{jsdmStanFit class}
 \usage{
 jsdmStanFit_empty()
-
-get_parnames(object)
-
-\method{nuts_params}{jsdmStanFit}(object, ...)
-
-\method{log_posterior}{jsdmStanFit}(object, ...)
-
-\method{rhat}{jsdmStanFit}(object, ...)
-
-\method{neff_ratio}{jsdmStanFit}(object, ...)
-}
-\arguments{
-\item{object}{The jsdmStanFit model object}
-
-\item{...}{Arguments passed on to the \pkg{bayesplot} equivalent for stanFit
-objects}
 }
 \description{
 This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 }
-\section{Functions}{
-\itemize{
-\item \code{get_parnames}: Get the model parameter names
-
-\item \code{nuts_params.jsdmStanFit}: Get the NUTS parameters
-
-\item \code{log_posterior.jsdmStanFit}: Get the log posterior
-
-\item \code{rhat.jsdmStanFit}: Get the R-hat
-
-\item \code{neff_ratio.jsdmStanFit}: Get the n_eff ratio
-}}
-
 \section{Elements for \code{jsdmStanFit} objects}{
 
 \describe{
@@ -68,11 +30,11 @@ A character vector of the measured predictors included
 }
 \item{\code{data_list}}{
 A list containing the original data used to fit the model
-(empty when save_data is set to FALSE)
+(empty when save_data is set to \code{FALSE})
 }
 \item{\code{n_latent}}{
 A length one integer vector representing number of latent
-variables (in gllvm type fits) or NA in all other cases
+variables (in gllvm type fits) or \code{NA} in all other cases
 }
 }
 }

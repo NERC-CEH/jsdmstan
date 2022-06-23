@@ -32,22 +32,23 @@ mglmm_sim_data(...)
 
 \item{D}{is number of latent variables, used within gllvm method}
 
-\item{K}{is number of covariates, by default 0}
+\item{K}{is number of covariates, by default \code{0}}
 
-\item{family}{is the response family, must be one of "gaussian", "neg_binomial",
-"poisson" or "bernoulli"}
+\item{family}{is the response family, must be one of \code{"gaussian"},
+\code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular expression
+matching is supported.}
 
-\item{method}{is the jSDM method to use, currently either GLLVM or MGLMM - see
-details for more information.}
+\item{method}{is the jSDM method to use, currently either \code{"gllvm"} or
+\code{"mglmm"} - see details for more information.}
 
 \item{phylo}{is whether to randomly generate a phylogenetic tree that will be used
-to constrain beta estimates. Can be given as TRUE, FALSE or as a given distance
-matrix.}
+to constrain beta estimates. Can be given as \code{TRUE}, \code{FALSE} or as a
+given distance matrix.}
 
 \item{species_intercept}{Whether to include an intercept in the predictors, must be
-TRUE if K is 0. Defaults to TRUE.}
+\code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.}
 
-\item{site_intercept}{Whether to include a site intercept. Defaults to FALSE.}
+\item{site_intercept}{Whether to include a site intercept. Defaults to \code{FALSE}.}
 
 \item{delta}{Nugget added to diagonal of resulting matrix to keep it positive
 definite}

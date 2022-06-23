@@ -25,8 +25,8 @@
 #'  species, by default \code{TRUE}
 #'
 #'@param dat_list Alternatively, data can be given to the model as a list containing
-#'  Y, X, N, S, K, and site_intercept. See output of jsdm_sim_data for an example of
-#'  how this can be formatted.
+#'  Y, X, N, S, K, and site_intercept. See output of [jsdm_sim_data()] for an example
+#'  of how this can be formatted.
 #'
 #'@param site_intercept Whether the model should be fit with a site intercept, by
 #'  default \code{FALSE}
@@ -50,8 +50,8 @@
 #'@param iter A positive integer specifying the number of iterations for each chain,
 #'  default 4000.
 #'
-#' @param log_lik Whether the log likelihood should be calculated in the generated
-#'   quantities (by default TRUE), required for loo
+#'@param log_lik Whether the log likelihood should be calculated in the generated
+#'  quantities (by default TRUE), required for loo
 #'
 #'@param ... Arguments passed to [rstan::sampling()]
 #'

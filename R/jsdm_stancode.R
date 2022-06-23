@@ -10,7 +10,7 @@
 #' @param prior The prior, currently only default (i.e. \code{NULL}) supported
 #' @param phylo Whether phylo should be included, only for MGLMM
 #' @param log_lik Whether the log likelihood should be calculated in the generated
-#'   quantities (by default TRUE), required for loo
+#'   quantities (by default \code{TRUE}), required for loo
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export

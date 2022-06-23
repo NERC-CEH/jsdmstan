@@ -20,7 +20,7 @@ jsdm_stancode(method, family, prior = NULL, phylo = FALSE, log_lik = TRUE)
 \item{phylo}{Whether phylo should be included, only for MGLMM}
 
 \item{log_lik}{Whether the log likelihood should be calculated in the generated
-quantities (by default TRUE), required for loo}
+quantities (by default \code{TRUE}), required for loo}
 
 \item{x}{The jsdm_stancode object}
 

@@ -1,18 +1,20 @@
-#' Update a jsdmStanFit model object with new data or Stan arguments
+#'Update a jsdmStanFit model object with new data or Stan arguments
 #'
-#' This function allows you to update a jsdmStanFit model with new data or new
-#' arguments to Stan. It does not support changes that require recompiling stancode -
-#' for that you should use [stan_jsdm()]. Changes to the number of sites, species or
-#' covariates do not require recompiling stancode and can therefore be done using
-#' this function.
+#'This function allows you to update a jsdmStanFit model with new data or new
+#'arguments to Stan. It does not support changes that require recompiling stancode -
+#'for that you should use [stan_jsdm()]. Changes to the number of sites, species or
+#'covariates do not require recompiling stancode and can therefore be done using this
+#'function.
 #'
-#' @param object The jsdmStanFit model object
-#' @param newY New Y data, by default NULL
-#' @param newX New X data, by default NULL
-#' @param ... Arguments passed to [rstan::sampling()]
+#'@param object The jsdmStanFit model object
+#'@param newY New Y data, by default \code{NULL}
+#'@param newX New X data, by default \code{NULL}
+#'@param save_data Whether to save the data in the jsdmStanFit object, by default
+#'  \code{TRUE}
+#'@param ... Arguments passed to [rstan::sampling()]
 #'
-#' @return An object of class jsdmStanFit
-#' @export
+#'@return An object of class \code{jsdmStanFit}
+#'@export
 #'
 #' @examples
 #' \donttest{

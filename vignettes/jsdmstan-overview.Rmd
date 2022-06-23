@@ -24,12 +24,13 @@ set.seed(8267317)
 
 Joint Species Distibution Models, or jSDMs, are models that model an entire community of species simultaneously. The idea behind these is that they allow information to be borrowed across species, such that the covariance between species can be used to inform the predictions of distributions of related or commonly co-occurring species. 
 
-These models can be difficult to fit as they involve fitting some type of covariance relationship between species at the same time as modelling responses to covariates etc. The original way of running jSDMs was to model the entire covariance matrix between species in a multivariate generalised linear mixed model (MGLMM). However, more recently there have been methods developed that involve representing the covariance matrix with a set of linear latent variables - known as generalised linear latent variable models (GLLVM).
+In plain language (or as plain as I can manage) jSDMs involve the modelling of an entire species community as a function of some combination of intercepts, covariate data and species covariance. Therefore the change of a single species is related to not only change in the environment but also how it relates to other species. There are several decisions to be made in how to specify these models - the standard decisions on which covariates to include, whether each species should have its own intercept (generally yes) and how to represent change across sites - but also how to represent the covariance between species. There are two options for representing this species covariance in this package. First, the original way of running jSDMs was to model the entire covariance matrix between species in a multivariate generalised linear mixed model (MGLMM). However, more recently there have been methods developed that involve representing the covariance matrix with a set of linear latent variables - known as generalised linear latent variable models (GLLVM).
 
 The jsdmstan package aims to provide an interface for fitting these models in [Stan](https://mc-stan.org/) using the Stan Hamiltonian Monte Carlo sampling as a robust Bayesian methodology.
 
-## Multivariate Generalised Linear Mixed Models
+## Underlying maths
 
+Feel free to skip this bit if you don't want to read equations, it is largely based on Warton et al. ([2015](http:://doi.org/10.1016/j.tree.2015.09.007)). We model the community data $m_{ij}$ for each site $i$ and taxon $j$ as a function of a species intercept, environmental covariates and species covariance matrix:
 
 $$ g(m_{ij}) = \beta_{0j} + \mathbf{x}_i^\intercal\beta_j + u_{ij} $$
 
@@ -39,14 +40,19 @@ A site effect $\alpha_{i}$ can also be added to adjust for total abundance or ri
 
 $$ g(m_{ij}) = \alpha_{i} + \beta_{0j} + \mathbf{x}_i^\intercal\beta_j + u_{ij} $$
 
+## Multivariate Generalised Linear Mixed Models
+
+The entire matrix of covariance between species is modelled in MGLMMs. 
+
 $$ u_{ij} \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma}) $$
 
+Within MGLMMs there is also the option to use a distance matrix between species to inform the result - further information on this will appear in a phylogenetic specific vignette as soon as I get around to writing one.
+
+Fitting the entire covariance matrix means that the amount of time required to fit these models scales with the number of species cubed, and the data required scales with the number of species squared. This makes these models both computationally and data intensive.
 
 ## Generalised Linear Latent Variable Models
 
-$$ g(m_{ij}) = \alpha_{i} + \beta_{0j} + \mathbf{x}_i^\intercal\beta_j + \mathbf{u}_{ij} $$
-
-This is the same as above, however $u_{ij}$ is now specified as a linear function of a set of latent variables $\mathbf{z_i}$:
+In response to some of these issues in fitting MGLMMs, GLLVMs were developed in which $u_{ij}$ is now specified as a linear function of a set of latent variables $\mathbf{z_i}$:
 
 $$ y_{ij}|\mathbf{u}_i \sim \mathrm{F}(m_{ij},\phi_j) $$
 $$ u_{ij} = \mathbf{z}_i^\intercal \lambda_j $$
@@ -55,6 +61,15 @@ The latent variables $\mathbf{z_i}$ are treated as random by assuming:
 
 $$y_{ij}|\mathbf{z_i} \sim \mathrm{F}(m_{ij},\phi_j)) $$
 $$\mathbf{z_i} \sim \mathrm{N}(\mathbf{0},\mathbf{1}) $$
+Treating the species covariance as pulling from a set of latent variables greatly reduces the computational time required to fit these models.
+
+## Relationship to environmental covariates
+
+The default approach in jsdmstan is to assume that the response of species to environmental covariates is constrained by a covariance matrix between the environmental covariates. This assumes that if one species is strongly positively related to multiple covariates then it is more likely that other species will either also be positively related to all these covariates, or negatively related. Mathematically this maybe corresponds to:
+
+$$\beta_j \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma})$$
+
+This default behaviour can be overridden through specifying the 
 
 # Fitting a MGLMM
 
@@ -155,7 +170,7 @@ mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
 mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
           pars = paste0("L_Rho_species[",rep(1:nspecies, nspecies),",",
                         rep(1:nspecies, each = nspecies),"]"),
-          true = c(mglmm_test_data$pars$L_Rho_sigma)) +
+          true = c(mglmm_test_data$pars$L_Rho_species)) +
   theme(axis.text.x = element_text(angle = 90))
 ```
 
@@ -224,7 +239,7 @@ ordiplot(gllvm_fit)
 ```
 
 ```{r}
-ordiplot(gllvm_fit, type = "sites", ndraws = 1) +
+ordiplot(gllvm_fit, type = "sites", ndraws = 0) +
   theme(legend.position = "none")
 ```
 

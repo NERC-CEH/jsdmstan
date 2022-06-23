@@ -43,8 +43,8 @@ species, by default \code{TRUE}}
 \item{method}{Whether to fit a GLLVM or MGLMM model, details in description}
 
 \item{dat_list}{Alternatively, data can be given to the model as a list containing
-Y, X, N, S, K, and site_intercept. See output of jsdm_sim_data for an example of
-how this can be formatted.}
+Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an example
+of how this can be formatted.}
 
 \item{family}{The response family for the model, required to be one of
 \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}}

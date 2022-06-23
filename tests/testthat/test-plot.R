@@ -22,3 +22,13 @@ test_that("mcmc_plot errors when expected", {
   expect_error(mcmc_plot(test_fit, pars = NULL, sample_n = 8.6),
                "If pars is NULL then sample_n must be a positive integer")
 })
+
+test_that("ordiplot errors when expected", {
+  expect_error(ordiplot(list()),
+               "Only objects of class jsdmStanFit are supported")
+  expect_error(ordiplot(test_fit),
+               "Only gllvm models are supported")
+  test_fit$jsdm_type <- "gllvm"
+  expect_error(ordiplot(test_fit, choices = 1:3),
+               "Only two latent variables can be plotted at once")
+})

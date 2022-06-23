@@ -7,11 +7,13 @@
 \usage{
 \method{extract}{jsdmStanFit}(
   object,
-  pars,
+  pars = NULL,
   permuted = FALSE,
   inc_warmup = FALSE,
   include = TRUE,
-  regexp = FALSE
+  regexp = FALSE,
+  return_array = FALSE,
+  ...
 )
 
 extract(object, ...)
@@ -32,10 +34,19 @@ or excluded from the result, by default \code{TRUE} for inclusion}
 
 \item{regexp}{Whether regular expression matching should be used to match the
 contents of \code{pars} to the parameter names, by default \code{FALSE}}
+
+\item{return_array}{Whether to return the output as a 3 dimensional array
+(\code{TRUE}) or a named list (\code{FALSE}, the default)}
+
+\item{...}{Arguments passed to \code{\link[=get_parnames]{get_parnames()}}}
 }
 \value{
-Returns a N by P matrix where N is the number of iterations and P is the
-number of parameters. The different chains are appended.
+If \code{return_array = FALSE} returns a named list with each parameter
+group being an element of the list. Each list element is an array with the first
+dimension being the iteration (all chains are appended) and the other dimensions
+coming from the parameter dimensions. If \code{return_array = TRUE} then a 3
+dimensional array is returned with the first dimension being the iterations, the
+second the chains and the third the parameters.
 }
 \description{
 This function extracts named parameters from a jsdmStanFit object, with optional

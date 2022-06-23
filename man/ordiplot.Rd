@@ -8,23 +8,46 @@ ordiplot(
   object,
   choices = c(1, 2),
   type = "species",
-  ndraws = 30,
-  draw_ids = NULL
+  summary_stat = "mean",
+  ndraws = 20,
+  draw_ids = NULL,
+  size = c(2, 1),
+  alpha = c(1, 0.5),
+  shape = c(18, 16)
 )
 }
 \arguments{
-\item{object}{The jsdmStanFit model object}
+\item{object}{The \code{jsdmStanFit} model object}
 
-\item{choices}{Which latent variables to plot as dimensions, by default 1 and 2}
+\item{choices}{Which latent variables to plot as dimensions, by default
+\code{c(1,2)}}
 
-\item{type}{Whether to plot sites or species}
+\item{type}{Whether to plot sites or species, default \code{"species"}.}
 
-\item{ndraws}{How many draws to include in plot}
+\item{summary_stat}{The summary statistic used to plot overall averages of the
+posterior sample. By default this is \code{"mean"}, and \code{NULL} will result
+in no summary being included}
 
-\item{draw_ids}{Which draws to include in plot (overrides ndraws)}
+\item{ndraws}{How many individual draws to include in plot, by default \code{20}. Setting
+this to \code{0} will result in no individual draws being included}
+
+\item{draw_ids}{Which draws to include in plot (overrides \code{ndraws})}
+
+\item{size}{The size of the points in the graph, specified as a two-element vector
+with the first being used for the summary points and the second the individual
+draws, default \code{c(2,1)}}
+
+\item{alpha}{The transparency/alpha of the points in the graph, specified as a
+two-element vector with the first being used for the summary points and the
+second the individual draws, default \code{c(1,0.5)}}
+
+\item{shape}{The shape of the points in the graph, specified as a two-element
+vector with the first being used for the summary points and the second the
+individual draws, default \code{c(18,16)}}
 }
 \value{
-A ggplot2 object that can be modified using ggplot arguments
+A \link[ggplot2:ggplot]{ggplot} object that can be customised using the
+\pkg{ggplot2} package
 }
 \description{
 This function takes a GLLVM model fit and plots an ordination plot with a random

@@ -9,21 +9,24 @@
 \arguments{
 \item{object}{The jsdmStanFit model object}
 
-\item{newY}{New Y data, by default NULL}
+\item{newY}{New Y data, by default \code{NULL}}
 
-\item{newX}{New X data, by default NULL}
+\item{newX}{New X data, by default \code{NULL}}
+
+\item{save_data}{Whether to save the data in the jsdmStanFit object, by default
+\code{TRUE}}
 
 \item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 }
 \value{
-An object of class jsdmStanFit
+An object of class \code{jsdmStanFit}
 }
 \description{
 This function allows you to update a jsdmStanFit model with new data or new
 arguments to Stan. It does not support changes that require recompiling stancode -
 for that you should use \code{\link[=stan_jsdm]{stan_jsdm()}}. Changes to the number of sites, species or
-covariates do not require recompiling stancode and can therefore be done using
-this function.
+covariates do not require recompiling stancode and can therefore be done using this
+function.
 }
 \examples{
 \donttest{
