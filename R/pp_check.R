@@ -70,13 +70,13 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
     }
   } else{
     aps_plotfuns <- c(
-      "error_scatter_avg", "error_scatter_avg_vs_x",
-      "intervals", "intervals_grouped", "loo_pit",
-      "loo_intervals", "loo_ribbon", "ribbon",
-      "ribbon_grouped", "rootogram", "scatter_avg",
-      "scatter_avg_grouped", "stat", "stat_2d",
-      "stat_freqpoly_grouped", "stat_grouped",
-      "violin_grouped"
+      "ppc_error_scatter_avg", "ppc_error_scatter_avg_vs_x",
+      "ppc_intervals", "ppc_intervals_grouped", "ppc_loo_pit",
+      "ppc_loo_intervals", "ppc_loo_ribbon", "ppc_ribbon",
+      "ppc_ribbon_grouped", "ppc_rootogram", "ppc_scatter_avg",
+      "ppc_scatter_avg_grouped", "ppc_stat", "ppc_stat_2d",
+      "ppc_stat_freqpoly_grouped", "ppc_stat_grouped",
+      "ppc_violin_grouped"
     )
     if (plotfun %in% aps_plotfuns) {
       draw_ids <- seq(1,nsamps,1)

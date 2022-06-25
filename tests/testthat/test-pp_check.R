@@ -63,3 +63,29 @@ test_that("pp_check errors correctly", {
   expect_error(pp_check(test_fit, plotfun = "fiona"),
                "is not a valid ppc type")
 })
+
+test_that("pp_check returns appropriate class", {
+  expect_s3_class(pp_check(gauss_fit, ndraws = 10), "gg")
+  expect_message(pp_check(gauss_fit),
+                 "Using 10 posterior draws")
+  expect_message(pp_check(bern_fit, plotfun="ribbon"),
+                 "Using all posterior draws")
+})
+
+# plot - so as to not have to fit an extra model
+
+test_that("plot returns right class of object",{
+  expect_s3_class(ordiplot(gauss_fit),"gg")
+
+  expect_s3_class(plot(bern_fit, plot = FALSE)[[1]],
+                  "bayesplot_grid")
+
+  expect_s3_class(plot(gauss_fit, plot=FALSE,
+                       pars = "sigma", regexp = TRUE)[[1]],
+                  "bayesplot_grid")
+
+  expect_s3_class(mcmc_plot(gauss_fit),"gg")
+  expect_s3_class(mcmc_plot(bern_fit, plotfun= "nuts_divergence"),"bayesplot_grid")
+  expect_s3_class(mcmc_plot(bern_fit, plotfun = "rhat_hist"), "gg")
+  expect_s3_class(mcmc_plot(gauss_fit, plotfun = "mcmc_neff_hist"), "gg")
+})
