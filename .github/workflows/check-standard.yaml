@@ -44,6 +44,3 @@ jobs:
           extra-packages: rcmdcheck
 
       - uses: r-lib/actions/check-r-package@v2
-        with:
-          build-args: 'c("--no-build-vignettes")'
-          args: 'c("--ignore-vignettes")'
