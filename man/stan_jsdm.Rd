@@ -99,7 +99,7 @@ multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 
 \examples{
 
-\donttest{
+\dontrun{
  # MGLMM - specified by using the mglmm aliases and with direct reference to Y and
  # X matrices:
  mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,

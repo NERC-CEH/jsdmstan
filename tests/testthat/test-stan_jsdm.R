@@ -2,19 +2,17 @@ set.seed(5488935)
 mglmm_data <- mglmm_sim_data(N = 100, S = 8, family = "gaussian", K = 3)
 df <- as.data.frame(mglmm_data$X)
 
-mglmm_fit <- stan_jsdm(~V1 + V2 + V3, data = df, Y = mglmm_data$Y,
-                       family = "gaussian", method = "mglmm",
-                       refresh = 0, control = list(adapt_delta = 0.99),
-                       iter = 6000)
+suppressWarnings(mglmm_fit <- stan_jsdm(~V1 + V2 + V3, data = df, Y = mglmm_data$Y,
+                                        family = "gaussian", method = "mglmm",
+                                        refresh = 0, chains = 2))
 test_that("formula structure works", {
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
   df$V3 <- as.factor(cut(df$V3, c(-Inf,-0.5,0.5,Inf), c("a","b","c")))
-  mglmm_fit <- stan_mglmm(~V1*V2 + V3, data = df, Y = mglmm_data$Y,
-                          family = "gaussian",
-                          refresh = 0, control = list(adapt_delta = 0.99),
-                          iter = 6000)
+  suppressWarnings(mglmm_fit <- stan_mglmm(~V1*V2 + V3, data = df, Y = mglmm_data$Y,
+                                           family = "gaussian",
+                                           refresh = 0, chains = 1))
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 })
 
@@ -36,9 +34,10 @@ test_that("summary works", {
 
 test_that("update works", {
   mglmm_data <- mglmm_sim_data(N = 50, S = 5, family = "gaussian", K = 2)
-  mglmm_fit2 <- update(mglmm_fit, newY = mglmm_data$Y, newX = mglmm_data$X,
-                       refresh = 0, control = list(adapt_delta = 0.99),
-                       iter = 4000)
+  suppressWarnings(mglmm_fit2 <- update(mglmm_fit, newY = mglmm_data$Y,
+                                        newX = mglmm_data$X,
+                                        refresh = 0,
+                                        chains = 2, iter = 1000))
 
   expect_s3_class(mglmm_fit2, "jsdmStanFit")
 })

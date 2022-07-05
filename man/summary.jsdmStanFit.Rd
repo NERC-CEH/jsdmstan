@@ -45,7 +45,7 @@ Rhat > 1.01 or ESS < 500 by setting \code{prob_pars_only = TRUE}.
 }
 \examples{
 
-\donttest{
+\dontrun{
 
  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
                              family = "bernoulli")

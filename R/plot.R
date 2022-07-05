@@ -161,7 +161,7 @@ par_sample <- function(pars, parnames, sd = c("sigma","kappa"), sample_n, regexp
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #'  # First simulate data and fit the model:
 #'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
 #'                              family = "bernoulli")
@@ -276,7 +276,7 @@ mcmc_plot <- function(x, ...) {
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #'  # First simulate data and fit the model:
 #'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 3,
 #'                              family = "bernoulli")

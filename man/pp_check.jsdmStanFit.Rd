@@ -59,7 +59,7 @@ available plotting functions call \code{\link[bayesplot:available_ppc]{bayesplot
 }
 \examples{
 
-\donttest{
+\dontrun{
  # First simulate data and fit the jsdmStan model:
  mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
                               family = "gaussian")

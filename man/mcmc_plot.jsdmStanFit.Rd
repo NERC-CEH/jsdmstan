@@ -64,7 +64,7 @@ plot all parameters (there will be hundreds in any reasonably sized model) set
 }
 \examples{
 
-\donttest{
+\dontrun{
  # First simulate data and fit the model:
  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
                              family = "bernoulli")

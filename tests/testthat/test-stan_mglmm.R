@@ -15,7 +15,7 @@ test_that("stan_mglmm returns right type of object", {
                                site_intercept = TRUE)
   mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
                           family = "bern",
-                          refresh = 0, site_intercept = TRUE)
+                          refresh = 0, site_intercept = TRUE, chains = 2)
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
@@ -29,16 +29,17 @@ test_that("stan_mglmm returns right type of object", {
   # poisson
   mglmm_data <- jsdm_sim_data(method = "mglmm", N = 200, S = 8, K = 3,
                               family = "poisson")
-  mglmm_fit <- stan_jsdm(X = NULL, dat_list = mglmm_data, family = "poisson",
-                         refresh = 0, method = "mglmm",
-                         control = list(adapt_delta = 0.95), iter = 4000)
+  suppressWarnings(mglmm_fit <- stan_jsdm(X = NULL, dat_list = mglmm_data,
+                                          family = "poisson",
+                                          refresh = 0, method = "mglmm", iter = 1000,
+                                          chains= 2))
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
   # neg bin
   mglmm_data <- mglmm_sim_data(N = 127, S = 12, K = 2, family = "neg_bin")
   mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X, family = "neg_bin",
-                          refresh = 0)
+                          refresh = 0, chains = 2)
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 })

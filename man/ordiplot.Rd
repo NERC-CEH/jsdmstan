@@ -55,7 +55,7 @@ This function takes a GLLVM model fit and plots an ordination plot with a random
 }
 \examples{
 
-\donttest{
+\dontrun{
  # First simulate data and fit the model:
  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 3,
                              family = "bernoulli")

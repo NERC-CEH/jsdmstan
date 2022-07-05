@@ -112,7 +112,7 @@ print.jsdmStanFit <- function(x, ...) {
 #'
 #' @examples
 #'
-#' \donttest{
+#' \dontrun{
 #'
 #'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
 #'                              family = "bernoulli")

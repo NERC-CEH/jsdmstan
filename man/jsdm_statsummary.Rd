@@ -57,7 +57,7 @@ all the predicted scores for each site.
 }
 \examples{
 
-\donttest{
+\dontrun{
  # First simulate data and fit the jsdmStan model:
  gllvm_data <- gllvm_sim_data(N = 100, S = 9, D = 2,
                               family = "bernoulli")
