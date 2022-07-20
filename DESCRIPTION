@@ -29,7 +29,6 @@ SystemRequirements: GNU make
 Suggests: 
     testthat (>= 3.0.0),
     ape,
-    invgamma,
     knitr,
     rmarkdown,
     ggplot2

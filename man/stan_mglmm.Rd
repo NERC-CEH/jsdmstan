@@ -15,6 +15,7 @@ stan_mglmm(X, ...)
   dat_list = NULL,
   family,
   site_intercept = FALSE,
+  prior = jsdm_prior(),
   phylo = FALSE,
   covar = "matern_05",
   delta = 1e-05,
@@ -46,6 +47,8 @@ of how this can be formatted.}
 
 \item{site_intercept}{Whether the model should be fit with a site intercept, by
 default \code{FALSE}}
+
+\item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{phylo}{A distance matrix between species (not necessarily phylogenetic). The
 default \code{FALSE} does not incorporate phylogenetic information.}

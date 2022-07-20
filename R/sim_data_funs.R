@@ -61,12 +61,11 @@
 #'  function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
 #'  nu = 2.5 and 3 is the squared exponential.
 #'
-#'@param eta Shape parameter in random generation of LKJ matrix, defaults to 1.
-
+#'@param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mglmm"),
                           phylo = FALSE, species_intercept = TRUE,
                           site_intercept = FALSE, delta = NULL, nu05 = NULL,
-                          eta = 1){
+                          prior = jsdm_prior()){
   response <- match.arg(family, c("gaussian","neg_binomial","poisson","bernoulli"))
 
   if(any(!c(is.double(N), is.double(S))))
@@ -94,18 +93,68 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     stop("gllvm method require D to be a positive integer")
   }
 
+  if(class(prior)[1] != "jsdmprior"){
+    stop("prior object must be of class jsdmprior, produced by jsdm_prior()")
+  }
+
+  # prior object breakdown
+  prior_split <- lapply(prior, strsplit, split = "\\(|\\)|,")
+  if(!all(sapply(prior_split, function(x) {
+    x[[1]][1] %in% c("normal",
+                      "invgamma",
+                      "lkj_corr_cholesky",
+                      "student_t",
+                      "cauchy",
+                      "gamma")
+    }))){
+    stop(paste("Not all prior distributions specified are supported.",
+               "Raise an issue at github.com/NERC-CEH/jsdmstan if you want a new",
+               "distribution added to jsdm_sim_data"))
+  }
+  D1 <- switch(method, "gllvm" = D, "mglmm" = 1)
+  prior_func <- lapply(names(prior_split), function(x){
+    y <- prior_split[x]
+    # print(str(y[[1]][[1]]))
+    fun_name <- switch(y[[1]][[1]][1],
+                       "normal" = "rnorm",
+                       "invgamma" = "rinvgamma",
+                       "lkj_corr_cholesky" = "rlkj",
+                       "student_t" = "rstudentt",
+                       "cauchy" = "rcauchy",
+                       "gamma" = "rgamma"
+                       )
+    fun_arg1 <- switch(x,
+                       "sigmas_b" = K + 1*species_intercept,
+                       "z_preds" = (K + 1*species_intercept)*S,
+                       "L_Rho_preds" = K + 1*species_intercept,
+                       "a" = N,
+                       "a_bar" = 1,
+                       "sigma_a" = 1,
+                       "sigmas_u" = S,
+                       "z_species" = S*N,
+                       "L_Rho_species" = S,
+                       "LV" = D1*N,
+                       "L" = D1*(S-D1) + (D1*(D1 - 1)/2) + D1,
+                       "sigma_L" = 1,
+                       "sigma" = 1,
+                       "kappa" = 1,
+                       "etasq" = 1,
+                       "rho" = 1)
+    fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
+
+    return(list(fun_name, fun_args))
+  })
+  names(prior_func) <- names(prior_split)
+
 
   # build phylogenetic tree - need to add check
   # if(phylo & )
   if(isTRUE(phylo)){
 
-    if(requireNamespace("invgamma",quietly = TRUE)){
-      sq_eta <- invgamma::rinvgamma(1,10,scale = 0.1)
-      rho <- invgamma::rinvgamma(1,10,scale = 0.1)
-    } else{
-      sq_eta <- abs(stats::rnorm(1,1,0.2))
-      rho <- abs(stats::rnorm(1,1,0.2))
-    }
+    sq_eta <- do.call(match.fun(prior_func[["etasq"]][[1]]),
+                      prior_func[["etasq"]][[2]])
+    rho <- do.call(match.fun(prior_func[["rho"]][[1]]),
+                   prior_func[["rho"]][[2]])
 
     if(isTRUE(phylo)){
       Dmat <- stats::cophenetic(ape::rtree(S))
@@ -120,7 +169,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     L_Rho_species <- t(chol(cov_matern(Dmat, sq_eta = sq_eta, rho = rho, delta = delta,
                                        nu05 = nu05)))
   } else if(isFALSE(phylo) & method=="mglmm"){
-    L_Rho_species <- rlkj(S, cholesky = TRUE, eta = eta)
+    L_Rho_species <- do.call(match.fun(prior_func[["L_Rho_species"]][[1]]),
+                             prior_func[["L_Rho_species"]][[2]])
   }
 
   # now do covariates - if K = NULL then do intercept only
@@ -138,25 +188,33 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     colnames(x) <- paste0("V",1:K)
     J <- K
   } else stop("K must be an integer value")
+  # print(str(x))
 
   # covariate parameters
-  beta_sds <- abs(stats::rnorm(J))
-  z_betas <- matrix(stats::rnorm(S*J), ncol = S, nrow = J)
+  beta_sds <- abs(do.call(match.fun(prior_func[["sigmas_b"]][[1]]),
+                          prior_func[["sigmas_b"]][[2]]))
+  z_betas <- matrix(do.call(match.fun(prior_func[["z_preds"]][[1]]),
+                            prior_func[["z_preds"]][[2]]), ncol = S, nrow = J)
   if(K == 0){
     beta_sim <- beta_sds %*% z_betas
   } else{
-    L_Rho_preds <- rlkj(J, cholesky = TRUE, eta = eta)
+    L_Rho_preds <- do.call(match.fun(prior_func[["L_Rho_preds"]][[1]]),
+                           prior_func[["L_Rho_preds"]][[2]])
     beta_sim <- (diag(beta_sds) %*% L_Rho_preds) %*% z_betas
   }
 
   mu_sim <- x %*% beta_sim
+  # print(str(mu_sim))
 
 
   ## site intercept
   if(isTRUE(site_intercept)){
-    a_bar <- stats::rnorm(1)
-    sigma_a <- abs(stats::rnorm(1))
-    a <- stats::rnorm(N)
+    a_bar <- do.call(match.fun(prior_func[["a_bar"]][[1]]),
+                     prior_func[["a_bar"]][[2]])
+    sigma_a <- abs(do.call(match.fun(prior_func[["sigma_a"]][[1]]),
+                           prior_func[["sigma_a"]][[2]]))
+    a <- do.call(match.fun(prior_func[["a"]][[1]]),
+                 prior_func[["a"]][[2]])
     a_i <- a_bar + a * sigma_a
   } else{
     a_i <- rep(0, N)
@@ -164,38 +222,46 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
 
   if(method == "mglmm"){
     # u covariance
-    u_sds <- abs(stats::rnorm(S))
-    u_ftilde <- matrix(stats::rnorm(S*N), nrow = S, ncol = N)
+    u_sds <- abs(do.call(match.fun(prior_func[["sigmas_u"]][[1]]),
+                         prior_func[["sigmas_u"]][[2]]))
+    u_ftilde <- matrix(do.call(match.fun(prior_func[["z_species"]][[1]]),
+                               prior_func[["z_species"]][[2]]), nrow = S, ncol = N)
     u_ij <- t((diag(u_sds) %*% L_Rho_species) %*% u_ftilde)
   }
 
   if(method == "gllvm"){
-    M <- D * (S - D) + D * (D - 1) / 2
 
-    L_l <- stats::rnorm(M, 0, 1)
-    L_d <- abs(stats::rnorm(D, 0, 1))
+    L_l <- do.call(match.fun(prior_func[["L"]][[1]]),
+                   prior_func[["L"]][[2]])
     L <- matrix(nrow = S, ncol = D)
 
     idx2 = 0;
     for (i in 1:(D-1)) { for (j in (i+1):(D)){ L[i,j] = 0 } }
-    diag(L) <- L_d
     for (j in 1:D) {
-      for (i in (j+1):S) {
+      for (i in j:S) {
         idx2 = idx2+1
         L[i,j] = L_l[idx2]
       }
     }
 
-    L_sigma <- abs(stats::rnorm(1,0,1))
+    L_sigma <- abs(do.call(match.fun(prior_func[["sigma_L"]][[1]]),
+                           prior_func[["sigma_L"]][[2]]))
 
-    LV <- matrix(stats::rnorm(N * D, 0, 1), nrow = D, ncol = N)
+    LV <- matrix(do.call(match.fun(prior_func[["LV"]][[1]]),
+                         prior_func[["LV"]][[2]]), nrow = D, ncol = N)
 
     LV_sum <- (L * L_sigma) %*% LV
   }
 
   # variance parameters
-  if(response %in% c("neg_binomial", "gaussian"))
-    sigma <- abs(stats::rnorm(1))
+  if(response == "gaussian"){
+    sigma <- abs(do.call(match.fun(prior_func[["sigma"]][[1]]),
+                         prior_func[["sigma"]][[2]]))
+  } else if(response == "neg_binomial"){
+    kappa <- abs(do.call(match.fun(prior_func[["kappa"]][[1]]),
+                         prior_func[["kappa"]][[2]]))
+  }
+  # print(str(sigma))
 
   Y <-  matrix(nrow = N, ncol = S)
   for(i in 1:N) {
@@ -204,15 +270,17 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
       mu_ij <- switch(method,
                       "gllvm" = a_i[i] + mu_sim[i,j] + LV_sum[j,i],
                       "mglmm" = a_i[i] + mu_sim[i,j] + u_ij[i,j])
+      # print(str(mu_ij))
 
       Y[i, j] <- switch(response,
                         "neg_binomial" = rgampois(1, mu = exp(mu_ij),
-                                                  scale = sigma),
+                                                  scale = kappa),
                         "gaussian" = stats::rnorm(1, mu_ij, sigma),
                         "poisson" = stats::rpois(1, exp(mu_ij)),
                         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)))
     }
   }
+  # print(str(Y))
 
 
   pars =  list(betas = beta_sim,
@@ -306,13 +374,24 @@ mglmm_sim_data <- function(...){
 #' \url{https://groups.google.com/g/stan-users/c/3gDvAs_qwN8/m/Xpgi2rPlx68J)}). The
 #' `rgampois` function is sourced from the rethinking package by Richard McElreath.
 #'
+#' The alternative parameterisation of the Student T distribution is by mean (mu) and
+#' scale (sigma) to be consistent with the Stan parameterisation rather than the
+#' parameterisation in [stats::rt()].
+#'
 #' @param n The number of samples to create/dimension of correlation matrix
-#' @param mu The mean of the negative binomial parameterisation
+#' @param mu The mean used within the negative binomial parameterisation and the
+#'   Student T distribution
 #' @param scale The phi parameter that controls overdispersion of the negative
-#'   binomial distribution (see details for description)
+#'   binomial distribution (see details for description), or the scale parameter used
+#'   within the inverse gamma distribution (see [stats::rgamma()])
 #' @param eta The shape parameter of the LKJ distribution
 #' @param cholesky Whether the correlation matrix should be returned as the Cholesky
 #'   decomposition, by default \code{FALSE}
+#' @param shape The shape parameter of the inverse gamma distribution (see
+#'   [stats::rgamma()])
+#' @param df The degrees of freedom parameter within the Student T distribution (see
+#'    details)
+#' @param sigma The scale of the Student T distribution (see details)
 #'
 #' @name sim_helpers
 NULL
@@ -344,7 +423,7 @@ rgbeta <-
 #' @rdname sim_helpers
 #' @export
 rlkj <-
-  function(n, eta = 1, cholesky = FALSE) {
+  function(n, eta = 1, cholesky = TRUE) {
     if (n < 2){
       stop("Dimension of correlation matrix must be >= 2")
     }
@@ -382,3 +461,13 @@ rlkj <-
     return(Sigma)
   }
 
+#' @rdname sim_helpers
+#' @export
+rinvgamma <- function(n, shape, scale){
+  1/stats::rgamma(n, shape, scale = scale)
+}
+#' @rdname sim_helpers
+#' @export
+rstudentt <- function(n, df, mu, sigma){
+  mu + sigma * stats::rt(n, df = df)
+}

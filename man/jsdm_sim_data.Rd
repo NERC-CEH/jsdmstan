@@ -18,7 +18,7 @@ jsdm_sim_data(
   site_intercept = FALSE,
   delta = NULL,
   nu05 = NULL,
-  eta = 1
+  prior = jsdm_prior()
 )
 
 gllvm_sim_data(...)
@@ -57,7 +57,7 @@ definite}
 function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
 nu = 2.5 and 3 is the squared exponential.}
 
-\item{eta}{Shape parameter in random generation of LKJ matrix, defaults to 1.}
+\item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{...}{Arguments passed to jsdm_sim_data}
 }

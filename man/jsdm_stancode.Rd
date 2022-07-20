@@ -5,7 +5,13 @@
 \alias{print.jsdmstan_model}
 \title{Make stancode for the jsdm model}
 \usage{
-jsdm_stancode(method, family, prior = NULL, phylo = FALSE, log_lik = TRUE)
+jsdm_stancode(
+  method,
+  family,
+  prior = jsdm_prior(),
+  phylo = FALSE,
+  log_lik = TRUE
+)
 
 \method{print}{jsdmstan_model}(x, ...)
 }
@@ -15,7 +21,7 @@ jsdm_stancode(method, family, prior = NULL, phylo = FALSE, log_lik = TRUE)
 \item{family}{The family, one of "\code{"gaussian"}, \code{"bernoulli"},
 \code{"poisson"} or \code{"neg_binomial"}}
 
-\item{prior}{The prior, currently only default (i.e. \code{NULL}) supported}
+\item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{phylo}{Whether phylo should be included, only for MGLMM}
 

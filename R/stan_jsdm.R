@@ -31,6 +31,8 @@
 #'@param site_intercept Whether the model should be fit with a site intercept, by
 #'  default \code{FALSE}
 #'
+#'@param prior Set of prior specifications from call to [jsdm_prior()]
+#'
 #'@param phylo A distance matrix between species (not necessarily phylogenetic). The
 #'  default \code{FALSE} does not incorporate phylogenetic information.
 #'
@@ -86,6 +88,7 @@ stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
 #' @export
 stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
                       dat_list = NULL, family, site_intercept = FALSE, D = NULL,
+                      prior = jsdm_prior(),
                       phylo = FALSE, covar = "matern_05", delta = 1e-5,
                       save_data = TRUE, iter = 4000, log_lik = TRUE, ...){
   family <- match.arg(family, c("gaussian","bernoulli","poisson","neg_binomial"))
@@ -123,7 +126,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 
   # Create stancode
   model_code <- jsdm_stancode(family = family,
-                              method = method, prior = NULL, phylo = phylo,
+                              method = method, prior = prior, phylo = phylo,
                               log_lik = log_lik)
 
   # Compile model
@@ -172,11 +175,12 @@ stan_mglmm <- function(X, ...) UseMethod("stan_mglmm")
 #' @export
 stan_mglmm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE,
                                dat_list = NULL, family, site_intercept = FALSE,
+                               prior = jsdm_prior(),
                                phylo = FALSE, covar = "matern_05", delta = 1e-5,
                                save_data = TRUE, iter = 4000, ...){
   stan_jsdm.default(X = X, Y = Y, species_intercept = species_intercept, method = "mglmm",
                     dat_list = dat_list, family, site_intercept = site_intercept,
-                    phylo = phylo, covar = covar, delta = delta,
+                    phylo = phylo, covar = covar, delta = delta, prior = prior,
                     save_data = save_data, iter = iter, ...)
 }
 #' @describeIn stan_mglmm Formula interface
@@ -195,10 +199,11 @@ stan_gllvm <- function(X, ...) UseMethod("stan_gllvm")
 #' @export
 stan_gllvm.default <- function(X = NULL, Y = NULL, D = NULL, species_intercept = TRUE,
                        dat_list = NULL, family, site_intercept = FALSE,
+                       prior = jsdm_prior(),
                        phylo = FALSE, covar = "matern_05", delta = 1e-5,
                        save_data = TRUE, iter = 4000, ...){
   stan_jsdm.default(X = X, Y = Y, D = D, species_intercept = species_intercept,
-                    method = "gllvm",
+                    method = "gllvm", prior = prior,
                     dat_list = dat_list, family, site_intercept = site_intercept,
                     phylo = phylo, covar = covar, delta = delta,
                     save_data = save_data, iter = iter, ...)

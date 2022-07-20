@@ -43,3 +43,24 @@ test_that("mglmm_sim_data returns a list of correct length", {
   expect_named(mglmm_sim_phylo, c("Y", "pars", "N","S","D","K","X",
                                   "site_intercept","Dmat","delta","nu05"))
 })
+
+test_that("prior specification works", {
+  jsdm_sim <- jsdm_sim_data(N = 100, S = 8, K = 2, family = "gaus", method = "mglmm",
+                            prior = jsdm_prior(z_species = "student_t(3,0,2)",
+                                               sigma = "gamma(1,1)"))
+  expect_named(jsdm_sim, c("Y", "pars", "N","S","D","K","X",
+                            "site_intercept"))
+  jsdm_sim <- jsdm_sim_data(N = 50, S = 8, D = 2,
+                            family = "neg_binomial", method = "gllvm",
+                            prior = jsdm_prior(sigma_L = "invgamma(10,0.1)",
+                                               kappa = "cauchy(1,1)"))
+
+  expect_error(jsdm_sim_data(N = 50, S = 5, D = 2, family = "bern", method = "gllvm",
+                             prior = list(LV = "weibull(3,5)")),
+               "prior object must be of class jsdmprior")
+
+  expect_error(jsdm_sim_data(N = 50, S = 5, K = 2, D = 2,
+                             family = "gaus", method = "gllvm",
+                             prior = jsdm_prior(LV = "weibull(3,5)")),
+               "Not all prior distributions specified are supported.")
+})

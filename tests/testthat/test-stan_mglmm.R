@@ -38,8 +38,9 @@ test_that("stan_mglmm returns right type of object", {
 
   # neg bin
   mglmm_data <- mglmm_sim_data(N = 127, S = 12, K = 2, family = "neg_bin")
-  mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X, family = "neg_bin",
-                          refresh = 0, chains = 2)
+  suppressWarnings(mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
+                                           family = "neg_bin",
+                                           refresh = 0, chains = 2))
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 })

@@ -17,6 +17,7 @@ stan_jsdm(X, ...)
   family,
   site_intercept = FALSE,
   D = NULL,
+  prior = jsdm_prior(),
   phylo = FALSE,
   covar = "matern_05",
   delta = 1e-05,
@@ -53,6 +54,8 @@ of how this can be formatted.}
 default \code{FALSE}}
 
 \item{D}{The number of latent variables within a GLLVM model}
+
+\item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{phylo}{A distance matrix between species (not necessarily phylogenetic). The
 default \code{FALSE} does not incorporate phylogenetic information.}
