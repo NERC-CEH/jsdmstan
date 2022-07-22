@@ -101,23 +101,28 @@ multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 }}
 
 \examples{
-
 \dontrun{
- # MGLMM - specified by using the mglmm aliases and with direct reference to Y and
- # X matrices:
- mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
-                              family = "gaussian")
- mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
-                         family = "gaussian")
- mglmm_fit
+# MGLMM - specified by using the mglmm aliases and with direct reference to Y and
+# X matrices:
+mglmm_data <- mglmm_sim_data(
+  N = 100, S = 10, K = 3,
+  family = "gaussian"
+)
+mglmm_fit <- stan_mglmm(
+  Y = mglmm_data$Y, X = mglmm_data$X,
+  family = "gaussian"
+)
+mglmm_fit
 
- # You can also run a model by supplying the data as a list:
- gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
-                             family = "bernoulli")
- gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
-                        family = "bernoulli")
- gllvm_fit
-
-
+# You can also run a model by supplying the data as a list:
+gllvm_data <- jsdm_sim_data(
+  method = "gllvm", N = 100, S = 6, D = 2,
+  family = "bernoulli"
+)
+gllvm_fit <- stan_jsdm(
+  dat_list = gllvm_data, method = "gllvm",
+  family = "bernoulli"
+)
+gllvm_fit
 }
 }

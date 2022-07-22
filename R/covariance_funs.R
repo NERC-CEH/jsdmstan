@@ -33,22 +33,22 @@
 #'   function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
 #'   nu = 2.5 and 3 is the squared exponential.
 
-cov_matern <- function(x, sq_eta, rho, delta = 1e-5, nu05){
+cov_matern <- function(x, sq_eta, rho, delta = 1e-5, nu05) {
   N <- dim(x)[1]
   K <- matrix(ncol = N, nrow = N)
-  for (i in 1:(N-1)) {
-    K[i,i] <- sq_eta + delta
+  for (i in 1:(N - 1)) {
+    K[i, i] <- sq_eta + delta
     for (j in (i + 1):N) {
-      if(nu05 == 0L){
-        K[i, j] <- sq_eta * exp(- x[i,j]/rho )
-      } else if(nu05 == 1L){
-        K[i, j] <- sq_eta*(1 + x[i,j]/rho)*exp(- x[i,j]/rho)
-      } else if(nu05 == 2L){
-        K[i, j] <- sq_eta*(1 + x[i,j]/rho + (x[i,j]^2) / (3*(rho^2)))*exp(- x[i,j]/rho)
-      } else if(nu05 == 3L){
-        K[i,j] <- sq_eta*exp(-((x[i,j]/rho)^2)/2)
-      } else{
-        stop("nu05 must be integer in range 0-3, given as:",nu05)
+      if (nu05 == 0L) {
+        K[i, j] <- sq_eta * exp(-x[i, j] / rho)
+      } else if (nu05 == 1L) {
+        K[i, j] <- sq_eta * (1 + x[i, j] / rho) * exp(-x[i, j] / rho)
+      } else if (nu05 == 2L) {
+        K[i, j] <- sq_eta * (1 + x[i, j] / rho + (x[i, j]^2) / (3 * (rho^2))) * exp(-x[i, j] / rho)
+      } else if (nu05 == 3L) {
+        K[i, j] <- sq_eta * exp(-((x[i, j] / rho)^2) / 2)
+      } else {
+        stop("nu05 must be integer in range 0-3, given as:", nu05)
       }
       K[j, i] <- K[i, j]
     }
@@ -58,6 +58,6 @@ cov_matern <- function(x, sq_eta, rho, delta = 1e-5, nu05){
 }
 
 #' @describeIn cov_matern alias for fitting squared exponential with
-cov_sq_exp <- function(x, sq_eta, rho, delta = 1e-5){
+cov_sq_exp <- function(x, sq_eta, rho, delta = 1e-5) {
   cov_matern(x = x, sq_eta = sq_eta, rho = rho, delta = delta, nu05 = 3)
 }

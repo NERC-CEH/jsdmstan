@@ -63,26 +63,32 @@ plot all parameters (there will be hundreds in any reasonably sized model) set
 \code{pars = get_parnames(x)}.
 }
 \examples{
-
 \dontrun{
- # First simulate data and fit the model:
- gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
-                             family = "bernoulli")
- gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
-                        family = "bernoulli")
+# First simulate data and fit the model:
+gllvm_data <- jsdm_sim_data(
+  method = "gllvm", N = 100, S = 6, D = 2,
+  family = "bernoulli"
+)
+gllvm_fit <- stan_jsdm(
+  dat_list = gllvm_data, method = "gllvm",
+  family = "bernoulli"
+)
 
- # Default is to plot the intervals:
- mcmc_plot(gllvm_fit)
+# Default is to plot the intervals:
+mcmc_plot(gllvm_fit)
 
- # Other plot types include options to see parameter recovery (if the
- # jsdm_sim_data functions are used the original parameters are saved within the
- # data list)
- mcmc_plot(gllvm_fit, plotfun = "recover_intervals",
-           pars = c("LV[2,20]","sigmas_b[1]","sigma_L"),
-           true = c(gllvm_data$pars$LV[2,20],
-                    gllvm_data$pars$beta_sds,
-                    gllvm_data$pars$L_sigma))
-
+# Other plot types include options to see parameter recovery (if the
+# jsdm_sim_data functions are used the original parameters are saved within the
+# data list)
+mcmc_plot(gllvm_fit,
+  plotfun = "recover_intervals",
+  pars = c("LV[2,20]", "sigmas_b[1]", "sigma_L"),
+  true = c(
+    gllvm_data$pars$LV[2, 20],
+    gllvm_data$pars$beta_sds,
+    gllvm_data$pars$L_sigma
+  )
+)
 }
 
 }

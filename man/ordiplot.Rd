@@ -54,17 +54,19 @@ This function takes a GLLVM model fit and plots an ordination plot with a random
 (or specified) selection of draws
 }
 \examples{
-
 \dontrun{
- # First simulate data and fit the model:
- gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 3,
-                             family = "bernoulli")
- gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
-                        family = "bernoulli")
+# First simulate data and fit the model:
+gllvm_data <- jsdm_sim_data(
+  method = "gllvm", N = 100, S = 6, D = 3,
+  family = "bernoulli"
+)
+gllvm_fit <- stan_jsdm(
+  dat_list = gllvm_data, method = "gllvm",
+  family = "bernoulli"
+)
 
 ordiplot(gllvm_fit)
 # now plot the 1st and 3rd latent variables against each other for the sites:
-ordiplot(gllvm_fit, choices = c(1,3), type = "sites")
-
+ordiplot(gllvm_fit, choices = c(1, 3), type = "sites")
 }
 }

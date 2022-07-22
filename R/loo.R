@@ -14,6 +14,6 @@
 #'   \code{\link[loo]{loo}} documentation
 #'
 #'
-loo.jsdmStanFit <- function(object, ...){
+loo.jsdmStanFit <- function(object, ...) {
   rstan::loo(object$fit, ...)
 }

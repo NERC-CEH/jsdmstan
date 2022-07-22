@@ -79,20 +79,21 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
                        sigma = "normal(0,1)",
                        kappa = "normal(0,1)",
                        etasq = "inv_gamma(10,.1)",
-                       rho = "inv_gamma(10,.1)"){
-  res <- list(sigmas_b = sigmas_b, z_preds = z_preds, L_Rho_preds = L_Rho_preds,
-              a = a, a_bar = a_bar, sigma_a = sigma_a,
-              sigmas_u = sigmas_u, z_species = z_species,
-              L_Rho_species = L_Rho_species,
-              LV = LV, L= L, sigma_L = sigma_L,
-              sigma = sigma, kappa = kappa,
-              etasq = etasq, rho = rho)
-  if(!(all(sapply(res, is.character)))){
+                       rho = "inv_gamma(10,.1)") {
+  res <- list(
+    sigmas_b = sigmas_b, z_preds = z_preds, L_Rho_preds = L_Rho_preds,
+    a = a, a_bar = a_bar, sigma_a = sigma_a,
+    sigmas_u = sigmas_u, z_species = z_species,
+    L_Rho_species = L_Rho_species,
+    LV = LV, L = L, sigma_L = sigma_L,
+    sigma = sigma, kappa = kappa,
+    etasq = etasq, rho = rho
+  )
+  if (!(all(sapply(res, is.character)))) {
     stop("All arguments must be supplied as character vectors")
   }
-  class(res) <- c("jsdmprior","list")
+  class(res) <- c("jsdmprior", "list")
   return(res)
-
 }
 
 #' @describeIn jsdm_prior Print method for object of class \code{jsdmprior}
@@ -102,15 +103,21 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
 #'
 #' @return
 #' @export
-print.jsdmprior <- function(x, ...){
-  df <- data.frame(Parameter = names(x),
-                   Group = c(rep("species_intercept",3),
-                             rep("site_intercept",3),
-                             rep("mglmm",3),
-                             rep("gllvm",3),
-                             "gaussian","neg_binomial","phylo","phylo"),
-                   Constraint = c("lower=0",rep("none",4),rep("lower=0",2),
-                                  rep("none",4),rep("lower=0",5)),
-                   Prior = unlist(unname(x)))
+print.jsdmprior <- function(x, ...) {
+  df <- data.frame(
+    Parameter = names(x),
+    Group = c(
+      rep("species_intercept", 3),
+      rep("site_intercept", 3),
+      rep("mglmm", 3),
+      rep("gllvm", 3),
+      "gaussian", "neg_binomial", "phylo", "phylo"
+    ),
+    Constraint = c(
+      "lower=0", rep("none", 4), rep("lower=0", 2),
+      rep("none", 4), rep("lower=0", 5)
+    ),
+    Prior = unlist(unname(x))
+  )
   print(df)
 }
