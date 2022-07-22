@@ -18,6 +18,14 @@
 #' prior is set on the non-zero matrix components \code{L} and not on the entire
 #' matrix).
 #'
+#' Prior distributions supported by [jsdm_sim_data()] are \code{"normal(mean, sd)"},
+#' \code{"student_t(df, mu, sigma)"}, \code{"cauchy(location, scale)"},
+#' \code{"gamma(shape, scale)"}, \code{"inv_gamma(shape, scale)"} and
+#' \code{"lkj_corr_cholesky(eta)"}.
+#'
+#' @seealso [sim_helpers] for a description of the parameterisations used within the
+#'   data simulation functions
+#'
 #'
 #' @param sigmas_b The standard deviation of the covariate effects, constrained to be
 #'   positive (default standard normal)
@@ -70,8 +78,8 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
                        sigma_L = "normal(0,1)",
                        sigma = "normal(0,1)",
                        kappa = "normal(0,1)",
-                       etasq = "invgamma(10,.1)",
-                       rho = "invgamma(10,.1)"){
+                       etasq = "inv_gamma(10,.1)",
+                       rho = "inv_gamma(10,.1)"){
   res <- list(sigmas_b = sigmas_b, z_preds = z_preds, L_Rho_preds = L_Rho_preds,
               a = a, a_bar = a_bar, sigma_a = sigma_a,
               sigmas_u = sigmas_u, z_species = z_species,

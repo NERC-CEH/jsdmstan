@@ -292,6 +292,7 @@ matrix cov_matern(matrix x, real sq_eta, real rho, real delta, int nu05){
           K[i, j] = sq_eta*(1 + dist_rho + pow(dist_rho, 2) / 3)*exp(- dist_rho);
         } else if(nu05 == 3){
           real dist_rho;
+          dist_rho = x[i,j]/rho;
           K[i, j] = sq_eta * exp(- pow(dist_rho, 2) / 2);
           } else {
           reject("nu05 must be an integer in range 0-3, given as:",nu05);

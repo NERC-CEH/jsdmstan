@@ -102,8 +102,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     if(!is.matrix(phylo)) stop("Phylo must be either FALSE or a matrix")
     if(!all(dim(phylo) == ncol(Y)))
       stop("Phylo must be a square matrix with dimensions equal to ncol(Y)")
-    if(!isSymmetric(phylo) | any(eigen(phylo)$values<0))
-      stop("Phylo must be symmetric and semipositive definite")
+    if(!isSymmetric(phylo))
+      stop("Phylo must be symmetric")
 
     covar <- match.arg(covar, c("matern_05","exponential","matern_15","matern_25",
                                 "sq_exponential","matern_inf"))
@@ -126,7 +126,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 
   # Create stancode
   model_code <- jsdm_stancode(family = family,
-                              method = method, prior = prior, phylo = phylo,
+                              method = method, prior = prior,
+                              phylo = !isFALSE(phylo),
                               log_lik = log_lik)
 
   # Compile model
@@ -214,6 +215,8 @@ stan_gllvm.formula <- function(formula, data = list(), ...){
   stan_jsdm.formula(formula, data = data, method = "gllvm", ...)
 }
 
+
+# Internal ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept,phylo,

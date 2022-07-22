@@ -57,14 +57,17 @@
 #'@param delta Nugget added to diagonal of resulting matrix to keep it positive
 #'  definite
 #'
-#'@param nu05 Must be an integer in range 0-3. Indicates what type of covariance
-#'  function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
-#'  nu = 2.5 and 3 is the squared exponential.
+#'@param covar The covariance function as a character string, options are Matérn
+#'  kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2
+#'  (\code{"matern_25"}), or infinite (\code{"matern_inf"}). Matérn kernel with
+#'  infinite nu is equivalent to the squared exponential kernel
+#'  (\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the exponential kernel
+#'  (\code{"exponential"}).
 #'
 #'@param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mglmm"),
                           phylo = FALSE, species_intercept = TRUE,
-                          site_intercept = FALSE, delta = NULL, nu05 = NULL,
+                          site_intercept = FALSE, delta = NULL, covar = NULL,
                           prior = jsdm_prior()){
   response <- match.arg(family, c("gaussian","neg_binomial","poisson","bernoulli"))
 
@@ -82,13 +85,25 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   if (isTRUE(phylo) & method == "gllvm") {
     stop("Phylogenetic sharing of information not currently supported for GLLVM")
   }
+
   if (isTRUE(phylo) & !requireNamespace("ape", quietly = TRUE)) {
     stop("The ape package is required for random generation of phylogenetic trees")
   }
-  if (isTRUE(phylo) & any(c(is.null(delta), is.null(nu05)))) {
-    stop("Need to specify delta and nu05 arguments for phylo")
+  if (isTRUE(phylo) & any(c(is.null(delta), is.null(covar)))) {
+    stop("Need to specify delta and covar arguments for phylo")
   }
-
+  if(!isFALSE(phylo)){
+    covar <- match.arg(covar, c("matern_05","exponential","matern_15","matern_25",
+                                "sq_exponential","matern_inf"))
+    nu05 <- switch(covar, "matern_05" = 0L,
+                   "exponential" = 0L,
+                   "matern_15" = 1L,
+                   "matern_25" = 2L,
+                   "sq_exponential" = 3L,
+                   "matern_inf" = 3L)
+  } else{
+    nu05 <- NULL
+  }
   if(method == "gllvm" & !is.double(D)){
     stop("gllvm method require D to be a positive integer")
   }
@@ -101,7 +116,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   prior_split <- lapply(prior, strsplit, split = "\\(|\\)|,")
   if(!all(sapply(prior_split, function(x) {
     x[[1]][1] %in% c("normal",
-                      "invgamma",
+                      "inv_gamma",
                       "lkj_corr_cholesky",
                       "student_t",
                       "cauchy",
@@ -117,7 +132,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
     # print(str(y[[1]][[1]]))
     fun_name <- switch(y[[1]][[1]][1],
                        "normal" = "rnorm",
-                       "invgamma" = "rinvgamma",
+                       "inv_gamma" = "rinvgamma",
                        "lkj_corr_cholesky" = "rlkj",
                        "student_t" = "rstudentt",
                        "cauchy" = "rcauchy",
@@ -150,6 +165,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm","mg
   # build phylogenetic tree - need to add check
   # if(phylo & )
   if(isTRUE(phylo)){
+
 
     sq_eta <- do.call(match.fun(prior_func[["etasq"]][[1]]),
                       prior_func[["etasq"]][[2]])

@@ -25,23 +25,11 @@ test_that("mglmm_sim_data errors with bad inputs", {
                "N and S must be positive integers")
 })
 
-test_that("mglmm_sim_data errors without phylo details", {
-  expect_error(mglmm_sim_data(N = 100, S = 5, family = "bern", phylo = TRUE),
-               "Need to specify delta and nu05 arguments for phylo")
-
-  expect_error(mglmm_sim_data(N = 100, S = 5, family = "gauss", phylo = TRUE,
-                              nu05 = 4, delta = 1e-10),
-               "nu05 must be integer in range 0-3, given as:4")
-})
 
 test_that("mglmm_sim_data returns a list of correct length", {
   mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "bern")
   expect_named(mglmm_sim, c("Y", "pars", "N","S","D","K","X",
                             "site_intercept"))
-  mglmm_sim_phylo <- mglmm_sim_data(N = 100, S = 5, phylo = TRUE, delta = 1e-5,
-                                    nu05= 1, family = "gauss")
-  expect_named(mglmm_sim_phylo, c("Y", "pars", "N","S","D","K","X",
-                                  "site_intercept","Dmat","delta","nu05"))
 })
 
 test_that("prior specification works", {
@@ -52,7 +40,7 @@ test_that("prior specification works", {
                             "site_intercept"))
   jsdm_sim <- jsdm_sim_data(N = 50, S = 8, D = 2,
                             family = "neg_binomial", method = "gllvm",
-                            prior = jsdm_prior(sigma_L = "invgamma(10,0.1)",
+                            prior = jsdm_prior(sigma_L = "inv_gamma(10,0.1)",
                                                kappa = "cauchy(1,1)"))
 
   expect_error(jsdm_sim_data(N = 50, S = 5, D = 2, family = "bern", method = "gllvm",

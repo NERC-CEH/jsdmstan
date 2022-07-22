@@ -291,6 +291,8 @@ mcmc_plot <- function(x, ...) {
 ordiplot <- function(object, choices = c(1,2), type = "species",
                      summary_stat = "mean", ndraws = 20, draw_ids = NULL,
                      size = c(2,1), alpha = c(1,0.5), shape = c(18,16)){
+  # try to remove CMD check note
+  LV <- NULL
   if(class(object) != "jsdmStanFit")
     stop("Only objects of class jsdmStanFit are supported")
   if(object$jsdm_type != "gllvm")

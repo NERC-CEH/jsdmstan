@@ -17,7 +17,7 @@ jsdm_sim_data(
   species_intercept = TRUE,
   site_intercept = FALSE,
   delta = NULL,
-  nu05 = NULL,
+  covar = NULL,
   prior = jsdm_prior()
 )
 
@@ -53,9 +53,12 @@ given distance matrix.}
 \item{delta}{Nugget added to diagonal of resulting matrix to keep it positive
 definite}
 
-\item{nu05}{Must be an integer in range 0-3. Indicates what type of covariance
-function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
-nu = 2.5 and 3 is the squared exponential.}
+\item{covar}{The covariance function as a character string, options are Matérn
+kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2
+(\code{"matern_25"}), or infinite (\code{"matern_inf"}). Matérn kernel with
+infinite nu is equivalent to the squared exponential kernel
+(\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the exponential kernel
+(\code{"exponential"}).}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 

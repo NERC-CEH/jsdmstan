@@ -20,8 +20,8 @@ jsdm_prior(
   sigma_L = "normal(0,1)",
   sigma = "normal(0,1)",
   kappa = "normal(0,1)",
-  etasq = "invgamma(10,.1)",
-  rho = "invgamma(10,.1)"
+  etasq = "inv_gamma(10,.1)",
+  rho = "inv_gamma(10,.1)"
 )
 
 \method{print}{jsdmprior}(x, ...)
@@ -100,6 +100,11 @@ vectors or matrices the prior has to be the same across the entire vector or
 matrix (note that for the species latent variable loadings in a GLLVM model the
 prior is set on the non-zero matrix components \code{L} and not on the entire
 matrix).
+
+Prior distributions supported by \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} are \code{"normal(mean, sd)"},
+\code{"student_t(df, mu, sigma)"}, \code{"cauchy(location, scale)"},
+\code{"gamma(shape, scale)"}, \code{"inv_gamma(shape, scale)"} and
+\code{"lkj_corr_cholesky(eta)"}.
 }
 \section{Methods (by generic)}{
 \itemize{
@@ -110,4 +115,8 @@ matrix).
 pr <- jsdm_prior(L_Rho_preds = "normal(0,10)")
 pr
 
+}
+\seealso{
+\link{sim_helpers} for a description of the parameterisations used within the
+data simulation functions
 }
