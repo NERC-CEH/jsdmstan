@@ -45,6 +45,6 @@ Matérn with \eqn{\nu = Inf}, or squared exponential: \deqn{sq_eta *
 }
 \section{Functions}{
 \itemize{
-\item \code{cov_sq_exp}: alias for fitting squared exponential with
-}}
+\item \code{cov_sq_exp()}: alias for fitting squared exponential with
 
+}}

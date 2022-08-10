@@ -96,10 +96,10 @@ draw from a LKJ correlation matrix with eta = 1.
 }
 \section{Functions}{
 \itemize{
-\item \code{gllvm_sim_data}: Alias for \code{jsdm_sim_data} with \code{method =
+\item \code{gllvm_sim_data()}: Alias for \code{jsdm_sim_data} with \code{method =
 "gllvm"}
 
-\item \code{mglmm_sim_data}: Alias for \code{jsdm_sim_data} with \code{method =
+\item \code{mglmm_sim_data()}: Alias for \code{jsdm_sim_data} with \code{method =
 "mglmm"}
-}}
 
+}}

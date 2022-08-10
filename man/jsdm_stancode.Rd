@@ -39,11 +39,11 @@ A character vector of Stan code, class "jsdmstan_model"
 This function returns the Stan code used to fit the model as specified by the data
 list, family and method.
 }
-\section{Methods (by generic)}{
+\section{Functions}{
 \itemize{
-\item \code{print}: A printing function for jsdmstan_model objects
-}}
+\item \code{print(jsdmstan_model)}: A printing function for jsdmstan_model objects
 
+}}
 \examples{
 jsdm_stancode(family = "gaussian", method = "gllvm")
 jsdm_stancode(family = "poisson", method = "mglmm", phylo = TRUE)

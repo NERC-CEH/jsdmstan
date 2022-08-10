@@ -21,4 +21,5 @@ NULL
 
 # Suppress R CMD check note
 #' @importFrom RcppParallel CxxFlags
+#' @import BH
 NULL

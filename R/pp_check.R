@@ -103,7 +103,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
 
   if (is.character(summary_stat)) {
     stat_fun <- get(summary_stat)
-  } else if (class(summary_stat) == "function") {
+  } else if (inherits(summary_stat, "function")) {
     stat_fun <- summary_stat
   }
   y <- apply(
@@ -191,7 +191,7 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
                              calc_over = "site", simplify = TRUE,
                              draw_ids = NULL, ndraws = NULL,
                              ...) {
-  if (class(object) != "jsdmStanFit") {
+  if (!inherits(object, "jsdmStanFit")) {
     stop("jsdm_summary only works for jsdmStanFit objects")
   }
   if (!is.null(species) & !is.character(species)) {
@@ -224,7 +224,7 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
 
   if (is.character(summary_stat)) {
     stat_fun <- get(summary_stat)
-  } else if (class(summary_stat) == "function") {
+  } else if (inherits(summary_stat, "function")) {
     stat_fun <- summary_stat
   }
 

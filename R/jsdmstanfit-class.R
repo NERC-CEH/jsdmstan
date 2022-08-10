@@ -289,7 +289,7 @@ NULL
 #'
 #' @export
 get_parnames <- function(object, log_lik = FALSE) {
-  if (class(object) != "jsdmStanFit") {
+  if (!inherits(object, "jsdmStanFit")) {
     stop("This only works for jsdmStanFit objects")
   }
   parnames <- names(object$fit)

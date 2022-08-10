@@ -34,6 +34,18 @@ mcmc_plot(mglmm_fit, plotfun = "rhat_hist")
 
 ***
 
+NOTE: If using R version >4.2 and RTools42 on Windows, then this package will not work with the CRAN version of rstan (see the Stan [blogpost](https://blog.mc-stan.org/2022/04/26/stan-r-4-2-on-windows/) for more information). Instead, remove your old `rstan` and `StanHeaders` and install the `rstan` version from the Stan repository rather than CRAN using the following commands:
+
+```
+remove.packages(c("rstan", "StanHeaders"))
+install.packages("rstan", repos = c("https://mc-stan.org/r-packages/", 
+                                    getOption("repos")))
+```
+
+If you're still experiencing problems please raise an issue on github.
+
+***
+
 This work was funded by the Natural Environment Research Council (part of UK Research and Innovation) under the UK-SCAPE Programme delivering National Capability (Grant Reference NE/R016429/1).
 
 ![UKCEH logo](./man/figures/UKCEH-Logo.png) ![UKSCAPE logo](./man/figures/uk_scape_logo.png)

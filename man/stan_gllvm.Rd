@@ -81,8 +81,8 @@ Alias for \code{stan_jsdm} with \code{method = "gllvm"}
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{default}: Default
+\item \code{stan_gllvm(default)}: Default
 
-\item \code{formula}: Formula interface
+\item \code{stan_gllvm(formula)}: Formula interface
+
 }}
-

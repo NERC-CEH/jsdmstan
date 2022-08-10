@@ -324,7 +324,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
                      size = c(2, 1), alpha = c(1, 0.5), shape = c(18, 16)) {
   # try to remove CMD check note
   LV <- NULL
-  if (class(object) != "jsdmStanFit") {
+  if (!inherits(object, "jsdmStanFit")) {
     stop("Only objects of class jsdmStanFit are supported")
   }
   if (object$jsdm_type != "gllvm") {
@@ -397,7 +397,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
   if (!is.null(summary_stat)) {
     if (is.character(summary_stat)) {
       stat_fun <- get(summary_stat)
-    } else if (class(summary_stat) == "function") {
+    } else if (inherits(summary_stat, "function")) {
       stat_fun <- summary_stat
     }
 

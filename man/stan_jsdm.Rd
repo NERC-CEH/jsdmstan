@@ -95,11 +95,11 @@ multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{default}: this is the default way of doing things
+\item \code{stan_jsdm(default)}: this is the default way of doing things
 
-\item \code{formula}: Formula interface
+\item \code{stan_jsdm(formula)}: Formula interface
+
 }}
-
 \examples{
 \dontrun{
 # MGLMM - specified by using the mglmm aliases and with direct reference to Y and

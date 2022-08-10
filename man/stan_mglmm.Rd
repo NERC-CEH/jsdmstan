@@ -78,8 +78,8 @@ Alias for \code{stan_jsdm} with \code{method = "mglmm"}
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{default}: Default
+\item \code{stan_mglmm(default)}: Default
 
-\item \code{formula}: Formula interface
+\item \code{stan_mglmm(formula)}: Formula interface
+
 }}
-

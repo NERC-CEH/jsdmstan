@@ -54,14 +54,14 @@ ratio.
 }
 \section{Functions}{
 \itemize{
-\item \code{get_parnames}: Get the model parameter names
+\item \code{get_parnames()}: Get the model parameter names
 
-\item \code{nuts_params.jsdmStanFit}: Get the NUTS parameters
+\item \code{nuts_params(jsdmStanFit)}: Get the NUTS parameters
 
-\item \code{log_posterior.jsdmStanFit}: Get the log posterior
+\item \code{log_posterior(jsdmStanFit)}: Get the log posterior
 
-\item \code{rhat.jsdmStanFit}: Get the R-hat
+\item \code{rhat(jsdmStanFit)}: Get the R-hat
 
-\item \code{neff_ratio.jsdmStanFit}: Get the n_eff ratio
+\item \code{neff_ratio(jsdmStanFit)}: Get the n_eff ratio
+
 }}
-

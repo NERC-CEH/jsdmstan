@@ -54,6 +54,6 @@ regular expression matching.
 }
 \section{Functions}{
 \itemize{
-\item \code{extract}: Generic method
-}}
+\item \code{extract()}: Generic method
 
+}}

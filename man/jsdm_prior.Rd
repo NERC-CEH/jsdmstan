@@ -78,8 +78,6 @@ kernel. See \code{\link[=cov_matern]{cov_matern()}} for details.}
 }
 \value{
 An object of class \code{"jsdmprior"} taking the form of a named list
-
-
 }
 \description{
 This function creates all of the potential priors used within a \code{jsdmstan}
@@ -106,11 +104,11 @@ Prior distributions supported by \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} a
 \code{"gamma(shape, scale)"}, \code{"inv_gamma(shape, scale)"} and
 \code{"lkj_corr_cholesky(eta)"}.
 }
-\section{Methods (by generic)}{
+\section{Functions}{
 \itemize{
-\item \code{print}: Print method for object of class \code{jsdmprior}
-}}
+\item \code{print(jsdmprior)}: Print method for object of class \code{jsdmprior}
 
+}}
 \examples{
 pr <- jsdm_prior(L_Rho_preds = "normal(0,10)")
 pr

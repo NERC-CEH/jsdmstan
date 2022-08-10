@@ -101,7 +101,6 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
 #' @param x Object of class \code{jsdmprior}
 #' @param ... Currently unused
 #'
-#' @return
 #' @export
 print.jsdmprior <- function(x, ...) {
   df <- data.frame(
