@@ -3,11 +3,14 @@
 \name{cov_matern}
 \alias{cov_matern}
 \alias{cov_sq_exp}
-\title{Calculate covariance functio based on a given data matrix}
+\alias{cov_exp}
+\title{Calculate covariance function based on a given data matrix}
 \usage{
 cov_matern(x, sq_eta, rho, delta = 1e-05, nu05)
 
 cov_sq_exp(x, sq_eta, rho, delta = 1e-05)
+
+cov_exp(x, sq_eta, rho, delta = 1e-05)
 }
 \arguments{
 \item{x}{Distance matrix}
@@ -33,18 +36,22 @@ Matérn kernel with \eqn{\nu} 1/2, 3/2, 5/2, or infinite. Matérn kernel with
 infinite nu is equivalent to the squared exponential kernel, and with \eqn{\nu}
 = 1/2 the exponential kernel.
 
-Matérn with \eqn{\nu = 1/2} (i.e. exponential): \deqn{sq_eta * exp(-x[i,j]/rho)}
+Matérn with \eqn{\nu = 1/2}, or exponential: \deqn{sq\_eta * \exp(-x_{ij}/rho)}
 
-Matérn with \eqn{\nu = 3/2}: \deqn{sq_eta * (1 + x[i,j]/rho) * exp(-x[i,j]/rho)}
+Matérn with \eqn{\nu = 3/2}: \deqn{sq\_eta * (1 + (\sqrt{3}x_{ij})/rho) * \exp(-\sqrt{3}x_{ij}/rho)}
 
-Matérn with \eqn{\nu = 5/2}: \deqn{sq_eta * (1 + x[i,j]/rho + (x[i,j]/rho)^2 /
-  3) * exp(-x[i,j]/rho)}
+Matérn with \eqn{\nu = 5/2}: \deqn{sq\_eta * (1 + \sqrt{5}x_{ij}/rho + 5(x_{ij}/rho)^2 /
+  3) * \exp(-\sqrt{5}x_{ij}/rho)}
 
-Matérn with \eqn{\nu = Inf}, or squared exponential: \deqn{sq_eta *
-  exp(-(x[i,j]/rho)^2)/2}
+Matérn with \eqn{\nu = \infty}, or squared exponential: \deqn{sq\_eta *
+  \exp(-(x_{ij}^2/2rho^2)}
+
+For more information see the phylogenetic models vignette.
 }
 \section{Functions}{
 \itemize{
-\item \code{cov_sq_exp()}: alias for fitting squared exponential with
+\item \code{cov_sq_exp()}: alias for fitting squared exponential
+
+\item \code{cov_exp()}: alias for fitting exponential
 
 }}

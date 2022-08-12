@@ -21,7 +21,7 @@
 #'  It makes a whole load of assumptions, incl that all parameters and measured
 #'  predictors are normally distributed with mean 0 and standard deviation 1, with
 #'  variance parameters being the absolute of this distribution. The exceptions are
-#'  that if there is a Matern (or exponential quadratic) kernel being fit the etasq
+#'  that if there is a Matern (or exponential quadratic) kernel being fit the sq_eta
 #'  and rho parameters are either simulated as an inverse gamma with shape 10 and
 #'  scale 0.1 if the invgamma package is installed or as an absolute value of a
 #'  normal distribution with mean 1 and standard deviation 0.2. If no phylogenetic
@@ -168,7 +168,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "sigma_L" = 1,
       "sigma" = 1,
       "kappa" = 1,
-      "etasq" = 1,
+      "sq_eta" = 1,
       "rho" = 1
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
@@ -182,8 +182,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   # if(phylo & )
   if (isTRUE(phylo)) {
     sq_eta <- do.call(
-      match.fun(prior_func[["etasq"]][[1]]),
-      prior_func[["etasq"]][[2]]
+      match.fun(prior_func[["sq_eta"]][[1]]),
+      prior_func[["sq_eta"]][[2]]
     )
     rho <- do.call(
       match.fun(prior_func[["rho"]][[1]]),
@@ -280,11 +280,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       match.fun(prior_func[["sigmas_u"]][[1]]),
       prior_func[["sigmas_u"]][[2]]
     ))
-    u_ftilde <- matrix(do.call(
+    z_species <- matrix(do.call(
       match.fun(prior_func[["z_species"]][[1]]),
       prior_func[["z_species"]][[2]]
     ), nrow = S, ncol = N)
-    u_ij <- t((diag(u_sds) %*% L_Rho_species) %*% u_ftilde)
+    u_ij <- t((diag(u_sds) %*% L_Rho_species) %*% z_species)
   }
 
   if (method == "gllvm") {
@@ -363,7 +363,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     z_betas = z_betas
   )
   if (isTRUE(phylo) | is.matrix(phylo)) {
-    pars$etasq <- sq_eta
+    pars$sq_eta <- sq_eta
     pars$rho <- rho
   }
 
@@ -380,7 +380,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if (method == "mglmm") {
     pars$u_sds <- u_sds
     pars$L_Rho_species <- L_Rho_species
-    pars$u_ftilde <- u_ftilde
+    pars$z_species <- z_species
   }
   if (isTRUE(species_intercept)) {
     if (K > 0) {

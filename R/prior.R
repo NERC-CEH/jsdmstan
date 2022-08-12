@@ -9,7 +9,7 @@
 #' simulated data functions, however there are functions that can be fed to the stan
 #' fitting procedure that will not be able to be used as input for [jsdm_sim_data()].
 #' Parameters \code{sigmas_b}, \code{sigma_a}, \code{sigmas_u}, \code{sigma_L},
-#' \code{sigma}, \code{kappa}, \code{etasq} and \code{rho} are fixed to be positive
+#' \code{sigma}, \code{kappa}, \code{sq_eta} and \code{rho} are fixed to be positive
 #' only in the stan code and this cannot be changed. Parameters \code{L_Rho_preds}
 #' and \code{L_Rho_species} are assumed to be the Cholesky factor of a correlation
 #' matrix. All other parameters are real numbers. For all parameters that represent
@@ -52,7 +52,7 @@
 #'   to be positive, default standard normal
 #' @param kappa For negative binomial response, the negative binomial variance
 #'   parameter. Constrained to be positive, default standard normal
-#' @param etasq For phylogenetic models, the variance parameter of the Matern kernel.
+#' @param sq_eta For phylogenetic models, the variance parameter of the Matern kernel.
 #'   See [cov_matern()] for details.
 #' @param rho For phylogenetic models, the length scale parameter of the Matern
 #'   kernel. See [cov_matern()] for details.
@@ -78,7 +78,7 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
                        sigma_L = "normal(0,1)",
                        sigma = "normal(0,1)",
                        kappa = "normal(0,1)",
-                       etasq = "inv_gamma(10,.1)",
+                       sq_eta = "inv_gamma(10,.1)",
                        rho = "inv_gamma(10,.1)") {
   res <- list(
     sigmas_b = sigmas_b, z_preds = z_preds, L_Rho_preds = L_Rho_preds,
@@ -87,7 +87,7 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
     L_Rho_species = L_Rho_species,
     LV = LV, L = L, sigma_L = sigma_L,
     sigma = sigma, kappa = kappa,
-    etasq = etasq, rho = rho
+    sq_eta = sq_eta, rho = rho
   )
   if (!(all(sapply(res, is.character)))) {
     stop("All arguments must be supplied as character vectors")

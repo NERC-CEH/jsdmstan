@@ -45,22 +45,24 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 .modelcode <- function(method, family, phylo, prior, log_lik) {
   model_functions <- "
-  matrix to_lower_tri(vector x, int nr, int nc){
-    matrix[nr,nc] y;
-    int pos = 1;
-    for(i in 1:nr){
-      for(j in 1:nc){
-        if(i < j){
-          y[i,j] = 0;
-        } else{
-          y[i,j] = x[pos];
-          pos += 1;
-        }
-      }
-    }
-    return y;
-  }
-"
+  "
+#   "
+#   matrix to_lower_tri(vector x, int nr, int nc){
+#     matrix[nr,nc] y;
+#     int pos = 1;
+#     for(i in 1:nr){
+#       for(j in 1:nc){
+#         if(i < j){
+#           y[i,j] = 0;
+#         } else{
+#           y[i,j] = x[pos];
+#           pos += 1;
+#         }
+#       }
+#     }
+#     return y;
+#   }
+# "
   data <- paste(
     "
   int<lower=1> N; // Number of samples
@@ -73,7 +75,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   matrix[N, K] X; // Predictor matrix
 
   int<lower=0,upper=1> site_intercept; // whether to include a site intercept
-  ",
+ ",
     switch(family,
       "gaussian" = "real ",
       "bernoulli" = "int<lower=0,upper=1> ",
@@ -322,11 +324,11 @@ matrix cov_matern(matrix x, real sq_eta, real rho, real delta, int nu05){
           K[i, j] = sq_eta * exp(- x[i,j]/rho );
         } else if(nu05 == 1){
           real dist_rho;
-          dist_rho = x[i,j]/rho;
+          dist_rho = sqrt(3) * x[i,j]/rho;
           K[i, j] = sq_eta*(1 + dist_rho)*exp(- dist_rho);
         } else if(nu05 == 2){
           real dist_rho;
-          dist_rho = x[i,j]/rho;
+          dist_rho = sqrt(5) * x[i,j]/rho;
           K[i, j] = sq_eta*(1 + dist_rho + pow(dist_rho, 2) / 3)*exp(- dist_rho);
         } else if(nu05 == 3){
           real dist_rho;
@@ -350,19 +352,18 @@ matrix cov_matern(matrix x, real sq_eta, real rho, real delta, int nu05){
 ")
     pars <- paste(gsub("cholesky_factor_corr\\[S\\] L_Rho_species;", "", pars), "
   // kernel parameters
-  real<lower=0> etasq;
+  real<lower=0> sq_eta;
   real<lower=0> rho;
 ")
     transformed_pars <- gsub(
-      "u = ",
-      "matrix[S,S] L_Rho_species;
-   L_Rho_species = cholesky_decompose(cov_matern(Dmat, etasq, rho, delta, nu05));
-   u = ",
+      "L_Rho_species",
+      "cholesky_decompose(cov_matern(Dmat, sq_eta, rho, delta, nu05))",
       transformed_pars
     )
-    model_priors <- paste(model_priors, "
+    model_priors <- paste(
+      gsub("L_Rho_species .* ;\n","",model_priors), "
   //kernel parameters
-  etasq ~ ", prior[["etasq"]], ";
+  sq_eta ~ ", prior[["sq_eta"]], ";
   rho ~ ", prior[["rho"]], ";
 ")
   }

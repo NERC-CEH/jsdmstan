@@ -87,7 +87,7 @@ overall model if the method used has covariance).
 It makes a whole load of assumptions, incl that all parameters and measured
 predictors are normally distributed with mean 0 and standard deviation 1, with
 variance parameters being the absolute of this distribution. The exceptions are
-that if there is a Matern (or exponential quadratic) kernel being fit the etasq
+that if there is a Matern (or exponential quadratic) kernel being fit the sq_eta
 and rho parameters are either simulated as an inverse gamma with shape 10 and
 scale 0.1 if the invgamma package is installed or as an absolute value of a
 normal distribution with mean 1 and standard deviation 0.2. If no phylogenetic

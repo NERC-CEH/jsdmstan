@@ -46,7 +46,7 @@ The entire matrix of covariance between species is modelled in MGLMMs.
 
 $$ u_{ij} \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma}) $$
 
-Within MGLMMs there is also the option to use a distance matrix between species to inform the result - further information on this will appear in a phylogenetic specific vignette as soon as I get around to writing one.
+Within MGLMMs there is also the option to use a distance matrix between species to inform the result - further information on this appears in the Phylogenetic Models vignette.
 
 Fitting the entire covariance matrix means that the amount of time required to fit these models scales with the number of species cubed, and the data required scales with the number of species squared. This makes these models both computationally and data intensive.
 
@@ -69,7 +69,6 @@ The default approach in jsdmstan is to assume that the response of species to en
 
 $$\beta_j \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma})$$
 
-This default behaviour can be overridden through specifying the 
 
 # Fitting a MGLMM
 
