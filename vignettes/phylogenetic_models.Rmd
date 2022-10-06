@@ -1,0 +1,128 @@
+---
+title: "Phylogenetic Models"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Phylogenetic Models}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(jsdmstan)
+```
+
+Within multivariate generalised linear mixed models (MGLMMs) there is the option to have the species covariance matrix be informed by a distance matrix. Throughout this vignette and the package we will refer to this distance matrix as a phylogenetic matrix but it does not need to be phylogenetic, it could represent distance between species based on some traits or some other appropriate distance matrix.
+
+Within these models there is a covariance function, also referred to as a kernel, fit to the distance matrix to establish how much information species should borrow from similar species and how similar species have to be to borrow information from them. The measure of how much information species should borrow is referred to as `etasq` throughout this package, and the measure of how similar species have to be is referred to as `rhosq`.
+
+There are four types of kernel supported within jsdmstan and they all fall within the Matérn covariance family. Within the Matérn family of covariance functions there is a parameter $\nu$ that at certain values (i.e. any positive natural number plus 1/2) resolves into a simpler form, and as $\nu$ goes to infinity the Matérn function converges to the squared exponential. The table below shows the values of $\nu$ supported by the jsdmstan package.
+
+| $\nu$    | Alternative name    | `jsdmstan` code (i.e. `covar = `)    |
+|----------|---------------------|--------------------------------------|
+| 1/2      | Exponential         | `"matern_05"` or `"exponential"`     |
+| 3/2      | N/A                 | `"matern_15"`                        |
+| 5/2      | N/A                 | `"matern_25"`                        |
+| $\infty$ | Squared Exponential | `"matern_inf"` or `"sq_exponential"` |
+
+
+
+## Equations
+
+Matérn with $\nu = 1/2$ (i.e. exponential): 
+$$\eta^2 * \exp{(-\frac{x_{ij}}{\rho})}$$
+
+Matérn with $\nu = 3/2$:
+$$\eta^2 *(1 + \frac{\sqrt{3}x_{ij}}{\rho} )* \exp{(-\frac{\sqrt{3}x_{ij}}{\rho})}$$
+
+Matérn with $\nu = 5/2$: 
+$$\eta^2 * (1 + \frac{\sqrt{5}x_{ij}}{\rho} + \frac{5x_{ij}^2}{3\rho^2}) * \exp{(-\frac{\sqrt{5}x_{ij}}{\rho})}$$
+
+Matérn with $\nu = \infty$, or squared exponential: 
+$$\eta^2 *exp(-\frac{x_{ij}^2}{2\rho^2})$$
+
+
+To show what kind of relationship these different kernels represent we'll now show some graphs of how covariance changes as the distance increases for the different kernels:
+
+```{r kernel graphs}
+distance <- seq(0,10,0.1)
+sq_eta <- 1
+rho <- 2
+nu05 <- sq_eta * exp(-distance/rho)
+nu15 <- sq_eta * (1 + (sqrt(3)*distance)/rho) * exp(-sqrt(3)*distance/rho)
+nu25 <- sq_eta * (1 + sqrt(5)*distance/rho + ((5*(distance^2))/(3*rho^2))) * exp(-sqrt(5)*distance/rho)
+nuinf <- sq_eta * exp(-(distance^2)/(2*(rho^2)))
+
+plot(distance, nu05, type = "l", col = "#56B4E9", lwd = 2,
+     xlab = "Distance", ylab = "Covariance")
+points(distance, nu15, type = "l", col = "#009E73", lwd = 2)
+points(distance, nu25, type = "l", col = "#E69F00", lwd = 2)
+points(distance, nuinf, type = "l", col = "#D55E00", lwd = 2)
+legend(8,1, c("nu 1/2","nu 3/2","nu 5/2","nu inf"),
+       fill = c("#56B4E9","#009E73","#E69F00","#D55E00"))
+
+```
+
+We can see that at low $nu$ the similarity between species drops off sharply at low distances, while as $nu$ increases there is more similarity between species at low distances, that then drop off at higher distances.
+
+# Simulating data
+
+Data can be simulated either by supplying a distance matrix to the `phylo` argument of the `jsdm_sim_data` function or by setting `phylo = TRUE`. If `phylo = TRUE` the `rtree` function from the ape package will be used to simulate a phylogenetic tree and then the distance matrix taken from this using `stats::cophenetic`. 
+
+The default prior (used by the data simulation) is `inv_gamma(10,0.1)` for both `etasq` and `rho`. This is constrained to be positive and is centred around 1, a histogram of a draw from this distribution is shown below. This is quite a tight prior, so you may want to change it through calling to `jsdm_prior()` for your own data.
+
+```{r rinvgamma}
+set.seed(13566720)
+hist(rinvgamma(10000,30,0.01), breaks = 20)
+```
+We will simulate data with the kernel having $\nu = 5/2$, setting `covar = "matern_25"` and with the poisson distribution. For phylogenetic models we also have to specify a small constant to add to the diagonal of the distance matrix to keep the covariance matrix semi-positive definite, `delta`.
+
+```{r data sim}
+N <- 100 # number sites
+S <- 12  # number of species
+phylo_dat <- mglmm_sim_data(N = N, S = S, K = 2, phylo = TRUE, covar = "matern_25",
+                            family = "poisson", delta = 1e-5)
+```
+
+If we examine the result of the call to `mglmm_sim_data` we can see that as well as the Y matrix and other features used within the non-phylogenetic models we also have Dmat, delta and nu05. Dmat is the distance matrix, delta the small constant we specified above and nu05 is an identifier for the $nu$ value used in the kernel ($nu05 = \nu - 0.5$).
+
+```{r}
+names(phylo_dat)
+```
+
+
+# Fitting the model
+
+Model code:
+
+```{r model code}
+jsdm_stancode(method = "mglmm", family = "poisson", phylo = TRUE, log_lik = FALSE)
+```
+
+
+We can fit the model through a call to the stan_jsdm function:
+
+```{r model fit}
+fit <- stan_jsdm(Y = phylo_dat$Y, family = "poisson", method = "mglmm",
+                 phylo = phylo_dat$Dmat, delta = 1e-5, covar = "matern_25",
+                 log_lik = FALSE)
+```
+
+
+
+```{r model kernel graphs}
+distance <- seq(0,1,0.01)
+sq_eta <- 1
+rho <- 2
+nu25 <- sq_eta * (1 + sqrt(5)*distance/rho + ((5*(distance^2))/(3*rho^2))) * exp(-sqrt(5)*distance/rho)
+
+plot(distance, nu25, type = "l", col = "#56B4E9", lwd = 2,
+     xlab = "Distance", ylab = "Covariance")
+
+```

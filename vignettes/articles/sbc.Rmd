@@ -1,0 +1,220 @@
+---
+title: "Simulation Based Calibration"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(jsdmstan)
+```
+
+Description of Simulation Based Calibration (and links)
+
+What parameters are we wanting to recover
+
+MGLMMs:
+
+* covariate effects (betas)
+* species covariance
+* variance parameters
+
+GLLVMs:
+
+* covariate effects (betas)
+* latent variable loadings
+* variance parameters
+
+Set up function for simulating data, fitting model and then recovering the rank and something for the parameters of interest:
+
+```{r SBC function}
+jsdm_sbc <- function(object, N, S, D = NULL, K = 0L, sbc_pars, ...){
+  sim_data <- jsdm_sim_data(N = N, S = S, D = D, K = K, 
+                            family = object$family, method = object$jsdm_type)
+  capture.output(fit <- update(object, newX = sim_data$X, newY = sim_data$Y, 
+                               save_data = FALSE, ...))
+  
+  # Compute diagnostics
+  np_fit <- nuts_params(fit)
+  anydiv <- any(np_fit[np_fit$Parameter == "divergent","Value"]>0)
+  fit_summ <- summary(fit, pars = sbc_pars)
+  anyess <- any(fit_summ[,c("Bulk.ESS","Tail.ESS")]<500)
+  
+  pars_list <- lapply(sbc_pars,function(x){
+    param <- extract(fit, x)[[1]]
+    x2 <- strsplit(x, "\\[|\\]|,")[[1]]
+    if(length(x2) == 3L){
+    simu_param <- sim_data$pars[[x2[1]]][as.numeric(x2[2]),as.numeric(x2[3])]
+    } else if(length(x2) == 2L){
+      simu_param <- sim_data$pars[[x2[1]]][as.numeric(x2[2])]
+    } else if(length(x2) == 1L){
+      simu_param <- sim_data$pars[[x2[1]]]
+    } else stop("Can't deal with this parameter")
+    # Compute rank of prior draw with respect to thinned posterior draws
+    sbc_rank <- sum(simu_param < param)
+    
+    # Compute posterior sensitivities
+    post_mean <- fit_summ[x,"mean"]
+    post_sd <- fit_summ[x,"sd"]
+    
+    prior_sd <- 1
+    
+    z_score <- (post_mean - simu_param) / post_sd
+    contraction <- 1 - (post_sd / prior_sd)**2
+    
+    res <- c(sbc_rank, z_score, contraction)
+    
+    names(res) <- paste0(x,c("__sbcrank","__zscore","__contraction"))
+    
+    return(res)
+  })
+  
+  
+  c(anydiv = 1*anydiv, anyess = 1*anyess, unlist(pars_list))
+  
+}
+```
+
+```{r}
+sim_data1 <- jsdm_sim_data(N = 100, S = 10, D = NULL, K = 3L, 
+                            family = "poisson", method = "mglmm")
+sim_fit1 <- stan_jsdm(X = sim_data1$X, Y = sim_data1$Y, 
+                      method = "mglmm", family = "poisson", log_lik = FALSE,
+                      iter = 100)
+```
+
+Check to see if works:
+```{r}
+N <- 100
+S <- 10
+K <- 3
+beta_parnames <- paste0("betas[",rep(1:(K+1),S),",",
+                                       rep(1:S,each = (K+1)),"]")
+rho_matr <- matrix(paste(rep(1:S,S),rep(1:S,each=S),sep=","),S,S)
+rho_lower <- rho_matr[lower.tri(rho_matr, diag = TRUE)]
+rho_parnames <- paste0("L_Rho_species[",rho_lower[2:length(rho_lower)],"]")
+sim_test <- jsdm_sbc(sim_fit1, N = N, S = S, K = K, 
+                     sbc_pars = c(beta_parnames, rho_parnames))
+```
+
+
+Run in parallel:
+```{r}
+library(future.apply)
+plan(multisession)
+
+```
+
+```{r}
+set.seed(468942)
+mglmm_N100_S10_pois <- future_replicate(100, {
+  jsdm_sbc(sim_fit1, N = N, S = S, K = K, 
+           sbc_pars = c(beta_parnames, rho_parnames), iter = 8000,
+                     control = list(adapt_delta = 0.95))},
+  future.seed = TRUE)
+write.csv(mglmm_N100_S10_pois, "mglmm_N100_S10_pois.csv")
+```
+
+```{r}
+N <- 1000
+mglmm_N1000_S10_pois <- future_replicate(100, {
+  jsdm_sbc(sim_fit1, N = N, S = S, K = K, 
+           sbc_pars = c(beta_parnames, rho_parnames), iter = 8000,
+                     control = list(adapt_delta = 0.95))},
+  future.seed = TRUE)
+write.csv(mglmm_N1000_S10_pois, "mglmm_N1000_S10_pois.csv")
+```
+
+```{r}
+N <- 500
+S <- 50
+beta_parnames <- paste0("betas[",rep(1:(K+1),S),",",
+                                       rep(1:S,each = (K+1)),"]")
+rho_matr <- matrix(paste(rep(1:S,S),rep(1:S,each=S),sep=","),S,S)
+rho_lower <- rho_matr[lower.tri(rho_matr, diag = TRUE)]
+rho_parnames <- paste0("L_Rho_species[",rho_lower[2:length(rho_lower)],"]")
+mglmm_N500_S50_pois <- future_replicate(100, {
+  jsdm_sbc(sim_fit1, N = N, S = S, K = K, 
+           sbc_pars = c(beta_parnames, rho_parnames), iter = 8000,
+                     control = list(adapt_delta = 0.95))},
+  future.seed = TRUE)
+write.csv(mglmm_N500_S50_pois, "mglmm_N500_S50_pois.csv")
+```
+
+
+```{r}
+N <- 1000
+S <- 50
+beta_parnames <- paste0("betas[",rep(1:(K+1),S),",",
+                                       rep(1:S,each = (K+1)),"]")
+rho_matr <- matrix(paste(rep(1:S,S),rep(1:S,each=S),sep=","),S,S)
+rho_lower <- rho_matr[lower.tri(rho_matr, diag = TRUE)]
+rho_parnames <- paste0("L_Rho_species[",rho_lower[2:length(rho_lower)],"]")
+mglmm_N1000_S50_pois <- future_replicate(100, {
+  jsdm_sbc(sim_fit1, N = N, S = S, K = K, 
+           sbc_pars = c(beta_parnames, rho_parnames), iter = 8000,
+                     control = list(adapt_delta = 0.95))},
+  future.seed = TRUE)
+write.csv(mglmm_N1000_S50_pois, "mglmm_N1000_S50_pois.csv")
+```
+
+```{r}
+library(tidyr, exclude = "extract")
+library(ggplot2)
+```
+
+
+```{r}
+table(test$anydiv,test$anyess)
+```
+
+```{r}
+longtest <- pivot_longer(test, contains("__"), names_to = c("param","stat"), 
+                         names_sep = "__") %>% 
+  pivot_wider(names_from = "stat", values_from = "value") %>%
+  filter(anydiv == 0 & anyess == 0) %>%
+  rename(Model = X)
+str(longtest)
+```
+
+```{r}
+qbinom(c(0.015,0.985),48,1/10)
+```
+
+```{r}
+ggplot(filter(longtest, grepl("betas",param)), aes(x = sbcrank)) + 
+  geom_histogram(bins = 10) +
+  geom_hline(yintercept = 1, colour = "purple") + 
+  geom_hline(yintercept = 10, colour = "purple") +
+  facet_wrap(~param) +
+  theme_minimal() + theme(axis.text = element_blank()) + labs(x = "",y = "") + 
+  NULL
+```
+```{r}
+ggplot(filter(longtest, grepl("Rho",param)), aes(x = sbcrank)) + 
+  geom_histogram(bins = 10) +
+  geom_hline(yintercept = 1, colour = "purple") + 
+  geom_hline(yintercept = 10, colour = "purple") +
+  facet_wrap(~param) +
+  theme_minimal() + theme(axis.text = element_blank()) + labs(x = "",y = "") + 
+  NULL
+```
+
+```{r}
+zcontr_plot <- function(pars){
+  ggplot(filter(dat, grepl(pars, param)), aes(x = contraction, y = zscore)) +
+  geom_point() +
+  facet_wrap(~param) +
+  scale_x_continuous(limits = c(0,1)) +
+  scale_y_continuous(limits = c(-4.5,4.5)) +
+  theme_minimal() + theme(panel.grid.minor = element_blank()) 
+}
+dat <- longtest
+lapply(paste0("betas\\.",1:4), zcontr_plot)
+```
+
+

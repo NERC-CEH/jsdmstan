@@ -163,7 +163,7 @@ mcmc_plot(mglmm_fit, plotfun = "recover_hist",
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
           pars = paste0("sigmas_u[",1:nspecies,"]"),
-          true = mglmm_test_data$pars$u_sds)
+          true = mglmm_test_data$pars$sigmas_u)
 ```
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_intervals",

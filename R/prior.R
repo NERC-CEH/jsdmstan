@@ -79,7 +79,7 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
                        sigma = "normal(0,1)",
                        kappa = "normal(0,1)",
                        sq_eta = "inv_gamma(10,.1)",
-                       rho = "inv_gamma(10,.1)") {
+                       rho = "inv_gamma(30,.01)") {
   res <- list(
     sigmas_b = sigmas_b, z_preds = z_preds, L_Rho_preds = L_Rho_preds,
     a = a, a_bar = a_bar, sigma_a = sigma_a,

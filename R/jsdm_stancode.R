@@ -28,10 +28,6 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
     stop("Prior must be given as a jsdmprior object")
   }
 
-  # if(!all(c("Y","K","S","N","X","site_intercept") %in% names(data_list)))
-  #   stop("Data list must have entries Y, K, S, N, X and site_intercept")
-
-
   # data processing steps
 
   scode <- .modelcode(
@@ -44,25 +40,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 
 .modelcode <- function(method, family, phylo, prior, log_lik) {
-  model_functions <- "
-  "
-#   "
-#   matrix to_lower_tri(vector x, int nr, int nc){
-#     matrix[nr,nc] y;
-#     int pos = 1;
-#     for(i in 1:nr){
-#       for(j in 1:nc){
-#         if(i < j){
-#           y[i,j] = 0;
-#         } else{
-#           y[i,j] = x[pos];
-#           pos += 1;
-#         }
-#       }
-#     }
-#     return y;
-#   }
-# "
+  model_functions <- ""
+
   data <- paste(
     "
   int<lower=1> N; // Number of samples
@@ -352,18 +331,18 @@ matrix cov_matern(matrix x, real sq_eta, real rho, real delta, int nu05){
 ")
     pars <- paste(gsub("cholesky_factor_corr\\[S\\] L_Rho_species;", "", pars), "
   // kernel parameters
-  real<lower=0> sq_eta;
+  //real<lower=0> sq_eta;
   real<lower=0> rho;
 ")
     transformed_pars <- gsub(
       "L_Rho_species",
-      "cholesky_decompose(cov_matern(Dmat, sq_eta, rho, delta, nu05))",
+      "cholesky_decompose(cov_matern(Dmat, 1, rho, delta, nu05))",
       transformed_pars
     )
     model_priors <- paste(
       gsub("L_Rho_species .* ;\n","",model_priors), "
   //kernel parameters
-  sq_eta ~ ", prior[["sq_eta"]], ";
+  //sq_eta ~ ", prior[["sq_eta"]], ";
   rho ~ ", prior[["rho"]], ";
 ")
   }

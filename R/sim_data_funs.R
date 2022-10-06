@@ -344,10 +344,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       # print(str(mu_ij))
 
       Y[i, j] <- switch(response,
-        "neg_binomial" = rgampois(1,
-          mu = exp(mu_ij),
-          scale = kappa
-        ),
+        "neg_binomial" = rgampois(1, mu = exp(mu_ij), scale = kappa),
         "gaussian" = stats::rnorm(1, mu_ij, sigma),
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij))
@@ -365,6 +362,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if (isTRUE(phylo) | is.matrix(phylo)) {
     pars$sq_eta <- sq_eta
     pars$rho <- rho
+  } else if(method == "mglmm"){
+    pars$L_Rho_species <- L_Rho_species
   }
 
   if (isTRUE(site_intercept)) {
@@ -378,8 +377,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     pars$L_sigma <- L_sigma
   }
   if (method == "mglmm") {
-    pars$u_sds <- u_sds
-    pars$L_Rho_species <- L_Rho_species
+    pars$sigmas_u <- u_sds
     pars$z_species <- z_species
   }
   if (isTRUE(species_intercept)) {

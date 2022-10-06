@@ -21,7 +21,7 @@ jsdm_prior(
   sigma = "normal(0,1)",
   kappa = "normal(0,1)",
   sq_eta = "inv_gamma(10,.1)",
-  rho = "inv_gamma(10,.1)"
+  rho = "inv_gamma(30,.01)"
 )
 
 \method{print}{jsdmprior}(x, ...)
