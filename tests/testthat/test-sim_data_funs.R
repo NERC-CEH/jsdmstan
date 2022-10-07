@@ -12,10 +12,6 @@ test_that("gllvm_sim_data errors with bad inputs", {
     "N and S must be positive integers"
   )
 
-  expect_error(gllvm_sim_data(
-    N = 100, S = 8, D = 2, phylo = TRUE,
-    family = "neg_bin"
-  ))
 })
 
 test_that("gllvm_sim_data returns a list of correct length", {

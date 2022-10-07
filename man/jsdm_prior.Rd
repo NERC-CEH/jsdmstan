@@ -19,9 +19,7 @@ jsdm_prior(
   L = "normal(0,1)",
   sigma_L = "normal(0,1)",
   sigma = "normal(0,1)",
-  kappa = "normal(0,1)",
-  etasq = "inv_gamma(10,.1)",
-  rho = "inv_gamma(10,.1)"
+  kappa = "normal(0,1)"
 )
 
 \method{print}{jsdmprior}(x, ...)
@@ -66,12 +64,6 @@ to be positive, default standard normal}
 \item{kappa}{For negative binomial response, the negative binomial variance
 parameter. Constrained to be positive, default standard normal}
 
-\item{etasq}{For phylogenetic models, the variance parameter of the Matern kernel.
-See \code{\link[=cov_matern]{cov_matern()}} for details.}
-
-\item{rho}{For phylogenetic models, the length scale parameter of the Matern
-kernel. See \code{\link[=cov_matern]{cov_matern()}} for details.}
-
 \item{x}{Object of class \code{jsdmprior}}
 
 \item{...}{Currently unused}
@@ -90,7 +82,7 @@ appropriate stan command. The most common versions of these are supported by the
 simulated data functions, however there are functions that can be fed to the stan
 fitting procedure that will not be able to be used as input for \code{\link[=jsdm_sim_data]{jsdm_sim_data()}}.
 Parameters \code{sigmas_b}, \code{sigma_a}, \code{sigmas_u}, \code{sigma_L},
-\code{sigma}, \code{kappa}, \code{etasq} and \code{rho} are fixed to be positive
+\code{sigma}, and \code{kappa} are fixed to be positive
 only in the stan code and this cannot be changed. Parameters \code{L_Rho_preds}
 and \code{L_Rho_species} are assumed to be the Cholesky factor of a correlation
 matrix. All other parameters are real numbers. For all parameters that represent

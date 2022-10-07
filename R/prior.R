@@ -9,7 +9,7 @@
 #' simulated data functions, however there are functions that can be fed to the stan
 #' fitting procedure that will not be able to be used as input for [jsdm_sim_data()].
 #' Parameters \code{sigmas_b}, \code{sigma_a}, \code{sigmas_u}, \code{sigma_L},
-#' \code{sigma}, \code{kappa}, \code{etasq} and \code{rho} are fixed to be positive
+#' \code{sigma}, and \code{kappa} are fixed to be positive
 #' only in the stan code and this cannot be changed. Parameters \code{L_Rho_preds}
 #' and \code{L_Rho_species} are assumed to be the Cholesky factor of a correlation
 #' matrix. All other parameters are real numbers. For all parameters that represent
@@ -52,10 +52,6 @@
 #'   to be positive, default standard normal
 #' @param kappa For negative binomial response, the negative binomial variance
 #'   parameter. Constrained to be positive, default standard normal
-#' @param etasq For phylogenetic models, the variance parameter of the Matern kernel.
-#'   See [cov_matern()] for details.
-#' @param rho For phylogenetic models, the length scale parameter of the Matern
-#'   kernel. See [cov_matern()] for details.
 #'
 #' @return An object of class \code{"jsdmprior"} taking the form of a named list
 #' @export
@@ -77,17 +73,14 @@ jsdm_prior <- function(sigmas_b = "normal(0,1)",
                        L = "normal(0,1)",
                        sigma_L = "normal(0,1)",
                        sigma = "normal(0,1)",
-                       kappa = "normal(0,1)",
-                       etasq = "inv_gamma(10,.1)",
-                       rho = "inv_gamma(10,.1)") {
+                       kappa = "normal(0,1)") {
   res <- list(
     sigmas_b = sigmas_b, z_preds = z_preds, L_Rho_preds = L_Rho_preds,
     a = a, a_bar = a_bar, sigma_a = sigma_a,
     sigmas_u = sigmas_u, z_species = z_species,
     L_Rho_species = L_Rho_species,
     LV = LV, L = L, sigma_L = sigma_L,
-    sigma = sigma, kappa = kappa,
-    etasq = etasq, rho = rho
+    sigma = sigma, kappa = kappa
   )
   if (!(all(sapply(res, is.character)))) {
     stop("All arguments must be supplied as character vectors")
@@ -110,11 +103,11 @@ print.jsdmprior <- function(x, ...) {
       rep("site_intercept", 3),
       rep("mglmm", 3),
       rep("gllvm", 3),
-      "gaussian", "neg_binomial", "phylo", "phylo"
+      "gaussian", "neg_binomial"
     ),
     Constraint = c(
       "lower=0", rep("none", 4), rep("lower=0", 2),
-      rep("none", 4), rep("lower=0", 5)
+      rep("none", 4), rep("lower=0", 3)
     ),
     Prior = unlist(unname(x))
   )

@@ -18,9 +18,6 @@ stan_jsdm(X, ...)
   site_intercept = FALSE,
   D = NULL,
   prior = jsdm_prior(),
-  phylo = FALSE,
-  covar = "matern_05",
-  delta = 1e-05,
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
@@ -56,19 +53,6 @@ default \code{FALSE}}
 \item{D}{The number of latent variables within a GLLVM model}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
-
-\item{phylo}{A distance matrix between species (not necessarily phylogenetic). The
-default \code{FALSE} does not incorporate phylogenetic information.}
-
-\item{covar}{The covariance function as a character string, options are Matérn
-kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2
-(\code{"matern_25"}), or infinite (\code{"matern_inf"}). Matérn kernel with
-infinite nu is equivalent to the squared exponential kernel
-(\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the exponential kernel
-(\code{"exponential"}).}
-
-\item{delta}{The constant added to the diagonal of the covariance matrix in the
-phylogenetic model to keep matrix semipositive definite, by default 1e-5.}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}

@@ -5,13 +5,7 @@
 \alias{print.jsdmstan_model}
 \title{Make stancode for the jsdm model}
 \usage{
-jsdm_stancode(
-  method,
-  family,
-  prior = jsdm_prior(),
-  phylo = FALSE,
-  log_lik = TRUE
-)
+jsdm_stancode(method, family, prior = jsdm_prior(), log_lik = TRUE)
 
 \method{print}{jsdmstan_model}(x, ...)
 }
@@ -22,8 +16,6 @@ jsdm_stancode(
 \code{"poisson"} or \code{"neg_binomial"}}
 
 \item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
-
-\item{phylo}{Whether phylo should be included, only for MGLMM}
 
 \item{log_lik}{Whether the log likelihood should be calculated in the generated
 quantities (by default \code{TRUE}), required for loo}
@@ -46,6 +38,6 @@ list, family and method.
 }}
 \examples{
 jsdm_stancode(family = "gaussian", method = "gllvm")
-jsdm_stancode(family = "poisson", method = "mglmm", phylo = TRUE)
+jsdm_stancode(family = "poisson", method = "mglmm")
 
 }

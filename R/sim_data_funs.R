@@ -18,16 +18,6 @@
 #'  covariance can be modelled together (this will be the covariance used in the
 #'  overall model if the method used has covariance).
 #'
-#'  It makes a whole load of assumptions, incl that all parameters and measured
-#'  predictors are normally distributed with mean 0 and standard deviation 1, with
-#'  variance parameters being the absolute of this distribution. The exceptions are
-#'  that if there is a Matern (or exponential quadratic) kernel being fit the etasq
-#'  and rho parameters are either simulated as an inverse gamma with shape 10 and
-#'  scale 0.1 if the invgamma package is installed or as an absolute value of a
-#'  normal distribution with mean 1 and standard deviation 0.2. If no phylogenetic
-#'  matrix is supplied the correlations between species are simulated as a random
-#'  draw from a LKJ correlation matrix with eta = 1.
-#'
 #' @export
 #'
 #' @param N is number of sites
@@ -45,29 +35,15 @@
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
 #'  \code{"mglmm"} - see details for more information.
 #'
-#' @param phylo is whether to randomly generate a phylogenetic tree that will be used
-#'  to constrain beta estimates. Can be given as \code{TRUE}, \code{FALSE} or as a
-#'  given distance matrix.
-#'
 #' @param species_intercept Whether to include an intercept in the predictors, must be
 #'  \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
 #'
 #' @param site_intercept Whether to include a site intercept. Defaults to \code{FALSE}.
 #'
-#' @param delta Nugget added to diagonal of resulting matrix to keep it positive
-#'  definite
-#'
-#' @param covar The covariance function as a character string, options are Matérn
-#'  kernel with \eqn{\nu} 1/2 (\code{"matern_05"}), 3/2 (\code{"matern_15"}), 5/2
-#'  (\code{"matern_25"}), or infinite (\code{"matern_inf"}). Matérn kernel with
-#'  infinite nu is equivalent to the squared exponential kernel
-#'  (\code{"sq_exponential"}), and with \eqn{\nu} = 1/2 the exponential kernel
-#'  (\code{"exponential"}).
-#'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
-                          phylo = FALSE, species_intercept = TRUE,
-                          site_intercept = FALSE, delta = NULL, covar = NULL,
+                          species_intercept = TRUE,
+                          site_intercept = FALSE,
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson", "bernoulli"))
 
@@ -86,32 +62,6 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     stop("If K is 0 then a species intercept is required")
   }
 
-  if (isTRUE(phylo) & method == "gllvm") {
-    stop("Phylogenetic sharing of information not currently supported for GLLVM")
-  }
-
-  if (isTRUE(phylo) & !requireNamespace("ape", quietly = TRUE)) {
-    stop("The ape package is required for random generation of phylogenetic trees")
-  }
-  if (isTRUE(phylo) & any(c(is.null(delta), is.null(covar)))) {
-    stop("Need to specify delta and covar arguments for phylo")
-  }
-  if (!isFALSE(phylo)) {
-    covar <- match.arg(covar, c(
-      "matern_05", "exponential", "matern_15", "matern_25",
-      "sq_exponential", "matern_inf"
-    ))
-    nu05 <- switch(covar,
-      "matern_05" = 0L,
-      "exponential" = 0L,
-      "matern_15" = 1L,
-      "matern_25" = 2L,
-      "sq_exponential" = 3L,
-      "matern_inf" = 3L
-    )
-  } else {
-    nu05 <- NULL
-  }
   if (method == "gllvm" & !is.double(D)) {
     stop("gllvm method require D to be a positive integer")
   }
@@ -167,9 +117,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
       "sigma" = 1,
-      "kappa" = 1,
-      "etasq" = 1,
-      "rho" = 1
+      "kappa" = 1
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
@@ -178,35 +126,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   names(prior_func) <- names(prior_split)
 
 
-  # build phylogenetic tree - need to add check
-  # if(phylo & )
-  if (isTRUE(phylo)) {
-    sq_eta <- do.call(
-      match.fun(prior_func[["etasq"]][[1]]),
-      prior_func[["etasq"]][[2]]
-    )
-    rho <- do.call(
-      match.fun(prior_func[["rho"]][[1]]),
-      prior_func[["rho"]][[2]]
-    )
-
-    if (isTRUE(phylo)) {
-      Dmat <- stats::cophenetic(ape::rtree(S))
-    } else if (is.matrix(phylo)) {
-      if (all(dim(phylo) == S) & isSymmetric(phylo)) {
-        Dmat <- phylo
-      } else {
-        stop("phylo matrix must be a symmetric square matrix of with row number equal to number of species")
-      }
-    }
-
-
-    # return matern covariance
-    L_Rho_species <- t(chol(cov_matern(Dmat,
-      sq_eta = sq_eta, rho = rho, delta = delta,
-      nu05 = nu05
-    )))
-  } else if (isFALSE(phylo) & method == "mglmm") {
+  # build species covariance matrix
+  if (method == "mglmm") {
     L_Rho_species <- do.call(
       match.fun(prior_func[["L_Rho_species"]][[1]]),
       prior_func[["L_Rho_species"]][[2]]
@@ -362,10 +283,6 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     beta_sds = beta_sds,
     z_betas = z_betas
   )
-  if (isTRUE(phylo) | is.matrix(phylo)) {
-    pars$etasq <- sq_eta
-    pars$rho <- rho
-  }
 
   if (isTRUE(site_intercept)) {
     pars$a_bar <- a_bar
@@ -393,15 +310,6 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x,
     site_intercept = as.integer(site_intercept)
   )
-  if (isTRUE(phylo)) {
-    output$Dmat <- Dmat
-    output$delta <- delta
-    output$nu05 <- nu05
-  } else if (is.matrix(phylo)) {
-    output$Dmat <- phylo
-    output$delta <- delta
-    output$nu05 <- nu05
-  }
 
   return(output)
 }
