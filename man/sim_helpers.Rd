@@ -4,24 +4,40 @@
 \alias{sim_helpers}
 \alias{rgampois}
 \alias{rlkj}
+\alias{rinvgamma}
+\alias{rstudentt}
 \title{Helper functions for simulating data}
 \usage{
 rgampois(n, mu, scale)
 
-rlkj(n, eta = 1, cholesky = FALSE)
+rlkj(n, eta = 1, cholesky = TRUE)
+
+rinvgamma(n, shape, scale)
+
+rstudentt(n, df, mu, sigma)
 }
 \arguments{
 \item{n}{The number of samples to create/dimension of correlation matrix}
 
-\item{mu}{The mean of the negative binomial parameterisation}
+\item{mu}{The mean used within the negative binomial parameterisation and the
+Student T distribution}
 
 \item{scale}{The phi parameter that controls overdispersion of the negative
-binomial distribution (see details for description)}
+binomial distribution (see details for description), or the scale parameter used
+within the inverse gamma distribution (see \code{\link[stats:GammaDist]{stats::rgamma()}})}
 
 \item{eta}{The shape parameter of the LKJ distribution}
 
 \item{cholesky}{Whether the correlation matrix should be returned as the Cholesky
 decomposition, by default \code{FALSE}}
+
+\item{shape}{The shape parameter of the inverse gamma distribution (see
+\code{\link[stats:GammaDist]{stats::rgamma()}})}
+
+\item{df}{The degrees of freedom parameter within the Student T distribution (see
+details)}
+
+\item{sigma}{The scale of the Student T distribution (see details)}
 }
 \description{
 The \code{rlkj} function is for generating random LKJ correlation matrices and the
@@ -45,4 +61,8 @@ The \code{rlkj} function are sourced from Ben Goodrich's response on the Stan
 google mailing list. (see link
 \url{https://groups.google.com/g/stan-users/c/3gDvAs_qwN8/m/Xpgi2rPlx68J)}). The
 \code{rgampois} function is sourced from the rethinking package by Richard McElreath.
+
+The alternative parameterisation of the Student T distribution is by mean (mu) and
+scale (sigma) to be consistent with the Stan parameterisation rather than the
+parameterisation in \code{\link[stats:TDist]{stats::rt()}}.
 }

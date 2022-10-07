@@ -72,21 +72,24 @@ hundreds in any reasonably sized model) set \code{pars = get_parnames(x)}.
 }
 \examples{
 \donttest{
- #First simulate data and get model fit:
- mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
-                              family = "gaussian")
- mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
-                         family = "gaussian")
+# First simulate data and get model fit:
+mglmm_data <- mglmm_sim_data(
+  N = 100, S = 10, K = 3,
+  family = "gaussian"
+)
+mglmm_fit <- stan_mglmm(
+  Y = mglmm_data$Y, X = mglmm_data$X,
+  family = "gaussian"
+)
 
- # The default plot:
- plot(mglmm_fit)
+# The default plot:
+plot(mglmm_fit)
 
- # Plotting specifically the L_Rho_species parameters:
- plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
+# Plotting specifically the L_Rho_species parameters:
+plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
 
- # Increasing the number of randomly sampled parameters to plot:
- plot(mglmm_fit, sample_n = 20)
-
+# Increasing the number of randomly sampled parameters to plot:
+plot(mglmm_fit, sample_n = 20)
 }
 
 }

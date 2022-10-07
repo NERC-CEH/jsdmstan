@@ -56,23 +56,23 @@ calculates summary statistics for each simulated community. The default is to su
 all the predicted scores for each site.
 }
 \examples{
-
 \dontrun{
- # First simulate data and fit the jsdmStan model:
- gllvm_data <- gllvm_sim_data(N = 100, S = 9, D = 2,
-                              family = "bernoulli")
- gllvm_fit <- stan_gllvm(dat_list = gllvm_data, family  = "bernoulli")
+# First simulate data and fit the jsdmStan model:
+gllvm_data <- gllvm_sim_data(
+  N = 100, S = 9, D = 2,
+  family = "bernoulli"
+)
+gllvm_fit <- stan_gllvm(dat_list = gllvm_data, family = "bernoulli")
 
- # The default is to return a matrix:
- jsdm_statsummary(gllvm_fit)
+# The default is to return a matrix:
+jsdm_statsummary(gllvm_fit)
 
- # The above returns the linear predictor, while we may want to get the posterior
- # prediction instead:
- jsdm_statsummary(gllvm_fit, post_type = "predict")
+# The above returns the linear predictor, while we may want to get the posterior
+# prediction instead:
+jsdm_statsummary(gllvm_fit, post_type = "predict")
 
- # This can be limited to a specific set of species and/or sites:
- jsdm_statsummary(gllvm_fit, species = 1:5, sites = seq(5,95,10))
-
+# This can be limited to a specific set of species and/or sites:
+jsdm_statsummary(gllvm_fit, species = 1:5, sites = seq(5, 95, 10))
 }
 
 }

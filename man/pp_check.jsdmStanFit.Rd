@@ -58,24 +58,29 @@ function to get summary statistics and then supplies them to the specified
 available plotting functions call \code{\link[bayesplot:available_ppc]{bayesplot::available_ppc()}}.
 }
 \examples{
-
 \dontrun{
- # First simulate data and fit the jsdmStan model:
- mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
-                              family = "gaussian")
- mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
-                         family = "gaussian")
+# First simulate data and fit the jsdmStan model:
+mglmm_data <- mglmm_sim_data(
+  N = 100, S = 10, K = 3,
+  family = "gaussian"
+)
+mglmm_fit <- stan_mglmm(
+  Y = mglmm_data$Y, X = mglmm_data$X,
+  family = "gaussian"
+)
 
- # The default is to plot a density overlay:
- pp_check(mglmm_fit)
+# The default is to plot a density overlay:
+pp_check(mglmm_fit)
 
- # Other plot functions can be called, such as a ribbon plot:
- pp_check(mglmm_fit, plotfun = "ribbon")
+# Other plot functions can be called, such as a ribbon plot:
+pp_check(mglmm_fit, plotfun = "ribbon")
 
- # Instead of calculating the sum over sites other statistics can be calculated,
- # e.g. the mean of each species:
- pp_check(mglmm_fit, plotfun = "ecdf_overlay", summary_stat = "mean",
-          calc_over = "species", ndraws = 20)
+# Instead of calculating the sum over sites other statistics can be calculated,
+# e.g. the mean of each species:
+pp_check(mglmm_fit,
+  plotfun = "ecdf_overlay", summary_stat = "mean",
+  calc_over = "species", ndraws = 20
+)
 }
 
 }

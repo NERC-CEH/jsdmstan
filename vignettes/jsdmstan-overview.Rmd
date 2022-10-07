@@ -46,8 +46,6 @@ The entire matrix of covariance between species is modelled in MGLMMs.
 
 $$ u_{ij} \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma}) $$
 
-Within MGLMMs there is also the option to use a distance matrix between species to inform the result - further information on this will appear in a phylogenetic specific vignette as soon as I get around to writing one.
-
 Fitting the entire covariance matrix means that the amount of time required to fit these models scales with the number of species cubed, and the data required scales with the number of species squared. This makes these models both computationally and data intensive.
 
 ## Generalised Linear Latent Variable Models
@@ -207,10 +205,12 @@ loo::loo_compare(mglmm_loo, mglmm_loo2)
 
 # Fitting a GLLVM
 
-The model fitting workflow for latent variable models is very similar to that above, with the addition of specifying the number of latent variables (D) in the data simulation and model fit:
+The model fitting workflow for latent variable models is very similar to that above, with the addition of specifying the number of latent variables (D) in the data simulation and model fit. We will also specify a different prior from the default using the `jsdm_prior` function.
 
 ```{r}
-gllvm_test_data <- gllvm_sim_data(N = 250, S = 6, D = 2, family = "gaussian")
+gllvm_test_data <- gllvm_sim_data(N = 250, S = 6, D = 2, family = "gaussian",
+                                  prior = jsdm_prior(sigma = "student_t(3,0,1)",
+                                                     sigmas_b = "student_t(3,0,1)"))
 ```
 
 
@@ -218,7 +218,10 @@ gllvm_test_data <- gllvm_sim_data(N = 250, S = 6, D = 2, family = "gaussian")
 gllvm_fit <- stan_jsdm(Y = gllvm_test_data$Y, X = gllvm_test_data$X,
                        D = gllvm_test_data$D,  
                        family = "gaussian",
-                       method = "gllvm", refresh = 0)
+                       method = "gllvm", 
+                       prior = jsdm_prior(sigma = "student_t(3,0,1)",
+                                                     sigmas_b = "student_t(3,0,1)"),
+                       refresh = 0)
 gllvm_fit
 ```
 

@@ -13,12 +13,9 @@ jsdm_sim_data(
   K = 0L,
   family,
   method = c("gllvm", "mglmm"),
-  phylo = FALSE,
   species_intercept = TRUE,
   site_intercept = FALSE,
-  delta = NULL,
-  nu05 = NULL,
-  eta = 1
+  prior = jsdm_prior()
 )
 
 gllvm_sim_data(...)
@@ -41,23 +38,12 @@ matching is supported.}
 \item{method}{is the jSDM method to use, currently either \code{"gllvm"} or
 \code{"mglmm"} - see details for more information.}
 
-\item{phylo}{is whether to randomly generate a phylogenetic tree that will be used
-to constrain beta estimates. Can be given as \code{TRUE}, \code{FALSE} or as a
-given distance matrix.}
-
 \item{species_intercept}{Whether to include an intercept in the predictors, must be
 \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.}
 
 \item{site_intercept}{Whether to include a site intercept. Defaults to \code{FALSE}.}
 
-\item{delta}{Nugget added to diagonal of resulting matrix to keep it positive
-definite}
-
-\item{nu05}{Must be an integer in range 0-3. Indicates what type of covariance
-function is used. 0 is exponential, 1 is Matérn with nu = 1.5, 2 is Matérn with
-nu = 2.5 and 3 is the squared exponential.}
-
-\item{eta}{Shape parameter in random generation of LKJ matrix, defaults to 1.}
+\item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{...}{Arguments passed to jsdm_sim_data}
 }
@@ -80,23 +66,13 @@ information pooled across species. If information is pooled this can be modelled
 as either a random draw from some mean and standard deviation or species
 covariance can be modelled together (this will be the covariance used in the
 overall model if the method used has covariance).
-
-It makes a whole load of assumptions, incl that all parameters and measured
-predictors are normally distributed with mean 0 and standard deviation 1, with
-variance parameters being the absolute of this distribution. The exceptions are
-that if there is a Matern (or exponential quadratic) kernel being fit the etasq
-and rho parameters are either simulated as an inverse gamma with shape 10 and
-scale 0.1 if the invgamma package is installed or as an absolute value of a
-normal distribution with mean 1 and standard deviation 0.2. If no phylogenetic
-matrix is supplied the correlations between species are simulated as a random
-draw from a LKJ correlation matrix with eta = 1.
 }
 \section{Functions}{
 \itemize{
-\item \code{gllvm_sim_data}: Alias for \code{jsdm_sim_data} with \code{method =
+\item \code{gllvm_sim_data()}: Alias for \code{jsdm_sim_data} with \code{method =
 "gllvm"}
 
-\item \code{mglmm_sim_data}: Alias for \code{jsdm_sim_data} with \code{method =
+\item \code{mglmm_sim_data()}: Alias for \code{jsdm_sim_data} with \code{method =
 "mglmm"}
-}}
 
+}}

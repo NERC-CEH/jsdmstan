@@ -32,14 +32,16 @@
 #'  }
 #'
 #'
-jsdmStanFit_empty <- function(){
-  res <- list(jsdm_type = "None",
-              family = character(),
-              species = character(),
-              sites = character(),
-              preds = character(),
-              data_list = list(),
-              n_latent = integer())
+jsdmStanFit_empty <- function() {
+  res <- list(
+    jsdm_type = "None",
+    family = character(),
+    species = character(),
+    sites = character(),
+    preds = character(),
+    data_list = list(),
+    n_latent = integer()
+  )
   class(res) <- "jsdmStanFit"
   res
 }
@@ -61,7 +63,7 @@ jsdmStanFit_empty <- function(){
 print.jsdmStanFit <- function(x, ...) {
   s <- summary(x, prob_pars_only = TRUE, ...)
 
-  cat("Model type: ", x$jsdm_type, if(x$jsdm_type == "gllvm"){
+  cat("Model type: ", x$jsdm_type, if (x$jsdm_type == "gllvm") {
     paste0(" with ", x$n_latent, " latent variables")
   }, "\n",
   "  Number of species: ", length(x$species), "\n",
@@ -70,14 +72,14 @@ print.jsdmStanFit <- function(x, ...) {
   "\n",
   "Model run on ", length(x$fit@stan_args), " chains with ",
   x$fit@stan_args[[1]]$iter, " iterations per chain (",
-  x$fit@stan_args[[1]]$warmup," warmup).\n\n",
+  x$fit@stan_args[[1]]$warmup, " warmup).\n\n",
   sep = ""
   )
-  if(nrow(s)>0){
+  if (nrow(s) > 0) {
     cat("Parameters with Rhat > 1.01, or ESS < 500:\n")
 
     print(s)
-  } else{
+  } else {
     cat("No parameters with Rhat > 1.01 or ESS < 500")
   }
 }
@@ -111,49 +113,53 @@ print.jsdmStanFit <- function(x, ...) {
 #' @param ... Arguments passed to [extract()]
 #'
 #' @examples
-#'
 #' \dontrun{
 #'
-#'  gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
-#'                              family = "bernoulli")
-#'  gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
-#'                         family = "bernoulli")
-#'  gllvm_summ <- summary(gllvm_fit)
-#'  head(gllvm_summ, 20)
+#' gllvm_data <- jsdm_sim_data(
+#'   method = "gllvm", N = 100, S = 6, D = 2,
+#'   family = "bernoulli"
+#' )
+#' gllvm_fit <- stan_jsdm(
+#'   dat_list = gllvm_data, method = "gllvm",
+#'   family = "bernoulli"
+#' )
+#' gllvm_summ <- summary(gllvm_fit)
+#' head(gllvm_summ, 20)
 #'
-#'  summary(gllvm_fit, prob_quantiles = c(0.05,0.5,0.95))
-#'
+#' summary(gllvm_fit, prob_quantiles = c(0.05, 0.5, 0.95))
 #' }
 #'
 #' @export
 summary.jsdmStanFit <- function(object,
-                                prob_quantiles = c(0.15,0.85),
+                                prob_quantiles = c(0.15, 0.85),
                                 digit_summary = 3,
                                 prob_pars_only = FALSE,
                                 pars = NULL,
                                 na_filter = TRUE, log_lik = FALSE, ...) {
-  if(is.null(pars)){
+  if (is.null(pars)) {
     full_pars <- get_parnames(object, log_lik = log_lik)
-    samps <- extract(object, pars = full_pars,return_array = TRUE, ...)
-  } else{
+    samps <- extract(object, pars = full_pars, return_array = TRUE, ...)
+  } else {
     samps <- extract(object, pars = pars, return_array = TRUE, ...)
   }
   rhat <- apply(samps, 3, rstan::Rhat)
-  bulk_ess <- round(apply(samps, 3, rstan::ess_bulk),0)
-  tail_ess <- round(apply(samps, 3, rstan::ess_tail),0)
+  bulk_ess <- round(apply(samps, 3, rstan::ess_bulk), 0)
+  tail_ess <- round(apply(samps, 3, rstan::ess_tail), 0)
 
   mean <- apply(samps, 3, mean)
   sd <- apply(samps, 3, sd)
   quants <- t(apply(samps, 3, stats::quantile, probs = prob_quantiles))
 
-  s <- cbind(mean = mean, sd = sd, quants, Rhat = rhat,
-             Bulk.ESS = bulk_ess, Tail.ESS = tail_ess)
+  s <- cbind(
+    mean = mean, sd = sd, quants, Rhat = rhat,
+    Bulk.ESS = bulk_ess, Tail.ESS = tail_ess
+  )
 
-  if(isTRUE(prob_pars_only)){
-    prob_pars <- rhat>1.01 | bulk_ess < 500 | tail_ess < 500
-    s <- s[prob_pars,,drop=FALSE]
+  if (isTRUE(prob_pars_only)) {
+    prob_pars <- rhat > 1.01 | bulk_ess < 500 | tail_ess < 500
+    s <- s[prob_pars, , drop = FALSE]
   }
-  if(isTRUE(na_filter))  s <- s[!is.na(s[,"Rhat"]),,drop=FALSE]
+  if (isTRUE(na_filter)) s <- s[!is.na(s[, "Rhat"]), , drop = FALSE]
 
   s <- round(s, digit_summary)
 
@@ -189,29 +195,30 @@ summary.jsdmStanFit <- function(object,
 #' @export
 extract.jsdmStanFit <- function(object, pars = NULL, permuted = FALSE,
                                 inc_warmup = FALSE, include = TRUE, regexp = FALSE,
-                                return_array = FALSE, ...){
-  if(isTRUE(return_array) & isTRUE(permuted)){
+                                return_array = FALSE, ...) {
+  if (isTRUE(return_array) & isTRUE(permuted)) {
     warning("If return_array is TRUE then permuted is set to FALSE")
     permuted <- FALSE
   }
-  if(is.null(pars)){
+  if (is.null(pars)) {
     pars <- get_parnames(object, ...)
-  } else if(regexp){
+  } else if (regexp) {
     full_pars <- get_parnames(object)
     pars <- grep(paste(pars, collapse = "|"), full_pars, value = TRUE)
   }
   pexp <- rstan::extract(object$fit, pars, permuted, inc_warmup, include)
-  if(isFALSE(permuted) & isFALSE(return_array)){
+  if (isFALSE(permuted) & isFALSE(return_array)) {
     pexp2 <- matrix(pexp, prod(dim(pexp)[1:2]), dim(pexp)[3])
     colnames(pexp2) <- dimnames(pexp)[[3]]
-    rownames(pexp2) <- paste0("Chain",rep(seq(1,dim(pexp)[2],1),each = dim(pexp)[1]),
-                              "_Iter",rep(seq(1,dim(pexp)[1],1),dim(pexp)[2]))
+    rownames(pexp2) <- paste0(
+      "Chain", rep(seq(1, dim(pexp)[2], 1), each = dim(pexp)[1]),
+      "_Iter", rep(seq(1, dim(pexp)[1], 1), dim(pexp)[2])
+    )
 
     pexp <- pars_indexes(pexp2)
   }
 
   pexp
-
 }
 #' @export
 #' @describeIn extract.jsdmStanFit Generic method
@@ -219,25 +226,32 @@ extract <- function(object, ...) {
   UseMethod("extract")
 }
 
-pars_indexes <- function(x){
-  pars_unique <- unique(sapply(strsplit(colnames(x), "\\["),"[",1))
-  x_list <- lapply(pars_unique, function(y) x[,grepl(y,colnames(x))])
-  x_list <- lapply(x_list, function(y){
-    if(class(y)[1] == "numeric"){
+pars_indexes <- function(x) {
+  pars_unique <- unique(sapply(strsplit(colnames(x), "\\["), "[", 1))
+  x_list <- lapply(pars_unique, function(y) x[, grepl(y, colnames(x))])
+  x_list <- lapply(x_list, function(y) {
+    if (class(y)[1] == "numeric") {
       val <- array(y, dim = length(y))
-    } else{
+    } else {
       ynames <- colnames(y)
       ninit <- nrow(y)
-      ndim <- sum(grepl(",",ynames[1]))+1
-      if(ndim == 1){
+      ndim <- sum(grepl(",", ynames[1])) + 1
+      if (ndim == 1) {
         val <- y
-      } else{
+      } else {
         dims <- apply(sapply(
-          strsplit(unlist(regmatches(ynames,
-                                     gregexpr("\\[\\K\\d+,\\d+(?=\\])",
-                                              ynames, perl=TRUE))),
-                   ","),as.numeric),1,max)
-        val <- array(y, dim = c(ninit,dims))
+          strsplit(
+            unlist(regmatches(
+              ynames,
+              gregexpr("\\[\\K\\d+,\\d+(?=\\])",
+                ynames,
+                perl = TRUE
+              )
+            )),
+            ","
+          ), as.numeric
+        ), 1, max)
+        val <- array(y, dim = c(ninit, dims))
       }
     }
     val
@@ -274,14 +288,15 @@ NULL
 #'   list
 #'
 #' @export
-get_parnames <- function(object, log_lik = FALSE){
-  if(class(object) != "jsdmStanFit")
+get_parnames <- function(object, log_lik = FALSE) {
+  if (!inherits(object, "jsdmStanFit")) {
     stop("This only works for jsdmStanFit objects")
-  parnames <- names(object$fit)
-  if(isFALSE(log_lik)){
-    parnames <- parnames[!grepl("log_lik",parnames)]
   }
-  parnames <- parnames[!grepl("_uncor",parnames)]
+  parnames <- names(object$fit)
+  if (isFALSE(log_lik)) {
+    parnames <- parnames[!grepl("log_lik", parnames)]
+  }
+  parnames <- parnames[!grepl("_uncor", parnames)]
   return(parnames)
 }
 
@@ -293,7 +308,7 @@ get_parnames <- function(object, log_lik = FALSE){
 #' @importFrom bayesplot nuts_params
 #' @export nuts_params
 #' @export
-nuts_params.jsdmStanFit <- function(object, ...){
+nuts_params.jsdmStanFit <- function(object, ...) {
   bayesplot::nuts_params(object$fit, ...)
 }
 
@@ -302,7 +317,7 @@ nuts_params.jsdmStanFit <- function(object, ...){
 #' @importFrom bayesplot log_posterior
 #' @export log_posterior
 #' @export
-log_posterior.jsdmStanFit <- function(object, ...){
+log_posterior.jsdmStanFit <- function(object, ...) {
   bayesplot::log_posterior(object$fit, ...)
 }
 
@@ -311,7 +326,7 @@ log_posterior.jsdmStanFit <- function(object, ...){
 #' @importFrom bayesplot rhat
 #' @export rhat
 #' @export
-rhat.jsdmStanFit <- function(object, ...){
+rhat.jsdmStanFit <- function(object, ...) {
   bayesplot::rhat(object$fit, ...)
 }
 
@@ -320,6 +335,6 @@ rhat.jsdmStanFit <- function(object, ...){
 #' @importFrom bayesplot neff_ratio
 #' @export neff_ratio
 #' @export
-neff_ratio.jsdmStanFit <- function(object, ...){
+neff_ratio.jsdmStanFit <- function(object, ...) {
   bayesplot::neff_ratio(object$fit, ...)
 }

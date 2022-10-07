@@ -44,18 +44,20 @@ estimates, R-hat, bulk ESS and tail ESS. This can be limited to parameters with
 Rhat > 1.01 or ESS < 500 by setting \code{prob_pars_only = TRUE}.
 }
 \examples{
-
 \dontrun{
 
- gllvm_data <- jsdm_sim_data(method = "gllvm", N = 100, S = 6, D = 2,
-                             family = "bernoulli")
- gllvm_fit <- stan_jsdm(dat_list = gllvm_data, method = "gllvm",
-                        family = "bernoulli")
- gllvm_summ <- summary(gllvm_fit)
- head(gllvm_summ, 20)
+gllvm_data <- jsdm_sim_data(
+  method = "gllvm", N = 100, S = 6, D = 2,
+  family = "bernoulli"
+)
+gllvm_fit <- stan_jsdm(
+  dat_list = gllvm_data, method = "gllvm",
+  family = "bernoulli"
+)
+gllvm_summ <- summary(gllvm_fit)
+head(gllvm_summ, 20)
 
- summary(gllvm_fit, prob_quantiles = c(0.05,0.5,0.95))
-
+summary(gllvm_fit, prob_quantiles = c(0.05, 0.5, 0.95))
 }
 
 }

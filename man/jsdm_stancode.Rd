@@ -5,7 +5,7 @@
 \alias{print.jsdmstan_model}
 \title{Make stancode for the jsdm model}
 \usage{
-jsdm_stancode(method, family, prior = NULL, phylo = FALSE, log_lik = TRUE)
+jsdm_stancode(method, family, prior = jsdm_prior(), log_lik = TRUE)
 
 \method{print}{jsdmstan_model}(x, ...)
 }
@@ -15,9 +15,7 @@ jsdm_stancode(method, family, prior = NULL, phylo = FALSE, log_lik = TRUE)
 \item{family}{The family, one of "\code{"gaussian"}, \code{"bernoulli"},
 \code{"poisson"} or \code{"neg_binomial"}}
 
-\item{prior}{The prior, currently only default (i.e. \code{NULL}) supported}
-
-\item{phylo}{Whether phylo should be included, only for MGLMM}
+\item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{log_lik}{Whether the log likelihood should be calculated in the generated
 quantities (by default \code{TRUE}), required for loo}
@@ -33,13 +31,13 @@ A character vector of Stan code, class "jsdmstan_model"
 This function returns the Stan code used to fit the model as specified by the data
 list, family and method.
 }
-\section{Methods (by generic)}{
+\section{Functions}{
 \itemize{
-\item \code{print}: A printing function for jsdmstan_model objects
-}}
+\item \code{print(jsdmstan_model)}: A printing function for jsdmstan_model objects
 
+}}
 \examples{
 jsdm_stancode(family = "gaussian", method = "gllvm")
-jsdm_stancode(family = "poisson", method = "mglmm", phylo = TRUE)
+jsdm_stancode(family = "poisson", method = "mglmm")
 
 }

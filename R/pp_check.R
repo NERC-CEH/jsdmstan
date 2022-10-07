@@ -11,7 +11,7 @@
 #' \code{ppc_} function from the \pkg{bayesplot} package. For a full list of
 #' available plotting functions call [bayesplot::available_ppc()].
 #'
-#'@aliases pp_check
+#' @aliases pp_check
 #' @param object An object of class \code{jsdmStanFit}
 #' @param plotfun The ppc plot function to use, given as a character string. The
 #'   default is to call [ppc_dens_overlay][bayesplot::PPC-distributions]. Can be
@@ -24,51 +24,59 @@
 #'   package.
 #'
 #' @examples
-#'
 #' \dontrun{
-#'  # First simulate data and fit the jsdmStan model:
-#'  mglmm_data <- mglmm_sim_data(N = 100, S = 10, K = 3,
-#'                               family = "gaussian")
-#'  mglmm_fit <- stan_mglmm(Y = mglmm_data$Y, X = mglmm_data$X,
-#'                          family = "gaussian")
+#' # First simulate data and fit the jsdmStan model:
+#' mglmm_data <- mglmm_sim_data(
+#'   N = 100, S = 10, K = 3,
+#'   family = "gaussian"
+#' )
+#' mglmm_fit <- stan_mglmm(
+#'   Y = mglmm_data$Y, X = mglmm_data$X,
+#'   family = "gaussian"
+#' )
 #'
-#'  # The default is to plot a density overlay:
-#'  pp_check(mglmm_fit)
+#' # The default is to plot a density overlay:
+#' pp_check(mglmm_fit)
 #'
-#'  # Other plot functions can be called, such as a ribbon plot:
-#'  pp_check(mglmm_fit, plotfun = "ribbon")
+#' # Other plot functions can be called, such as a ribbon plot:
+#' pp_check(mglmm_fit, plotfun = "ribbon")
 #'
-#'  # Instead of calculating the sum over sites other statistics can be calculated,
-#'  # e.g. the mean of each species:
-#'  pp_check(mglmm_fit, plotfun = "ecdf_overlay", summary_stat = "mean",
-#'           calc_over = "species", ndraws = 20)
+#' # Instead of calculating the sum over sites other statistics can be calculated,
+#' # e.g. the mean of each species:
+#' pp_check(mglmm_fit,
+#'   plotfun = "ecdf_overlay", summary_stat = "mean",
+#'   calc_over = "species", ndraws = 20
+#' )
 #' }
 #'
-#'@importFrom bayesplot pp_check
-#'@export pp_check
-#'@export
+#' @importFrom bayesplot pp_check
+#' @export pp_check
+#' @export
 pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NULL,
                                  sites = NULL, summary_stat = "sum",
-                                 calc_over = "site", ndraws = NULL, ...){
+                                 calc_over = "site", ndraws = NULL, ...) {
   # check ppc plot type
   valid_types <- as.character(bayesplot::available_ppc())
-  plotfun <- ifelse(grepl("^ppc_",plotfun),plotfun, paste0("ppc_",plotfun))
-  if(!plotfun %in% valid_types)
-    stop(paste("plotfun:",plotfun, "is not a valid ppc type. ",
-               "Valid types are:\n", paste(valid_types, collapse = ", ")))
+  plotfun <- ifelse(grepl("^ppc_", plotfun), plotfun, paste0("ppc_", plotfun))
+  if (!plotfun %in% valid_types) {
+    stop(paste(
+      "plotfun:", plotfun, "is not a valid ppc type. ",
+      "Valid types are:\n", paste(valid_types, collapse = ", ")
+    ))
+  }
   ppc_fun <- get(plotfun, asNamespace("bayesplot"))
   dots <- list(...)
 
   # get draw IDs
   ndraws_given <- "ndraws" %in% names(match.call())
   nsamps <- dim(object$fit)[1] * dim(object$fit)[2]
-  if(ndraws_given){
-    if(is.null(ndraws)){
-      draw_ids <- seq(1,nsamps,1)
-    } else{
+  if (ndraws_given) {
+    if (is.null(ndraws)) {
+      draw_ids <- seq(1, nsamps, 1)
+    } else {
       draw_ids <- sample.int(nsamps, ndraws)
     }
-  } else{
+  } else {
     aps_plotfuns <- c(
       "ppc_error_scatter_avg", "ppc_error_scatter_avg_vs_x",
       "ppc_intervals", "ppc_intervals_grouped", "ppc_loo_pit",
@@ -79,40 +87,50 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
       "ppc_violin_grouped"
     )
     if (plotfun %in% aps_plotfuns) {
-      draw_ids <- seq(1,nsamps,1)
-      message("Using all posterior draws for ppc plot type '",
-              plotfun, "' by default.")
+      draw_ids <- seq(1, nsamps, 1)
+      message(
+        "Using all posterior draws for ppc plot type '",
+        plotfun, "' by default."
+      )
     } else {
       draw_ids <- sample.int(nsamps, 10)
-      message("Using 10 posterior draws for ppc plot type '",
-              plotfun, "' by default.")
+      message(
+        "Using 10 posterior draws for ppc plot type '",
+        plotfun, "' by default."
+      )
     }
   }
 
-  if(is.character(summary_stat)){
+  if (is.character(summary_stat)) {
     stat_fun <- get(summary_stat)
-  } else if(class(summary_stat) == "function"){
+  } else if (inherits(summary_stat, "function")) {
     stat_fun <- summary_stat
   }
-  y <- apply(object$data_list$Y, switch(calc_over,"site" = 1,
-                                        "species" = 2),
-             stat_fun)
+  y <- apply(
+    object$data_list$Y, switch(calc_over,
+      "site" = 1,
+      "species" = 2
+    ),
+    stat_fun
+  )
 
   # Extract all data
-  yrep <- jsdm_statsummary(object, species = species, sites = sites,
-                           summary_stat = summary_stat, calc_over = calc_over,
-                           draw_ids = draw_ids, post_type = "predict", ...)
+  yrep <- jsdm_statsummary(object,
+    species = species, sites = sites,
+    summary_stat = summary_stat, calc_over = calc_over,
+    draw_ids = draw_ids, post_type = "predict", ...
+  )
 
   # prepare plotting arguments
   ppc_args <- list(y = y, yrep = yrep)
 
-  for_pred <- union(names(dots) %in% names(formals(jsdm_statsummary)),
-                    names(dots) %in% names(formals(posterior_linpred.jsdmStanFit)))
+  for_pred <- union(
+    names(dots) %in% names(formals(jsdm_statsummary)),
+    names(dots) %in% names(formals(posterior_linpred.jsdmStanFit))
+  )
   ppc_args <- c(ppc_args, dots[!for_pred])
 
   do.call(ppc_fun, ppc_args)
-
-
 }
 
 
@@ -147,24 +165,24 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
 #'
 #' @seealso pp_check.jsdmStanFit
 #'
-#'@examples
-#'
+#' @examples
 #' \dontrun{
-#'  # First simulate data and fit the jsdmStan model:
-#'  gllvm_data <- gllvm_sim_data(N = 100, S = 9, D = 2,
-#'                               family = "bernoulli")
-#'  gllvm_fit <- stan_gllvm(dat_list = gllvm_data, family  = "bernoulli")
+#' # First simulate data and fit the jsdmStan model:
+#' gllvm_data <- gllvm_sim_data(
+#'   N = 100, S = 9, D = 2,
+#'   family = "bernoulli"
+#' )
+#' gllvm_fit <- stan_gllvm(dat_list = gllvm_data, family = "bernoulli")
 #'
-#'  # The default is to return a matrix:
-#'  jsdm_statsummary(gllvm_fit)
+#' # The default is to return a matrix:
+#' jsdm_statsummary(gllvm_fit)
 #'
-#'  # The above returns the linear predictor, while we may want to get the posterior
-#'  # prediction instead:
-#'  jsdm_statsummary(gllvm_fit, post_type = "predict")
+#' # The above returns the linear predictor, while we may want to get the posterior
+#' # prediction instead:
+#' jsdm_statsummary(gllvm_fit, post_type = "predict")
 #'
-#'  # This can be limited to a specific set of species and/or sites:
-#'  jsdm_statsummary(gllvm_fit, species = 1:5, sites = seq(5,95,10))
-#'
+#' # This can be limited to a specific set of species and/or sites:
+#' jsdm_statsummary(gllvm_fit, species = 1:5, sites = seq(5, 95, 10))
 #' }
 #'
 #' @export
@@ -172,23 +190,30 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
                              summary_stat = "sum", post_type = "linpred",
                              calc_over = "site", simplify = TRUE,
                              draw_ids = NULL, ndraws = NULL,
-                             ...){
-  if(class(object) != "jsdmStanFit")
+                             ...) {
+  if (!inherits(object, "jsdmStanFit")) {
     stop("jsdm_summary only works for jsdmStanFit objects")
-  if(!is.null(species) & !is.character(species)){
-    if(any(!is.wholenumber(species)))
-      stop(paste("Species must be either a character vector of species names or an",
-                 "integer vector of species positions in the input data columns"))
   }
-  if(!is.null(sites) & !is.character(sites)){
-    if(any(!is.wholenumber(sites)))
-      stop(paste("Sites must be either a character vector of site names or an",
-                 "integer vector of sites positions in the input data columns"))
+  if (!is.null(species) & !is.character(species)) {
+    if (any(!is.wholenumber(species))) {
+      stop(paste(
+        "Species must be either a character vector of species names or an",
+        "integer vector of species positions in the input data columns"
+      ))
+    }
   }
-  calc_over <- match.arg(calc_over, c("site","species"))
-  post_type <- match.arg(post_type, c("linpred","predict"))
+  if (!is.null(sites) & !is.character(sites)) {
+    if (any(!is.wholenumber(sites))) {
+      stop(paste(
+        "Sites must be either a character vector of site names or an",
+        "integer vector of sites positions in the input data columns"
+      ))
+    }
+  }
+  calc_over <- match.arg(calc_over, c("site", "species"))
+  post_type <- match.arg(post_type, c("linpred", "predict"))
 
-  post_fun <- get(paste0("posterior_",post_type), asNamespace("jsdmstan"))
+  post_fun <- get(paste0("posterior_", post_type), asNamespace("jsdmstan"))
   post_args <- list(...)
   post_args$object <- object
   post_args$list_index <- "draws"
@@ -197,42 +222,46 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
 
   post_res <- do.call(post_fun, post_args)
 
-  if(is.character(summary_stat)){
+  if (is.character(summary_stat)) {
     stat_fun <- get(summary_stat)
-  } else if(class(summary_stat) == "function"){
+  } else if (inherits(summary_stat, "function")) {
     stat_fun <- summary_stat
   }
 
   # Limit to species that have been selected:
-  if(!is.null(species)){
-    if(is.character(species)){
+  if (!is.null(species)) {
+    if (is.character(species)) {
       species_names <- dimnames(post_res[[1]])[[2]]
-      if(any(!(species %in% species_names)))
+      if (any(!(species %in% species_names))) {
         stop("Species specified are not found in the model fit object")
+      }
       species <- match(species, species_names)
     }
-    post_res <- lapply(post_res, "[",,species)
+    post_res <- lapply(post_res, "[", , species)
   }
   # Limit to sites that have been selected:
-  if(!is.null(sites)){
-    if(is.character(sites)){
+  if (!is.null(sites)) {
+    if (is.character(sites)) {
       sites_names <- dimnames(post_res[[1]])[[1]]
-      if(any(!(sites %in% sites_names)))
+      if (any(!(sites %in% sites_names))) {
         stop("Sites specified are not found in the model fit object")
+      }
       sites <- match(sites, sites_names)
     }
-    post_res <- lapply(post_res, "[",sites,)
+    post_res <- lapply(post_res, "[", sites, )
   }
 
   # calculate summary statistic over sites:
-  res <- lapply(post_res,function(x) apply(x,switch(calc_over,"site" = 1,
-                                                    "species" = 2),stat_fun))
+  res <- lapply(post_res, function(x) {
+    apply(x, switch(calc_over,
+      "site" = 1,
+      "species" = 2
+    ), stat_fun)
+  })
 
-  if(simplify){
+  if (simplify) {
     res <- do.call(rbind, res)
   }
 
   return(res)
-
-
 }
