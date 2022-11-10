@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(jsdmstan)
 library(ggplot2)
-set.seed(8267317)
+set.seed(826317)
 ```
 
 # Joint Species Distribution Models
@@ -75,7 +75,7 @@ First we can use the in-built functions for simulating data according to the MGL
 
 ```{r}
 nsites <- 200
-nspecies <- 9
+nspecies <- 15
 ncovar <- 2
 mglmm_test_data <- mglmm_sim_data(N = nsites, S = nspecies, 
                                   K = ncovar, family = "pois")

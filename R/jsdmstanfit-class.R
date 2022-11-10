@@ -54,14 +54,22 @@ jsdmStanFit_empty <- function() {
 #'
 #' This prints out a summary for the models which includes the type of model fit, the
 #' number of species, sites and predictors as well as a summary of any parameters
-#' with Rhat > 1.01 or ESS < 500
+#' with Rhat > 1.01 or effective sample size to total number of samples ratio < 0.1
 #'
 #' @param x The \code{jsdmStanFit} model object
 #' @param ... Other arguments passed to [summary.jsdmStanFit]
 #'
 #' @export
 print.jsdmStanFit <- function(x, ...) {
-  s <- summary(x, prob_pars_only = TRUE, ...)
+  rhat_prob <- rhat(x)
+  prob_rhat <- names(na.omit(rhat_prob[rhat_prob > 1.01]))
+  neff_prob <- neff_ratio(x)
+  prob_neff <- names(na.omit(neff_prob[neff_prob < 0.1]))
+  prob_pars <- union(prob_rhat, prob_neff)
+
+  if (length(prob_pars) > 0) {
+    s <- summary(x, pars = prob_pars, ...)
+  }
 
   cat("Model type: ", x$jsdm_type, if (x$jsdm_type == "gllvm") {
     paste0(" with ", x$n_latent, " latent variables")
@@ -75,12 +83,12 @@ print.jsdmStanFit <- function(x, ...) {
   x$fit@stan_args[[1]]$warmup, " warmup).\n\n",
   sep = ""
   )
-  if (nrow(s) > 0) {
-    cat("Parameters with Rhat > 1.01, or ESS < 500:\n")
+  if (length(prob_pars) > 0) {
+    cat("Parameters with Rhat > 1.01, or Neff/N < 0.1:\n")
 
     print(s)
   } else {
-    cat("No parameters with Rhat > 1.01 or ESS < 500")
+    cat("No parameters with Rhat > 1.01 or Neff/N < 0.1")
   }
 }
 
