@@ -51,8 +51,8 @@
 #' # The default plot:
 #' plot(mglmm_fit)
 #'
-#' # Plotting specifically the L_Rho_species parameters:
-#' plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
+#' # Plotting specifically the cor_species parameters:
+#' plot(mglmm_fit, pars = "cor_species", regexp = TRUE)
 #'
 #' # Increasing the number of randomly sampled parameters to plot:
 #' plot(mglmm_fit, sample_n = 20)
@@ -194,7 +194,7 @@ par_sample <- function(pars, parnames, sd = c("sigma", "kappa"), sample_n, regex
 #' # data list)
 #' mcmc_plot(gllvm_fit,
 #'   plotfun = "recover_intervals",
-#'   pars = c("LV[2,20]", "sigmas_b[1]", "sigma_L"),
+#'   pars = c("LV[2,20]", "sigmas_preds[1]", "sigma_L"),
 #'   true = c(
 #'     gllvm_data$pars$LV[2, 20],
 #'     gllvm_data$pars$beta_sds,

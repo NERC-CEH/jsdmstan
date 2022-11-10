@@ -95,15 +95,15 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   vector[N] a[site_intercept];"
   species_pars <- "
   //betas are hierarchical with covariance model
-  vector<lower=0>[K] sigmas_b;
+  vector<lower=0>[K] sigmas_preds;
   matrix[K, S] z_preds;
   // covariance matrix on betas by predictors
-  cholesky_factor_corr[K] L_Rho_preds;"
+  cholesky_factor_corr[K] cor_preds;"
   mglmm_spcov_pars <- "
   // species covariances
-  vector<lower=0>[S] sigmas_u;
+  vector<lower=0>[S] sigmas_species;
   matrix[S, N] z_species;
-  cholesky_factor_corr[S] L_Rho_species;"
+  cholesky_factor_corr[S] cor_species;"
   gllvm_pars <- "
   // Factor parameters
   vector[M] L; // Non-zero factor loadings
@@ -153,10 +153,10 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   ",
     "mglmm" = "
   matrix[N, S] u;
-  u = (diag_pre_multiply(sigmas_u, L_Rho_species) * z_species)';
+  u = (diag_pre_multiply(sigmas_species, cor_species) * z_species)';
   "
   ), "
-  betas = diag_pre_multiply(sigmas_b, L_Rho_preds) * z_preds;
+  betas = diag_pre_multiply(sigmas_preds, cor_preds) * z_preds;
 ")
 
 
@@ -196,10 +196,10 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   }
 
   // Species parameter priors
-  sigmas_b ~ ", prior[["sigmas_b"]], ";
+  sigmas_preds ~ ", prior[["sigmas_preds"]], ";
   to_vector(z_preds) ~ ", prior[["z_preds"]], ";
   // covariance matrix priors
-  L_Rho_preds ~ ", prior[["L_Rho_preds"]], ";
+  cor_preds ~ ", prior[["cor_preds"]], ";
 ",
     switch(method,
       "gllvm" = paste("
@@ -210,9 +210,9 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 "),
       "mglmm" = paste("
   // Species parameter priors
-  sigmas_u ~ ", prior[["sigmas_u"]], ";
+  sigmas_species ~ ", prior[["sigmas_species"]], ";
   to_vector(z_species) ~ ", prior[["z_species"]], ";
-  L_Rho_species ~ ", prior[["L_Rho_species"]], ";
+  cor_species ~ ", prior[["cor_species"]], ";
 ")
     ),
     switch(family,

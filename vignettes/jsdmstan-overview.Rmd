@@ -155,20 +155,20 @@ As we have run the above model on simulated data and the original data list cont
 
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_hist",
-          pars = c("sigmas_b[1]","sigmas_b[2]",
-                   "sigmas_b[3]"),
+          pars = c("sigmas_preds[1]","sigmas_preds[2]",
+                   "sigmas_preds[3]"),
           true = mglmm_test_data$pars$beta_sds)
 ```
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
-          pars = paste0("sigmas_u[",1:nspecies,"]"),
+          pars = paste0("sigmas_species[",1:nspecies,"]"),
           true = mglmm_test_data$pars$u_sds)
 ```
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
-          pars = paste0("L_Rho_species[",rep(1:nspecies, nspecies),",",
+          pars = paste0("cor_species[",rep(1:nspecies, nspecies),",",
                         rep(1:nspecies, each = nspecies),"]"),
-          true = c(mglmm_test_data$pars$L_Rho_species)) +
+          true = c(mglmm_test_data$pars$cor_species)) +
   theme(axis.text.x = element_text(angle = 90))
 ```
 
@@ -210,7 +210,7 @@ The model fitting workflow for latent variable models is very similar to that ab
 ```{r}
 gllvm_test_data <- gllvm_sim_data(N = 250, S = 6, D = 2, family = "gaussian",
                                   prior = jsdm_prior(sigma = "student_t(3,0,1)",
-                                                     sigmas_b = "student_t(3,0,1)"))
+                                                     sigmas_preds = "student_t(3,0,1)"))
 ```
 
 
@@ -220,7 +220,7 @@ gllvm_fit <- stan_jsdm(Y = gllvm_test_data$Y, X = gllvm_test_data$X,
                        family = "gaussian",
                        method = "gllvm", 
                        prior = jsdm_prior(sigma = "student_t(3,0,1)",
-                                                     sigmas_b = "student_t(3,0,1)"),
+                                                     sigmas_preds = "student_t(3,0,1)"),
                        refresh = 0)
 gllvm_fit
 ```

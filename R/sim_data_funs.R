@@ -104,15 +104,15 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "gamma" = "rgamma"
     )
     fun_arg1 <- switch(x,
-      "sigmas_b" = K + 1 * species_intercept,
+      "sigmas_preds" = K + 1 * species_intercept,
       "z_preds" = (K + 1 * species_intercept) * S,
-      "L_Rho_preds" = K + 1 * species_intercept,
+      "cor_preds" = K + 1 * species_intercept,
       "a" = N,
       "a_bar" = 1,
       "sigma_a" = 1,
-      "sigmas_u" = S,
+      "sigmas_species" = S,
       "z_species" = S * N,
-      "L_Rho_species" = S,
+      "cor_species" = S,
       "LV" = D1 * N,
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
@@ -128,9 +128,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
   # build species covariance matrix
   if (method == "mglmm") {
-    L_Rho_species <- do.call(
-      match.fun(prior_func[["L_Rho_species"]][[1]]),
-      prior_func[["L_Rho_species"]][[2]]
+    cor_species <- do.call(
+      match.fun(prior_func[["cor_species"]][[1]]),
+      prior_func[["cor_species"]][[2]]
     )
   }
 
@@ -155,8 +155,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
   # covariate parameters
   beta_sds <- abs(do.call(
-    match.fun(prior_func[["sigmas_b"]][[1]]),
-    prior_func[["sigmas_b"]][[2]]
+    match.fun(prior_func[["sigmas_preds"]][[1]]),
+    prior_func[["sigmas_preds"]][[2]]
   ))
   z_betas <- matrix(do.call(
     match.fun(prior_func[["z_preds"]][[1]]),
@@ -165,11 +165,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if (K == 0) {
     beta_sim <- beta_sds %*% z_betas
   } else {
-    L_Rho_preds <- do.call(
-      match.fun(prior_func[["L_Rho_preds"]][[1]]),
-      prior_func[["L_Rho_preds"]][[2]]
+    cor_preds <- do.call(
+      match.fun(prior_func[["cor_preds"]][[1]]),
+      prior_func[["cor_preds"]][[2]]
     )
-    beta_sim <- (diag(beta_sds) %*% L_Rho_preds) %*% z_betas
+    beta_sim <- (diag(beta_sds) %*% cor_preds) %*% z_betas
   }
 
   mu_sim <- x %*% beta_sim
@@ -198,14 +198,14 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if (method == "mglmm") {
     # u covariance
     u_sds <- abs(do.call(
-      match.fun(prior_func[["sigmas_u"]][[1]]),
-      prior_func[["sigmas_u"]][[2]]
+      match.fun(prior_func[["sigmas_species"]][[1]]),
+      prior_func[["sigmas_species"]][[2]]
     ))
     u_ftilde <- matrix(do.call(
       match.fun(prior_func[["z_species"]][[1]]),
       prior_func[["z_species"]][[2]]
     ), nrow = S, ncol = N)
-    u_ij <- t((diag(u_sds) %*% L_Rho_species) %*% u_ftilde)
+    u_ij <- t((diag(u_sds) %*% cor_species) %*% u_ftilde)
   }
 
   if (method == "gllvm") {
@@ -296,7 +296,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   }
   if (method == "mglmm") {
     pars$u_sds <- u_sds
-    pars$L_Rho_species <- L_Rho_species
+    pars$cor_species <- cor_species
     pars$u_ftilde <- u_ftilde
   }
   if (isTRUE(species_intercept)) {
