@@ -9,44 +9,49 @@
 #' @param data Dataframe or list of covariates.
 #'
 #' @param Y Matrix of species by sites. Rows are assumed to be sites, columns are
-#'  assumed to be species
+#'   assumed to be species
 #'
 #' @param X The covariates matrix, with rows being site and columns being covariates.
-#'  Ignored in favour of data when formula approach is used to specify model.
+#'   Ignored in favour of data when formula approach is used to specify model.
 #'
 #' @param method Whether to fit a GLLVM or MGLMM model, details in description
 #'
 #' @param D The number of latent variables within a GLLVM model
 #'
 #' @param family The response family for the model, required to be one of
-#'  \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}
+#'   \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}
 #'
 #' @param species_intercept Whether the model should be fit with an intercept by
-#'  species, by default \code{TRUE}
+#'   species, by default \code{TRUE}
 #'
 #' @param dat_list Alternatively, data can be given to the model as a list containing
-#'  Y, X, N, S, K, and site_intercept. See output of [jsdm_sim_data()] for an example
-#'  of how this can be formatted.
+#'   Y, X, N, S, K, and site_intercept. See output of [jsdm_sim_data()] for an
+#'   example of how this can be formatted.
 #'
-#' @param site_intercept Whether the model should be fit with a site intercept, by
-#'  default \code{FALSE}
+#' @param site_intercept Whether a site intercept should be included, potential
+#'   values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+#'   with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+#'   grouping)
+#'
+#' @param site_groups If the site intercept is grouped, a vector of group identities
+#'   per site
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 #'
 #' @param save_data If the data used to fit the model should be saved in the model
-#'  object, by default TRUE.
+#'   object, by default TRUE.
 #'
 #' @param iter A positive integer specifying the number of iterations for each chain,
-#'  default 4000.
+#'   default 4000.
 #'
 #' @param log_lik Whether the log likelihood should be calculated in the generated
-#'  quantities (by default TRUE), required for loo
+#'   quantities (by default TRUE), required for loo
 #'
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
 #' @return A \code{jsdmStanFit} object, comprising a list including the StanFit
-#'  object, the data used to fit the model plus a few other bits of information. See
-#'  [jsdmStanFit] for details.
+#'   object, the data used to fit the model plus a few other bits of information. See
+#'   [jsdmStanFit] for details.
 #'
 #' @examples
 #' \dontrun{
@@ -79,21 +84,22 @@ stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
 #' @describeIn stan_jsdm this is the default way of doing things
 #' @export
 stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
-                              dat_list = NULL, family, site_intercept = FALSE, D = NULL,
-                              prior = jsdm_prior(),
+                              dat_list = NULL, family, site_intercept = "none",
+                              D = NULL, prior = jsdm_prior(), site_groups = NULL,
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
 
   stopifnot(
     is.logical(species_intercept),
-    is.logical(site_intercept),
     is.logical(save_data)
   )
+  if(site_intercept == "grouped" & is.null(site_groups) & is.null(dat_list))
+    stop("If site_intercept is grouped then groups must be supplied to site_groups")
 
   # validate data
   data_list <- validate_data(
     Y = Y, X = X, species_intercept = species_intercept,
-    D = D, site_intercept = site_intercept,
+    D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = dat_list, phylo = FALSE,
     family = family, method = method, nu05 = "1",
     delta = 1e-5
@@ -103,7 +109,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   model_code <- jsdm_stancode(
     family = family,
     method = method, prior = prior,
-    log_lik = log_lik
+    log_lik = log_lik, site_intercept = site_intercept
   )
 
   # Compile model
@@ -155,7 +161,7 @@ stan_mglmm <- function(X, ...) UseMethod("stan_mglmm")
 #' @describeIn stan_mglmm Default
 #' @export
 stan_mglmm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE,
-                               dat_list = NULL, family, site_intercept = FALSE,
+                               dat_list = NULL, family, site_intercept = "none",
                                prior = jsdm_prior(),
                                save_data = TRUE, iter = 4000, ...) {
   stan_jsdm.default(
@@ -180,7 +186,7 @@ stan_gllvm <- function(X, ...) UseMethod("stan_gllvm")
 #' @describeIn stan_gllvm Default
 #' @export
 stan_gllvm.default <- function(X = NULL, Y = NULL, D = NULL, species_intercept = TRUE,
-                               dat_list = NULL, family, site_intercept = FALSE,
+                               dat_list = NULL, family, site_intercept = "none",
                                prior = jsdm_prior(),
                                save_data = TRUE, iter = 4000, ...) {
   stan_jsdm.default(
@@ -201,7 +207,7 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept, phylo,
-                          method, nu05, delta) {
+                          method, nu05, delta, site_groups) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -232,18 +238,28 @@ validate_data <- function(Y, D, X, species_intercept,
         colnames(X)[1] <- "(Intercept)"
       }
     }
-    site_intercept <- as.integer(site_intercept)
+
+    if(site_intercept == "grouped"){
+      if(length(site_groups) != N)
+        stop("site_groups must be a vector of site identities of the same length as the number of sites")
+      suppressWarnings(grps <- as.integer(as.factor(site_groups)))
+      if(anyNA(grps))
+        stop("site_groups must be coercible to a numeric vector with no NAs")
+      ngrp <- max(grps)
+    }
 
     if (method == "mglmm") {
       data_list <- list(
-        Y = Y, S = S, K = K, X = X, N = N,
-        site_intercept = site_intercept
+        Y = Y, S = S, K = K, X = X, N = N
       )
     } else if (method == "gllvm") {
       data_list <- list(
-        Y = Y, D = D, S = S, K = K, X = X, N = N,
-        site_intercept = site_intercept
+        Y = Y, D = D, S = S, K = K, X = X, N = N
       )
+    }
+    if(site_intercept == "grouped"){
+      data_list$ngrp <- ngrp
+      data_list$grps <- grps
     }
     if (!isFALSE(phylo)) {
       data_list$Dmat <- phylo
@@ -251,8 +267,8 @@ validate_data <- function(Y, D, X, species_intercept,
       data_list$delta <- delta
     }
   } else {
-    if (!all(c("Y", "K", "S", "N", "X", "site_intercept") %in% names(dat_list))) {
-      stop("If supplying data as a list must have entries Y, K, S, N, X and site_intercept")
+    if (!all(c("Y", "K", "S", "N", "X") %in% names(dat_list))) {
+      stop("If supplying data as a list must have entries Y, K, S, N, X")
     }
 
     if (!("D" %in% names(dat_list)) & method == "gllvm") {
@@ -262,6 +278,12 @@ validate_data <- function(Y, D, X, species_intercept,
     if (!isFALSE(phylo)) {
       if (!all(c("Dmat", "nu05", "delta") %in% names(dat_list))) {
         stop("Phylo models require Dmat, nu05 and delta in dat_list")
+      }
+    }
+
+    if (site_intercept == "grouped") {
+      if (!all(c("ngrp","grps") %in% names(dat_list))) {
+        stop("Grouped site intercept models require ngrp and grps in dat_list")
       }
     }
 

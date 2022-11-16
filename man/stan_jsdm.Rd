@@ -15,9 +15,10 @@ stan_jsdm(X, ...)
   method,
   dat_list = NULL,
   family,
-  site_intercept = FALSE,
+  site_intercept = "none",
   D = NULL,
   prior = jsdm_prior(),
+  site_groups = NULL,
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
@@ -41,18 +42,23 @@ species, by default \code{TRUE}}
 \item{method}{Whether to fit a GLLVM or MGLMM model, details in description}
 
 \item{dat_list}{Alternatively, data can be given to the model as a list containing
-Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an example
-of how this can be formatted.}
+Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an
+example of how this can be formatted.}
 
 \item{family}{The response family for the model, required to be one of
 \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}}
 
-\item{site_intercept}{Whether the model should be fit with a site intercept, by
-default \code{FALSE}}
+\item{site_intercept}{Whether a site intercept should be included, potential
+values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+grouping)}
 
 \item{D}{The number of latent variables within a GLLVM model}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
+
+\item{site_groups}{If the site intercept is grouped, a vector of group identities
+per site}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}

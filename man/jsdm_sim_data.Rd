@@ -14,7 +14,7 @@ jsdm_sim_data(
   family,
   method = c("gllvm", "mglmm"),
   species_intercept = TRUE,
-  site_intercept = FALSE,
+  site_intercept = "none",
   prior = jsdm_prior()
 )
 
@@ -32,16 +32,19 @@ mglmm_sim_data(...)
 \item{K}{is number of covariates, by default \code{0}}
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
-\code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular expression
-matching is supported.}
+\code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular
+expression matching is supported.}
 
 \item{method}{is the jSDM method to use, currently either \code{"gllvm"} or
 \code{"mglmm"} - see details for more information.}
 
-\item{species_intercept}{Whether to include an intercept in the predictors, must be
-\code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.}
+\item{species_intercept}{Whether to include an intercept in the predictors, must
+be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.}
 
-\item{site_intercept}{Whether to include a site intercept. Defaults to \code{FALSE}.}
+\item{site_intercept}{Whether a site intercept should be included, potential
+values \code{"none"} (no site intercept) or \code{"ungrouped"} (site intercept
+with no grouping). Defaults to no site intercept, grouped is not supported
+currently.}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 

@@ -7,16 +7,16 @@
 #' respectively.
 #'
 #' @details This simulates data based on a joint species distribution model with
-#'  either a generalised linear latent variable model approach or a multivariate
-#'  generalised linear mixed model approach.
+#'   either a generalised linear latent variable model approach or a multivariate
+#'   generalised linear mixed model approach.
 #'
-#'  Models can be fit with or without "measured predictors", and if measured
-#'  predictors are included then the species have species-specific parameter
-#'  estimates. These can either be simulated completely independently, or have
-#'  information pooled across species. If information is pooled this can be modelled
-#'  as either a random draw from some mean and standard deviation or species
-#'  covariance can be modelled together (this will be the covariance used in the
-#'  overall model if the method used has covariance).
+#'   Models can be fit with or without "measured predictors", and if measured
+#'   predictors are included then the species have species-specific parameter
+#'   estimates. These can either be simulated completely independently, or have
+#'   information pooled across species. If information is pooled this can be modelled
+#'   as either a random draw from some mean and standard deviation or species
+#'   covariance can be modelled together (this will be the covariance used in the
+#'   overall model if the method used has covariance).
 #'
 #' @export
 #'
@@ -29,23 +29,30 @@
 #' @param K is number of covariates, by default \code{0}
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
-#'  \code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular expression
-#'  matching is supported.
+#'   \code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular
+#'   expression matching is supported.
 #'
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
-#'  \code{"mglmm"} - see details for more information.
+#'   \code{"mglmm"} - see details for more information.
 #'
-#' @param species_intercept Whether to include an intercept in the predictors, must be
-#'  \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
+#' @param species_intercept Whether to include an intercept in the predictors, must
+#'   be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
 #'
-#' @param site_intercept Whether to include a site intercept. Defaults to \code{FALSE}.
+#' @param site_intercept Whether a site intercept should be included, potential
+#'   values \code{"none"} (no site intercept) or \code{"ungrouped"} (site intercept
+#'   with no grouping). Defaults to no site intercept, grouped is not supported
+#'   currently.
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
-                          site_intercept = FALSE,
+                          site_intercept = "none",
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson", "bernoulli"))
+  site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
+  if(site_intercept == "grouped"){
+    stop("Grouped site intercept not supported")
+  }
 
   if (any(!c(is.double(N), is.double(S)))) {
     stop("N and S must be positive integers")
@@ -177,7 +184,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
 
   ## site intercept
-  if (isTRUE(site_intercept)) {
+  if (site_intercept %in% c("grouped","ungrouped")) {
     a_bar <- do.call(
       match.fun(prior_func[["a_bar"]][[1]]),
       prior_func[["a_bar"]][[2]]
@@ -284,7 +291,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     z_betas = z_betas
   )
 
-  if (isTRUE(site_intercept)) {
+  if (site_intercept == "ungrouped") {
     pars$a_bar <- a_bar
     pars$sigma_a <- sigma_a
     pars$a <- a
@@ -307,8 +314,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     }
   }
   output <- list(
-    Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x,
-    site_intercept = as.integer(site_intercept)
+    Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x
   )
 
   return(output)

@@ -10,6 +10,10 @@
 #' @param prior The prior, given as the result of a call to [jsdm_prior()]
 #' @param log_lik Whether the log likelihood should be calculated in the generated
 #'   quantities (by default \code{TRUE}), required for loo
+#' @param site_intercept Whether a site intercept should be included, potential
+#'   values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+#'   with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+#'   grouping)
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
@@ -19,65 +23,47 @@
 #' jsdm_stancode(family = "poisson", method = "mglmm")
 #'
 jsdm_stancode <- function(method, family, prior = jsdm_prior(),
-                          log_lik = TRUE) {
+                          log_lik = TRUE, site_intercept = "none") {
   # checks
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
   method <- match.arg(method, c("gllvm", "mglmm"))
+  site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
   if (class(prior)[1] != "jsdmprior") {
     stop("Prior must be given as a jsdmprior object")
   }
 
-  # if(!all(c("Y","K","S","N","X","site_intercept") %in% names(data_list)))
-  #   stop("Data list must have entries Y, K, S, N, X and site_intercept")
-
-
   # data processing steps
-
   scode <- .modelcode(
     method = method, family = family,
-    phylo = FALSE, prior = prior, log_lik = log_lik
+    phylo = FALSE, prior = prior, log_lik = log_lik, site_intercept = site_intercept
   )
   class(scode) <- c("jsdmstan_model", "character")
   return(scode)
 }
 
 
-.modelcode <- function(method, family, phylo, prior, log_lik) {
+.modelcode <- function(method, family, phylo, prior, log_lik, site_intercept) {
   model_functions <- "
-  matrix to_lower_tri(vector x, int nr, int nc){
-    matrix[nr,nc] y;
-    int pos = 1;
-    for(i in 1:nr){
-      for(j in 1:nc){
-        if(i < j){
-          y[i,j] = 0;
-        } else{
-          y[i,j] = x[pos];
-          pos += 1;
-        }
-      }
-    }
-    return y;
-  }
 "
   data <- paste(
-    "
-  int<lower=1> N; // Number of samples
+    " int<lower=1> N; // Number of sites
   int<lower=1> S; // Number of species
-  ", ifelse(method == "gllvm",
+ ", ifelse(method == "gllvm",
       "int<lower=1> D; // Number of latent dimensions", ""
     ),
     "
   int<lower=0> K; // Number of predictor variables
   matrix[N, K] X; // Predictor matrix
-
-  int<lower=0,upper=1> site_intercept; // whether to include a site intercept
-  ",
-    switch(family,
-      "gaussian" = "real ",
-      "bernoulli" = "int<lower=0,upper=1> ",
-      "neg_binomial" = "int<lower=0> ",
-      "poisson" = "int<lower=0> "
+", ifelse(site_intercept == "grouped",
+            "
+  int<lower=1> ngrp; // Number of groups in site intercept
+  int<lower=0, upper = ngrp> grps[N]; // Vector matching sites to groups
+  ",""),
+  switch(family,
+      "gaussian" = "real",
+      "bernoulli" = "int<lower=0,upper=1>",
+      "neg_binomial" = "int<lower=0>",
+      "poisson" = "int<lower=0>"
     ), "Y[N,S]; //Species matrix"
   )
   transformed_data <- ifelse(method == "gllvm", "
@@ -88,11 +74,18 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 
 
-  site_inter_par <- "
+  site_inter_par <- switch(site_intercept,
+                           "ungrouped" = "
   // Site intercepts
-  real a_bar[site_intercept];
-  real<lower=0> sigma_a[site_intercept];
-  vector[N] a[site_intercept];"
+  real a_bar;
+  real<lower=0> sigma_a;
+  vector[N] a;",
+  "none" = "",
+  "grouped" = "
+  // Site intercepts
+  real a_bar;
+  real<lower=0> sigma_a;
+  vector[ngrp] a;")
   species_pars <- "
   //betas are hierarchical with covariance model
   vector<lower=0>[K] sigmas_preds;
@@ -161,25 +154,43 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 
 
-  gllvm_model <- "
+  gllvm_model <- switch(site_intercept, "ungrouped" = "
   // model
   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-  if(site_intercept == 1){
-    matrix[N, S] alpha = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S);
-    mu = alpha + (X * betas) + LV_sum;
-  } else{
-      mu = (X * betas) + LV_sum;
-  }
-  "
-  mglmm_model <- "
+  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  mu = alpha + (X * betas) + LV_sum;
+  ", "none" = "
   // model
-  if(site_intercept == 1){
-    matrix[N, S] alpha = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S);
-    mu = alpha + (X * betas) + u;
-  } else {
-    mu = (X * betas) + u;
+  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
+  mu = (X * betas) + LV_sum;
+  ", "grouped" = "
+  matrix[N, S] alpha;
+  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
+  {
+    vector[ngrp] theta = a_bar + a * sigma_a;
+    for (n in 1:N){
+      alpha[n,] = rep_row_vector(theta[grps[n]],S);
+    }
   }
-  "
+  mu = alpha + (X * betas) + LV_sum;
+  ")
+  mglmm_model <- switch(site_intercept, "ungrouped" = "
+  // model
+  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  mu = alpha + (X * betas) + u;
+  ", "none" = "
+  // model
+  mu = (X * betas) + u;
+  ", "grouped" = "
+  matrix[N, S] alpha;
+  {
+    vector[ngrp] theta = a_bar + a * sigma_a;
+    for (n in 1:N){
+      alpha[n,] = rep_row_vector(theta[grps[n]],S);
+    }
+  }
+  mu = alpha + (X * betas) + u;
+  ")
   model <- paste("
   matrix[N,S] mu;
   ", switch(method,
@@ -187,14 +198,14 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
     "mglmm" = mglmm_model
   ))
   model_priors <- paste(
-    "
+    ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
   // Site-level intercept priors
-  if(site_intercept == 1){
-    a[1,] ~ ", prior[["a"]], ";
-    a_bar[1] ~ ", prior[["a_bar"]], ";
-    sigma_a[1] ~ ", prior[["sigma_a"]], ";
-  }
-
+  a ~ ", prior[["a"]], ";
+  a_bar ~ ", prior[["a_bar"]], ";
+  sigma_a ~ ", prior[["sigma_a"]], ";
+  "), "
+  "),
+  "
   // Species parameter priors
   sigmas_preds ~ ", prior[["sigmas_preds"]], ";
   to_vector(z_preds) ~ ", prior[["z_preds"]], ";
@@ -248,8 +259,6 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   // Sign correct factor loadings and factors
   matrix[D, N] LV;
   matrix[S, D] Lambda;
-  //matrix[S, S] COV;
-  //vector[M] Lambda_vect;
   for(d in 1:D){
     if(Lambda_uncor[d,d] < 0){
       Lambda[,d] = -1 * Lambda_uncor[,d];
@@ -261,21 +270,30 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   }", ""), ifelse(isTRUE(log_lik), paste(
       "
   {
-    matrix[N, S] linpred;
-    if(site_intercept == 1){
-      linpred = rep_matrix(a_bar[1] + a[1,] * sigma_a[1], S) + (X * betas) +",
-      switch(method,
-        "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
-        "mglmm" = "u"
+    matrix[N, S] linpred;", switch(site_intercept, "ungrouped" = paste("
+    linpred = rep_matrix(a_bar + a * sigma_a, S) + (X * betas) +",
+    switch(method,
+           "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
+           "mglmm" = "u"
+    ), ";
+    "), "none" = paste("
+    linpred = (X * betas) +",
+    switch(method,
+           "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
+           "mglmm" = "u"
       ), ";
-    } else{
-      linpred = (X * betas) +",
-      switch(method,
-        "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
-        "mglmm" = "u"
-      ), ";
-    }
-        for(i in 1:N) {
+    "), "grouped" = paste("
+  matrix[N, S] alpha;
+  for (n in 1:N){
+    alpha[n,] = rep_row_vector(a[grps[n]],S);
+  }
+  linpred = alpha + (X * betas) +",
+  switch(method,
+         "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
+         "mglmm" = "u"
+  ), ";
+    ")),"
+      for(i in 1:N) {
       for(j in 1:S) {
         log_lik[i, j] = ",
       switch(family,

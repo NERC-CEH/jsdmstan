@@ -5,7 +5,13 @@
 \alias{print.jsdmstan_model}
 \title{Make stancode for the jsdm model}
 \usage{
-jsdm_stancode(method, family, prior = jsdm_prior(), log_lik = TRUE)
+jsdm_stancode(
+  method,
+  family,
+  prior = jsdm_prior(),
+  log_lik = TRUE,
+  site_intercept = "none"
+)
 
 \method{print}{jsdmstan_model}(x, ...)
 }
@@ -19,6 +25,11 @@ jsdm_stancode(method, family, prior = jsdm_prior(), log_lik = TRUE)
 
 \item{log_lik}{Whether the log likelihood should be calculated in the generated
 quantities (by default \code{TRUE}), required for loo}
+
+\item{site_intercept}{Whether a site intercept should be included, potential
+values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+grouping)}
 
 \item{x}{The jsdm_stancode object}
 
