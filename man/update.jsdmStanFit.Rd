@@ -4,7 +4,7 @@
 \alias{update.jsdmStanFit}
 \title{Update a jsdmStanFit model object with new data or Stan arguments}
 \usage{
-\method{update}{jsdmStanFit}(object, newY = NULL, newX = NULL, save_data = TRUE, ...)
+\method{update}{jsdmStanFit}(object, newY = NULL, newX = NULL, newD = NULL, save_data = TRUE, ...)
 }
 \arguments{
 \item{object}{The jsdmStanFit model object}
@@ -12,6 +12,8 @@
 \item{newY}{New Y data, by default \code{NULL}}
 
 \item{newX}{New X data, by default \code{NULL}}
+
+\item{newD}{New number of latent variables, by default \code{NULL}}
 
 \item{save_data}{Whether to save the data in the jsdmStanFit object, by default
 \code{TRUE}}

@@ -328,18 +328,6 @@ validate_data <- function(Y, D, X, species_intercept,
 
 model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept,
                                  family, save_data) {
-  # upper triangle of factor loadings
-  # if(method == "gllvm"){
-  #   if(data_list$D>1){
-  #     nr <- data_list$D
-  #     upper_trinames <- character()
-  #     while(nr>1){
-  #       upper_trinames <- c(upper_trinames, paste0("[",1:(nr-1),",",nr,"]"))
-  #       nr <- nr-1
-  #     }
-  #   }
-  # }
-
   # Turn into jsdmStanFit
   sites <- if (!is.null(rownames(data_list$Y))) {
     rownames(data_list$Y)

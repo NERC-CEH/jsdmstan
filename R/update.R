@@ -9,6 +9,7 @@
 #' @param object The jsdmStanFit model object
 #' @param newY New Y data, by default \code{NULL}
 #' @param newX New X data, by default \code{NULL}
+#' @param newD New number of latent variables, by default \code{NULL}
 #' @param save_data Whether to save the data in the jsdmStanFit object, by default
 #'  \code{TRUE}
 #' @param ... Arguments passed to [rstan::sampling()]
@@ -47,8 +48,8 @@
 #' gllvm_fit2 <- update(gllvm_fit, newY = gllvm_data$Y)
 #' gllvm_fit2
 #' }
-update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, save_data = TRUE,
-                               ...) {
+update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
+                               save_data = TRUE, ...) {
   if (length(object$data_list) == 0) {
     stop("Update requires the original data to be saved in the model object")
   }
@@ -70,9 +71,18 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, save_data = TRU
   }
   family <- object$family
   method <- object$jsdm_type
-  D <- object$data_list$D
+  if(!is.null(newD)){
+    D <- newD
+  } else{
+    D <- object$data_list$D
+  }
   species_intercept <- "(Intercept)" %in% colnames(object$data_list$X)
-  site_intercept <- object$data_list$site_intercept
+
+  site_intercept <- ifelse("ngrp" %in% names(object$data_list), "grouped",
+                           ifelse("a" %in% get_parnames(object), "ungrouped",
+                                  "none"))
+  site_groups <- if(site_intercept == "grouped"){
+    object$data_list$grps} else{NULL}
   phylo <- object$data_list$phylo
   if (!isFALSE(phylo)) {
     nu05 <- object$data_list$nu05
@@ -85,7 +95,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, save_data = TRU
   # validate data
   data_list <- validate_data(
     Y = Y, X = X, species_intercept = species_intercept,
-    D = D, site_intercept = site_intercept,
+    D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = NULL, phylo = phylo,
     family = family, method = method, nu05 = nu05,
     delta = delta

@@ -419,9 +419,9 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     graph <- graph +
       ggplot2::geom_point(
         data = ord_scores_summary,
-        ggplot2::aes_string(paste0("LV", choices[1]),
-          paste0("LV", choices[2]),
-          colour = "S"
+        ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                     .data[[paste0("LV", choices[2])]],
+                     colour = .data[["S"]]
         ),
         size = size[1], alpha = alpha[1], shape = shape[1]
       )
@@ -431,9 +431,9 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     graph <- graph +
       ggplot2::geom_point(
         data = ord_scores,
-        ggplot2::aes_string(paste0("LV", choices[1]),
-          paste0("LV", choices[2]),
-          colour = "S"
+        ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                     .data[[paste0("LV", choices[2])]],
+                     colour = .data[["S"]]
         ),
         size = size[2], alpha = alpha[2], shape = shape[2]
       )

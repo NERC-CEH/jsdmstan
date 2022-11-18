@@ -21,55 +21,6 @@ test_that("formula structure works", {
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 })
 
-# stan_jsdm site_intercept tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-mglmm_data <- mglmm_sim_data(N = 100, S = 8, family = "gaussian", K = 3,
-                             site_intercept = "ungrouped")
-df <- as.data.frame(mglmm_data$X)
-grps <- rep(1:20, each = 5)
-
-gllvm_data <- gllvm_sim_data(N = 100, S = 8, family = "bern", D = 3,
-                             site_intercept = "ungrouped")
-gllvm_data$grps <- rep(1:20, each = 5)
-gllvm_data$ngrp <- 20
-
-test_that("site intercept errors correctly", {
-  expect_error(stan_mglmm(~ V1 + V2, data = df, Y = mglmm_data$Y,
-                          site_intercept = "fauh",family = "gaussian"))
-  expect_error(stan_gllvm(~V1 + V2, data = df, D = 2, Y = mglmm_data$Y,
-                          site_intercept = "grouped", family = "gaussian"),
-               "If site_intercept is grouped then groups must be supplied to site_groups")
-})
-
-test_that("site intercept models run", {
-  suppressWarnings(mglmm_fit <- stan_mglmm(~ V1 * V2,
-                                           data = df, Y = mglmm_data$Y,
-                                           site_intercept = "ungrouped",
-                                           family = "gaussian",
-                                           refresh = 0, chains = 1, iter = 200
-  ))
-  expect_s3_class(mglmm_fit, "jsdmStanFit")
-
-
-  suppressWarnings(mglmm_fit <- stan_mglmm(~ V1 * V2,
-                                           data = df, Y = mglmm_data$Y,
-                                           site_intercept = "grouped",
-                                           site_groups = grps,
-                                           family = "gaussian",
-                                           refresh = 0, chains = 1, iter = 200
-  ))
-  expect_s3_class(mglmm_fit, "jsdmStanFit")
-
-
-
-  suppressWarnings(gllvm_fit <- stan_gllvm(X = NULL, dat_list = gllvm_data,
-                                           site_intercept = "grouped",
-                                           family = "bern",
-                                           refresh = 0, chains = 1, iter = 200
-  ))
-  expect_s3_class(gllvm_fit, "jsdmStanFit")
-})
-
-
 # jsdmstanfit object interaction tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 test_that("print works", {
   expect_output(print(mglmm_fit))
@@ -269,3 +220,56 @@ test_that("stan_mglmm returns right type of object", {
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 })
 
+# stan_jsdm site_intercept tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+mglmm_data <- mglmm_sim_data(N = 100, S = 8, family = "gaussian", K = 3,
+                             site_intercept = "ungrouped")
+df <- as.data.frame(mglmm_data$X)
+grps <- rep(1:20, each = 5)
+
+gllvm_data <- gllvm_sim_data(N = 100, S = 8, family = "bern", D = 3,
+                             site_intercept = "ungrouped")
+gllvm_data$grps <- rep(1:20, each = 5)
+gllvm_data$ngrp <- 20
+
+test_that("site intercept errors correctly", {
+  expect_error(stan_mglmm(~ V1 + V2, data = df, Y = mglmm_data$Y,
+                          site_intercept = "fauh",family = "gaussian"))
+  expect_error(stan_gllvm(~V1 + V2, data = df, D = 2, Y = mglmm_data$Y,
+                          site_intercept = "grouped", family = "gaussian"),
+               "If site_intercept is grouped then groups must be supplied to site_groups")
+})
+
+test_that("site intercept models run", {
+  suppressWarnings(mglmm_fit <- stan_mglmm(~ V1 * V2,
+                                           data = df, Y = mglmm_data$Y,
+                                           site_intercept = "ungrouped",
+                                           family = "gaussian",
+                                           refresh = 0, chains = 1, iter = 200
+  ))
+  expect_s3_class(mglmm_fit, "jsdmStanFit")
+
+
+  suppressWarnings(mglmm_fit <- stan_mglmm(~ V1 * V2,
+                                           data = df, Y = mglmm_data$Y,
+                                           site_intercept = "grouped",
+                                           site_groups = grps,
+                                           family = "gaussian",
+                                           refresh = 0, chains = 1, iter = 200
+  ))
+  expect_s3_class(mglmm_fit, "jsdmStanFit")
+
+})
+
+test_that("site_intercept models update", {
+  suppressWarnings(gllvm_fit <- stan_gllvm(X = NULL, dat_list = gllvm_data,
+                                           site_intercept = "grouped",
+                                           family = "bern",
+                                           refresh = 0, chains = 1, iter = 200
+  ))
+  expect_s3_class(gllvm_fit, "jsdmStanFit")
+
+  suppressWarnings(gllvm_fit2 <- update(gllvm_fit, newD = 2,
+                                        refresh = 0, chains = 1, iter = 200
+  ))
+  expect_s3_class(gllvm_fit2, "jsdmStanFit")
+})
