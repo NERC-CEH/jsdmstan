@@ -22,7 +22,11 @@
 \item{plotfun}{The ppc plot function to use, given as a character string. The
 default is to call \link[bayesplot:PPC-distributions]{ppc_dens_overlay}. Can be
 specified as either the entire name of function as a character string or without
-the ppc_ prefix}
+the ppc_ prefix. If \code{plotfun == "pairs"} then a pairs plot is produced with
+a diagonal of density plots for the selected species, the upper triangle showing
+the recovery of the correlation between the selected species, and the lower
+triangle showing the plotted relationships between the species in the data and
+one draw of the posterior prediction.}
 
 \item{species}{Which species to include in the summary statistic, by default all}
 
@@ -45,9 +49,9 @@ A ggplot object that can be further customised using the \pkg{ggplot2}
 package.
 }
 \description{
-This function acts as an interface to \code{\link[bayesplot:pp_check]{bayesplot::pp_check()}}, by
-default calculating summary statistics for each site (i.e. row in the response
-matrix) which are then plotted and compared to the data used to fit the model.
+This function acts as an interface to \code{\link[bayesplot:pp_check]{bayesplot::pp_check()}}, by default
+calculating summary statistics for each site (i.e. row in the response matrix)
+which are then plotted and compared to the data used to fit the model.
 }
 \details{
 This function takes a \code{jsdmStanFit} object and tries to extract statistics
@@ -81,6 +85,9 @@ pp_check(mglmm_fit,
   plotfun = "ecdf_overlay", summary_stat = "mean",
   calc_over = "species", ndraws = 20
 )
+
+# A pairs plot - limiting to only a subset of species for graphical simplicity
+pp_check(mglmm_fit, plotfun = "pairs", species = 1:4)
 }
 
 }

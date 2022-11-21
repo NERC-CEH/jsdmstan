@@ -112,6 +112,24 @@ test_that("pp_check returns appropriate class", {
   )
 })
 
+# pp_check pairs
+test_that("pp_check pairs errors correctly", {
+  expect_error(pp_check(gauss_fit, plotfun = "pairs",
+                        species = 20:22),
+               "species in model fit but species vector")
+
+  expect_error(pp_check(gauss_fit, plotfun = "pairs",
+                        species = c("never","give")),
+               "Not all species named are in model object")
+})
+
+test_that("pp_check returns correct object",{
+  suppressMessages(test <- pp_check(gauss_fit, plotfun = "pairs",
+                                    species = 1:3))
+  expect_s3_class(test, "bayesplot_grid")
+  expect_length(test, 9)
+})
+
 # plot - so as to not have to fit an extra model
 
 test_that("plot returns right class of object", {

@@ -54,7 +54,7 @@ jsdmStanFit_empty <- function() {
 #'
 #' This prints out a summary for the models which includes the type of model fit, the
 #' number of species, sites and predictors as well as a summary of any parameters
-#' with Rhat > 1.01 or effective sample size to total number of samples ratio < 0.1
+#' with Rhat > 1.01 or effective sample size to total number of samples ratio < 0.05
 #'
 #' @param x The \code{jsdmStanFit} model object
 #' @param ... Other arguments passed to [summary.jsdmStanFit]
@@ -64,7 +64,7 @@ print.jsdmStanFit <- function(x, ...) {
   rhat_prob <- rhat(x)
   prob_rhat <- names(na.omit(rhat_prob[rhat_prob > 1.01]))
   neff_prob <- neff_ratio(x)
-  prob_neff <- names(na.omit(neff_prob[neff_prob < 0.1]))
+  prob_neff <- names(na.omit(neff_prob[neff_prob < 0.05]))
   prob_pars <- union(prob_rhat, prob_neff)
 
   if (length(prob_pars) > 0) {
@@ -84,11 +84,11 @@ print.jsdmStanFit <- function(x, ...) {
   sep = ""
   )
   if (length(prob_pars) > 0) {
-    cat("Parameters with Rhat > 1.01, or Neff/N < 0.1:\n")
+    cat("Parameters with Rhat > 1.01, or Neff/N < 0.05:\n")
 
     print(s)
   } else {
-    cat("No parameters with Rhat > 1.01 or Neff/N < 0.1")
+    cat("No parameters with Rhat > 1.01 or Neff/N < 0.05")
   }
 }
 
