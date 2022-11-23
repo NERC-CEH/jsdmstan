@@ -62,8 +62,8 @@ test_that("jsdm_statsummary returns correct form of output", {
     c(10, 100)
   )
   test_stat <- jsdm_statsummary(bern_fit,
-    post_type = "predict",
-    draw_ids = seq(1, 1000, 100)
+                                post_type = "predict",
+                                draw_ids = seq(1, 1000, 100)
   )
   expect_false(anyNA(test_stat))
   expect_false(any(test_stat < 0))
@@ -75,8 +75,8 @@ test_that("jsdm_statsummary returns correct form of output", {
   )
   expect_equal(
     dim(jsdm_statsummary(gauss_fit,
-      species = 1:5,
-      summary_stat = function(x) quantile(x, 0.1)
+                         species = 1:5,
+                         summary_stat = function(x) quantile(x, 0.1)
     )),
     c(1000, 150)
   )
@@ -85,8 +85,8 @@ test_that("jsdm_statsummary returns correct form of output", {
     c(30, 16)
   )
   test_stat <- jsdm_statsummary(gauss_fit,
-    post_type = "predict",
-    draw_ids = seq(1, 1000, 100)
+                                post_type = "predict",
+                                draw_ids = seq(1, 1000, 100)
   )
   expect_false(anyNA(test_stat))
 })
@@ -133,6 +133,13 @@ test_that("pp_check returns correct object",{
 # plot - so as to not have to fit an extra model
 
 test_that("plot returns right class of object", {
+  expect_warning(ordiplot(gauss_fit, ndraws = 1e6),
+                 "There are fewer samples than ndraws specified")
+
+  expect_error(
+    ordiplot(gauss_fit, draw_ids = c(1e7,8e4)),
+    "Maximum of draw_ids"
+  )
   expect_s3_class(ordiplot(gauss_fit), "gg")
 
   expect_s3_class(
@@ -142,11 +149,15 @@ test_that("plot returns right class of object", {
 
   expect_s3_class(
     plot(gauss_fit,
-      plot = FALSE,
-      pars = "sigma", regexp = TRUE
+         plot = FALSE,
+         pars = "sigma", regexp = TRUE
     )[[1]],
     "bayesplot_grid"
   )
+
+  expect_error(mcmc_plot(gauss_fit, plotfun = "scatter",
+                         pars = "LV", regexp = TRUE),
+               "Exactly 2 parameters must be selected for this plot function")
 
   expect_s3_class(mcmc_plot(gauss_fit), "gg")
   expect_s3_class(mcmc_plot(bern_fit, plotfun = "nuts_divergence"), "bayesplot_grid")
