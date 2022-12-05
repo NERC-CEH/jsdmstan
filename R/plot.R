@@ -321,7 +321,8 @@ mcmc_plot <- function(x, ...) {
 #' }
 ordiplot <- function(object, choices = c(1, 2), type = "species",
                      summary_stat = "mean", ndraws = 20, draw_ids = NULL,
-                     size = c(2, 1), alpha = c(1, 0.5), shape = c(18, 16)) {
+                     size = c(2, 1), alpha = c(1, 0.5), shape = c(18, 16),
+                     geom = "point") {
   # try to remove CMD check note
   LV <- NULL
   if (!inherits(object, "jsdmStanFit")) {
@@ -334,6 +335,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
   if (length(choices) != 2L) {
     stop("Only two latent variables can be plotted at once")
   }
+  geom <- match.arg(geom, c("point","text"))
 
   # Extract corrected latent variable scores for species OR sites
   ext_pars <- switch(type,
@@ -416,15 +418,29 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     ggplot2::coord_equal()
 
   if (!is.null(summary_stat)) {
-    graph <- graph +
-      ggplot2::geom_point(
-        data = ord_scores_summary,
-        ggplot2::aes(.data[[paste0("LV", choices[1])]],
-                     .data[[paste0("LV", choices[2])]],
-                     colour = .data[["S"]]
-        ),
-        size = size[1], alpha = alpha[1], shape = shape[1]
-      )
+    if(geom == "point"){
+      graph <- graph +
+        ggplot2::geom_point(
+          data = ord_scores_summary,
+          ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                       .data[[paste0("LV", choices[2])]],
+                       colour = .data[["S"]]
+          ),
+          size = size[1], alpha = alpha[1], shape = shape[1]
+        )
+    } else {
+      graph <- graph +
+        ggplot2::geom_text(
+          data = ord_scores_summary,
+          ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                       .data[[paste0("LV", choices[2])]],
+                       label = switch(type,
+                                      "species" = object$species,
+                                      "sites" = object$sites)
+          ),
+          size = size[1], alpha = alpha[1]
+        )
+    }
   }
 
   if (ndraws > 0 | !is.null(draw_ids)) {

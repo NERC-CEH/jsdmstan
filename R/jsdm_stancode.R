@@ -23,10 +23,12 @@
 #' jsdm_stancode(family = "poisson", method = "mglmm")
 #'
 jsdm_stancode <- function(method, family, prior = jsdm_prior(),
-                          log_lik = TRUE, site_intercept = "none") {
+                          log_lik = TRUE, site_intercept = "none",
+                          beta_param = "cor") {
   # checks
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
   method <- match.arg(method, c("gllvm", "mglmm"))
+  beta_param <- match.arg(beta_param, c("cor","unstruct"))
   site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
   if (class(prior)[1] != "jsdmprior") {
     stop("Prior must be given as a jsdmprior object")
@@ -35,14 +37,16 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   # data processing steps
   scode <- .modelcode(
     method = method, family = family,
-    phylo = FALSE, prior = prior, log_lik = log_lik, site_intercept = site_intercept
+    phylo = FALSE, prior = prior, log_lik = log_lik, site_intercept = site_intercept,
+    beta_param = beta_param
   )
   class(scode) <- c("jsdmstan_model", "character")
   return(scode)
 }
 
 
-.modelcode <- function(method, family, phylo, prior, log_lik, site_intercept) {
+.modelcode <- function(method, family, phylo, prior, log_lik, site_intercept,
+                       beta_param) {
   model_functions <- "
 "
   data <- paste(
@@ -86,12 +90,13 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   real a_bar;
   real<lower=0> sigma_a;
   vector[ngrp] a;")
-  species_pars <- "
+  species_pars <- switch(beta_param, "cor" = "
   //betas are hierarchical with covariance model
   vector<lower=0>[K] sigmas_preds;
   matrix[K, S] z_preds;
   // covariance matrix on betas by predictors
-  cholesky_factor_corr[K] cor_preds;"
+  cholesky_factor_corr[K] cor_preds;", "unstruct" = "
+  matrix[K, S] betas;")
   mglmm_spcov_pars <- "
   // species covariances
   vector<lower=0>[S] sigmas_species;
@@ -120,10 +125,10 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
     ),
     var_pars
   )
-  transformed_pars <- paste("
+  transformed_pars <- paste(if(beta_param == "cor"){ "
   // covariance matrix on betas by preds
   matrix[K, S] betas;
-  ", switch(method,
+  "} else {""}, switch(method,
     "gllvm" = "
   // Construct factor loading matrix
   matrix[S, D] Lambda_uncor;
@@ -148,9 +153,9 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   matrix[N, S] u;
   u = (diag_pre_multiply(sigmas_species, cor_species) * z_species)';
   "
-  ), "
+  ), if(beta_param == "cor") {"
   betas = diag_pre_multiply(sigmas_preds, cor_preds) * z_preds;
-")
+"} else {""})
 
 
 
@@ -204,14 +209,18 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   a_bar ~ ", prior[["a_bar"]], ";
   sigma_a ~ ", prior[["sigma_a"]], ";
   "), "
-  "),
+  "), switch(beta_param, "cor" = paste(
   "
   // Species parameter priors
   sigmas_preds ~ ", prior[["sigmas_preds"]], ";
   to_vector(z_preds) ~ ", prior[["z_preds"]], ";
   // covariance matrix priors
   cor_preds ~ ", prior[["cor_preds"]], ";
-",
+"), "unstruct" = paste(
+  "
+  // Species parameter priors
+  to_vector(betas) ~ ", prior[["betas"]],";
+  ")),
     switch(method,
       "gllvm" = paste("
   // Factor priors

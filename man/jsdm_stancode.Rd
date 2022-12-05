@@ -10,7 +10,8 @@ jsdm_stancode(
   family,
   prior = jsdm_prior(),
   log_lik = TRUE,
-  site_intercept = "none"
+  site_intercept = "none",
+  beta_param = "cor"
 )
 
 \method{print}{jsdmstan_model}(x, ...)

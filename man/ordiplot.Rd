@@ -13,7 +13,8 @@ ordiplot(
   draw_ids = NULL,
   size = c(2, 1),
   alpha = c(1, 0.5),
-  shape = c(18, 16)
+  shape = c(18, 16),
+  geom = "point"
 )
 }
 \arguments{

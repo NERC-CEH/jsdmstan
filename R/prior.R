@@ -8,14 +8,14 @@
 #' appropriate stan command. The most common versions of these are supported by the
 #' simulated data functions, however there are functions that can be fed to the stan
 #' fitting procedure that will not be able to be used as input for [jsdm_sim_data()].
-#' Parameters \code{sigmas_preds}, \code{sigma_a}, \code{sigmas_species}, \code{sigma_L},
-#' \code{sigma}, and \code{kappa} are fixed to be positive only in the stan code and
-#' this cannot be changed. Parameters \code{cor_preds} and \code{cor_species} are
-#' assumed to be the Cholesky factor of a correlation matrix. All other parameters
-#' are real numbers. For all parameters that represent vectors or matrices the prior
-#' has to be the same across the entire vector or matrix (note that for the species
-#' latent variable loadings in a GLLVM model the prior is set on the non-zero matrix
-#' components \code{L} and not on the entire matrix).
+#' Parameters \code{sigmas_preds}, \code{sigma_a}, \code{sigmas_species},
+#' \code{sigma_L}, \code{sigma}, and \code{kappa} are fixed to be positive only in
+#' the stan code and this cannot be changed. Parameters \code{cor_preds} and
+#' \code{cor_species} are assumed to be the Cholesky factor of a correlation matrix.
+#' All other parameters are real numbers. For all parameters that represent vectors
+#' or matrices the prior has to be the same across the entire vector or matrix (note
+#' that for the species latent variable loadings in a GLLVM model the prior is set on
+#' the non-zero matrix components \code{L} and not on the entire matrix).
 #'
 #' Prior distributions supported by [jsdm_sim_data()] are \code{"normal(mean, sd)"},
 #' \code{"student_t(df, mu, sigma)"}, \code{"cauchy(location, scale)"},
@@ -26,12 +26,14 @@
 #'   data simulation functions
 #'
 #'
-#' @param sigmas_preds The standard deviation of the covariate effects, constrained to be
-#'   positive (default standard normal)
+#' @param sigmas_preds The standard deviation of the covariate effects, constrained
+#'   to be positive (default standard normal)
 #' @param z_preds The covariate effects (default standard normal)
 #' @param cor_preds The correlation matrix on the covariate effects (npred by npred
 #'   matrix represented as a Cholesky factor of a correlation matrix) (default
 #'   \code{"lkj_corr_cholesky(1)"})
+#' @param betas If covariate effects are unstructured, the prior on the covariate
+#'   effects
 #' @param a The site level intercepts (default standard normal)
 #' @param a_bar The mean site level intercept
 #' @param sigma_a The standard deviation of the site level intercepts, constrained to
@@ -63,6 +65,7 @@
 jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        z_preds = "normal(0,1)",
                        cor_preds = "lkj_corr_cholesky(1)",
+                       betas = "normal(0,1)",
                        a = "normal(0,1)",
                        a_bar = "normal(0,1)",
                        sigma_a = "normal(0,1)",
@@ -76,6 +79,7 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        kappa = "normal(0,1)") {
   res <- list(
     sigmas_preds = sigmas_preds, z_preds = z_preds, cor_preds = cor_preds,
+    betas = betas,
     a = a, a_bar = a_bar, sigma_a = sigma_a,
     sigmas_species = sigmas_species, z_species = z_species,
     cor_species = cor_species,
@@ -99,14 +103,14 @@ print.jsdmprior <- function(x, ...) {
   df <- data.frame(
     Parameter = names(x),
     Group = c(
-      rep("species_intercept", 3),
+      rep("covariate_effects", 4),
       rep("site_intercept", 3),
       rep("mglmm", 3),
       rep("gllvm", 3),
       "gaussian", "neg_binomial"
     ),
     Constraint = c(
-      "lower=0", rep("none", 4), rep("lower=0", 2),
+      "lower=0", rep("none", 5), rep("lower=0", 2),
       rep("none", 4), rep("lower=0", 3)
     ),
     Prior = unlist(unname(x))

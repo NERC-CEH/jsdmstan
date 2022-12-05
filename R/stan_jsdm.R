@@ -86,6 +86,7 @@ stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
 stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
                               dat_list = NULL, family, site_intercept = "none",
                               D = NULL, prior = jsdm_prior(), site_groups = NULL,
+                              beta_param = "cor",
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
 
@@ -109,7 +110,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   model_code <- jsdm_stancode(
     family = family,
     method = method, prior = prior,
-    log_lik = log_lik, site_intercept = site_intercept
+    log_lik = log_lik, site_intercept = site_intercept,
+    beta_param = beta_param
   )
 
   # Compile model
@@ -233,6 +235,9 @@ validate_data <- function(Y, D, X, species_intercept,
       colnames(X) <- "(Intercept)"
     } else {
       K <- ncol(X) + 1 * species_intercept
+      if(is.data.frame(X)){
+        X <- as.matrix(X)
+      }
       if (isTRUE(species_intercept)) {
         X <- cbind(matrix(1, nrow = N, ncol = 1), X)
         colnames(X)[1] <- "(Intercept)"

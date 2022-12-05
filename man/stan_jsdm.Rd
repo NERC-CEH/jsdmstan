@@ -19,6 +19,7 @@ stan_jsdm(X, ...)
   D = NULL,
   prior = jsdm_prior(),
   site_groups = NULL,
+  beta_param = "cor",
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
