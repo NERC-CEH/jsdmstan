@@ -67,7 +67,7 @@ The default approach in jsdmstan is to assume that the response of species to en
 
 $$\beta_j \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma})$$
 
-This default behaviour can be overridden through specifying the 
+This default behaviour can be overridden through specifying the `beta_param` argument to `"unstruct"` if you want the betas to just draw from some distribution set through `jsdm_prior()`.
 
 # Fitting a MGLMM
 
@@ -129,6 +129,13 @@ By default the `plot` command plots all of the parameters with sigma or kappa in
 
 All the mcmc plot types within bayesplot are supported by the `mcmc_plot` function, and to see a full list either use `bayesplot::available_mcmc` or run `mcmc_plot` with an incorrect type and the options will be printed.
 
+We can also view the environmental effect parameters for each species using the `envplot` function.
+
+```{r}
+envplot(mglmm_fit)
+```
+
+
 Posterior predictions can be extracted from the models using either `posterior_linpred` or `posterior_predict`, where the linpred function extracts the linear predictor for the community composition within each draw and the predict function combines this linear predictor extraction with a random generation based on the predicted probability for the family. Both functions by default return a list of length equal to the number of draws extracted, where each element of the list is a sites by species matrix. 
 
 ```{r}
@@ -150,6 +157,7 @@ The summary statistic can be changed, as can whether it is calculated for every 
 pp_check(mglmm_fit, summary_stat = "mean", calc_over = "species")
 ```
 
+We can examine the species-specific posterior predictive check through using `multi_pp_check`, or examine how well the relationships between specific species are recovered using `pp_check` with `plotfun = "pairs"`.
 
 As we have run the above model on simulated data and the original data list contains the parameters used to simulate the data we can use the `mcmc_recover_` functions from `bayesplot` to see how the model did:
 

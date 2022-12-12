@@ -48,3 +48,15 @@ test_that("ordiplot errors when expected", {
     "Only two latent variables can be plotted at once"
   )
 })
+
+
+test_that("envplot errors when expected", {
+  expect_error(
+    envplot(list()),
+    "Only objects of class jsdmStanFit are supported"
+  )
+  expect_error(
+    envplot(test_fit),
+    "This beta parameterisation currently unsupported"
+  )
+})

@@ -298,6 +298,8 @@ mcmc_plot <- function(x, ...) {
 #' @param shape The shape of the points in the graph, specified as a two-element
 #'   vector with the first being used for the summary points and the second the
 #'   individual draws, default \code{c(18,16)}
+#' @param geom Which geom from \pkg{ggplot2} is used for the summary statistic
+#'   by default \code{"point"}, or alternatively can be \code{"text"}
 #'
 #' @return A [ggplot][ggplot2::ggplot] object that can be customised using the
 #'   \pkg{ggplot2} package
@@ -455,4 +457,61 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
       )
   }
   graph
+}
+
+#' Plotting environmental effects on species
+#'
+#' @param object The jsdmStanFit model object
+#' @param include_intercept Whether to include the intercept in the plots
+#' @param plotfun Which plot function from mcmc_plot should be used, by default \code{"intervals"}
+#' @param nrow The number of rows within the plot
+#' @param y_labels Which plots should have annotated y axes
+#' @param widths The widths of the plots
+#'
+#' @return An object of class \code{"bayesplot_grid"}, for more information see [bayesplot::bayesplot_grid()]
+#' @export
+#'
+envplot <- function(object, include_intercept = FALSE,
+                    nrow = NULL, y_labels = NULL,
+                    plotfun = "intervals", widths = NULL){
+  if (!inherits(object, "jsdmStanFit"))
+    stop("Only objects of class jsdmStanFit are supported")
+  preds <- object$preds
+  if(isFALSE(include_intercept)){
+    if(all("preds" == "(Intercept)")){
+      stop("include_intercept is FALSE but there are no other predictors")
+    }
+    preds <- preds[preds != "(Intercept)"]
+  }
+  pn <- get_parnames(object)
+  if(any(grepl("betas", pn))){
+    pl_list <- lapply(preds, function(x){
+      beta_ind <- match(x, object$preds)
+      suppressMessages(
+        pl <- mcmc_plot(object, plotfun = plotfun,
+                pars = paste0("betas\\[",beta_ind,","), regexp = TRUE) +
+          ggplot2::scale_y_discrete(labels = object$species) +
+          ggplot2::labs(x = x)
+      )
+      return(pl)
+    })
+  } else
+    stop("This beta parameterisation currently unsupported")
+
+  if(is.null(nrow)){
+    nrow <- ceiling(length(preds)/3)
+  }
+  if(is.null(y_labels)){
+    ppr <- ceiling(length(preds)/nrow)
+    y_labels <- 1 + ppr*seq(0,nrow-1)
+  }
+  y_nolabels <- seq_along(preds)[!seq_along(preds) %in% y_labels]
+  for(i in y_nolabels){
+    pl_list[[i]] <- pl_list[[i]] +
+      ggplot2::theme(axis.text.y = ggplot2::element_blank())
+  }
+
+  bayesplot::bayesplot_grid(plots = pl_list,
+                            grid_args = list(nrow = nrow,
+                                             widths = widths))
 }

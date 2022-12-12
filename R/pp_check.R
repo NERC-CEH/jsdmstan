@@ -62,6 +62,7 @@
 pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NULL,
                                  sites = NULL, summary_stat = "sum",
                                  calc_over = "site", ndraws = NULL, ...) {
+  calc_over <- match.arg(calc_over, c("site", "species"))
   if(plotfun == "pairs"){
     plot_args <- list(...)
     plot_args$object <- object
@@ -119,10 +120,18 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
     } else if (inherits(summary_stat, "function")) {
       stat_fun <- summary_stat
     }
+
+    get_stsp <- .spsite_checks(object = object,
+                               species = species,
+                               sites = sites)
+    st <- get_stsp$sites
+    sp <- get_stsp$species
+
     y <- apply(
-      object$data_list$Y, switch(calc_over,
-                                 "site" = 1,
-                                 "species" = 2
+      object$data_list$Y[st, sp, drop = FALSE],
+      switch(calc_over,
+             "site" = 1,
+             "species" = 2
       ),
       stat_fun
     )
@@ -207,22 +216,13 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
   if (!inherits(object, "jsdmStanFit")) {
     stop("jsdm_summary only works for jsdmStanFit objects")
   }
-  if (!is.null(species) & !is.character(species)) {
-    if (any(!is.wholenumber(species))) {
-      stop(paste(
-        "Species must be either a character vector of species names or an",
-        "integer vector of species positions in the input data columns"
-      ))
-    }
-  }
-  if (!is.null(sites) & !is.character(sites)) {
-    if (any(!is.wholenumber(sites))) {
-      stop(paste(
-        "Sites must be either a character vector of site names or an",
-        "integer vector of sites positions in the input data columns"
-      ))
-    }
-  }
+
+  get_stsp <- .spsite_checks(object = object,
+                             species = species,
+                             sites = sites)
+  st <- get_stsp$sites
+  sp <- get_stsp$species
+
   calc_over <- match.arg(calc_over, c("site", "species"))
   post_type <- match.arg(post_type, c("linpred", "predict"))
 
@@ -243,25 +243,11 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
 
   # Limit to species that have been selected:
   if (!is.null(species)) {
-    if (is.character(species)) {
-      species_names <- dimnames(post_res[[1]])[[2]]
-      if (any(!(species %in% species_names))) {
-        stop("Species specified are not found in the model fit object")
-      }
-      species <- match(species, species_names)
-    }
-    post_res <- lapply(post_res, "[", , species)
+    post_res <- lapply(post_res, "[", , sp, drop = FALSE)
   }
   # Limit to sites that have been selected:
   if (!is.null(sites)) {
-    if (is.character(sites)) {
-      sites_names <- dimnames(post_res[[1]])[[1]]
-      if (any(!(sites %in% sites_names))) {
-        stop("Sites specified are not found in the model fit object")
-      }
-      sites <- match(sites, sites_names)
-    }
-    post_res <- lapply(post_res, "[", sites, )
+    post_res <- lapply(post_res, "[", st, , drop = FALSE)
   }
 
   # calculate summary statistic over sites:
@@ -277,6 +263,114 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
   }
 
   return(res)
+}
+
+#' Multiple pp_check plots per species
+#'
+#' @param object The jsdmStanFit model object
+#' @param plotfun The ppc plot function to use, given as a character string. The
+#'   default is to call [ppc_dens_overlay][bayesplot::PPC-distributions]. Can be
+#'   specified as either the entire name of function as a character string or without
+#'   the ppc_ prefix.
+#' @param species Which species should be included, by default all
+#' @param ndraws How many draws should be used within the plots
+#' @param grid_args Optional list of arguments that are passed to
+#'   [gridExtra::arrangeGrob()] (nrow, ncol, widths, etc.)
+#' @param ... Other options passed to pp_check
+#'
+#' @return An object of class \code{"bayesplot_grid"}, for more information see [bayesplot::bayesplot_grid()]
+#' @export
+#'
+multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
+                           ndraws = NULL, grid_args = list(...), ...){
+  if (!inherits(object, "jsdmStanFit"))
+    stop("multi_pp_check only supports jsdmStanFit objects")
+  if (!is.null(species) & !is.character(species)) {
+    if (any(!is.wholenumber(species))) {
+      stop(paste(
+        "Species must be either a character vector of species names or an",
+        "integer vector of species positions in the input data columns"
+      ))
+    }
+  }
+
+  valid_types <- as.character(bayesplot::available_ppc())
+  plotfun <- ifelse(grepl("^ppc_", plotfun), plotfun, paste0("ppc_", plotfun))
+  if (!plotfun %in% valid_types) {
+    stop(paste(
+      "plotfun:", plotfun, "is not a valid ppc type. ",
+      "Valid types are:\n", paste(valid_types, collapse = ", ")
+    ))
+  }
+  ppc_fun <- get(plotfun, asNamespace("bayesplot"))
+
+  if (!is.null(species)) {
+    if (is.character(species)) {
+      species_names <- object$species
+      if (any(!(species %in% species_names))) {
+        stop("Species specified are not found in the model fit object")
+      }
+      species <- match(species, species_names)
+    }
+    species_names <- object$species[species]
+  } else{
+    species_names <- object$species
+    species <- seq_along(species_names)
+  }
+
+  # get draw IDs
+  ndraws_given <- "ndraws" %in% names(match.call())
+  nsamps <- dim(object$fit)[1] * dim(object$fit)[2]
+  if (ndraws_given) {
+    if (is.null(ndraws)) {
+      draw_ids <- seq(1, nsamps, 1)
+    } else {
+      draw_ids <- sample.int(nsamps, ndraws)
+    }
+  } else {
+    aps_plotfuns <- c(
+      "ppc_error_scatter_avg", "ppc_error_scatter_avg_vs_x",
+      "ppc_intervals", "ppc_intervals_grouped", "ppc_loo_pit",
+      "ppc_loo_intervals", "ppc_loo_ribbon", "ppc_ribbon",
+      "ppc_ribbon_grouped", "ppc_rootogram", "ppc_scatter_avg",
+      "ppc_scatter_avg_grouped", "ppc_stat", "ppc_stat_2d",
+      "ppc_stat_freqpoly_grouped", "ppc_stat_grouped",
+      "ppc_violin_grouped"
+    )
+    if (plotfun %in% aps_plotfuns) {
+      draw_ids <- seq(1, nsamps, 1)
+      message(
+        "Using all posterior draws for ppc plot type '",
+        plotfun, "' by default."
+      )
+    } else {
+      draw_ids <- sample.int(nsamps, 10)
+      message(
+        "Using 10 posterior draws for ppc plot type '",
+        plotfun, "' by default."
+      )
+    }
+  }
+
+  post_fun <- get("posterior_predict", asNamespace("jsdmstan"))
+  post_args <- list(...)
+  post_args$object <- object
+  post_args$list_index <- "draws"
+  post_args$draw_ids <- draw_ids
+  post_args$ndraws <- ndraws
+
+  post_res <- do.call(post_fun, post_args)
+
+  pl_list <- mapply(function(x, name){
+    y <- object$data_list$Y[,x]
+    yrep <- t(do.call(cbind, lapply(post_res, "[", , x)))
+    ppc_args <- list(y = y, yrep = yrep)
+    do.call(ppc_fun, ppc_args) +
+      ggplot2::ggtitle(name)
+  }, species, species_names, SIMPLIFY = FALSE)
+
+  bayesplot::bayesplot_grid(plots = pl_list, grid_args = grid_args)
+
 }
 
 # internal ~~~~~
@@ -376,5 +470,51 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
   }
 
   bayesplot::bayesplot_grid(plots = plots)
+
+}
+
+.spsite_checks <- function(object, species, sites){
+  if (!is.null(species) & !is.character(species)) {
+    if (any(!is.wholenumber(species))) {
+      stop(paste(
+        "Species must be either a character vector of species names or an",
+        "integer vector of species positions in the input data columns"
+      ))
+    }
+  }
+  if (!is.null(sites) & !is.character(sites)) {
+    if (any(!is.wholenumber(sites))) {
+      stop(paste(
+        "Sites must be either a character vector of site names or an",
+        "integer vector of sites positions in the input data columns"
+      ))
+    }
+  }
+  if (!is.null(species)) {
+    if (is.character(species)) {
+      species_names <- object$species
+      if (any(!(species %in% species_names))) {
+        stop("Species specified are not found in the model fit object")
+      }
+      species <- match(species, species_names)
+    }
+  } else{
+    species <- seq_along(object$species)
+  }
+
+  if (!is.null(sites)) {
+    if (is.character(sites)) {
+      sites_names <- object$sites
+      if (any(!(sites %in% sites_names))) {
+        stop("Sites specified are not found in the model fit object")
+      }
+      sites <- match(sites, sites_names)
+    }
+  } else{
+    sites <- seq_along(object$sites)
+  }
+
+  return(list(species = species,
+              sites = sites))
 
 }

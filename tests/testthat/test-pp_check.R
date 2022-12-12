@@ -167,3 +167,55 @@ test_that("plot returns right class of object", {
     "gg"
   )
 })
+
+# multi_pp_check ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+test_that("multi_pp_check errors correctly", {
+  expect_error(
+    multi_pp_check("eugsuf"),
+    "multi_pp_check only supports jsdmStanFit objects"
+  )
+  test_fit <- jsdmStanFit_empty()
+  expect_error(
+    multi_pp_check(test_fit, species = -3),
+    paste(
+      "Species must be either a character vector of species names or an",
+      "integer vector of species positions in the input data columns"
+    )
+  )
+  test_fit$species <- LETTERS[1:10]
+  expect_error(
+    multi_pp_check(test_fit, species = LETTERS[5:15]),
+    "Species specified are not found in the model fit object"
+  )
+
+})
+
+test_that("multi_pp_check returns appropriate class", {
+  expect_s3_class(multi_pp_check(gauss_fit, ndraws = 10), "bayesplot_grid")
+  expect_message(
+    gf <- multi_pp_check(gauss_fit, species = 1:5),
+    "Using 10 posterior draws"
+  )
+  expect_message(
+    bf <- multi_pp_check(bern_fit, plotfun = "ribbon", species = LETTERS[4:7]),
+    "Using all posterior draws"
+  )
+  expect_length(bf, 4)
+
+  expect_length(gf, 5)
+})
+
+test_that("envplot returns appropriate class", {
+  ep <- envplot(bern_fit)
+  expect_s3_class(ep, "bayesplot_grid")
+  expect_length(ep, 2)
+  ep <- envplot(bern_fit, include_intercept = TRUE,
+                y_labels = 1:3, nrow = 2)
+  expect_length(ep, 3)
+})
+
+test_that("ordiplot returns appropriate class", {
+  op <- ordiplot(gauss_fit, geom = "text",
+                 summary_stat = median)
+  expect_s3_class(op, "gg")
+})
