@@ -5,11 +5,10 @@
 \alias{pinewood}
 \title{Vegetation data from native pinewoods in Scotland, 1971}
 \format{
-A data frame with 25 rows and 34 columns. Each column is a
-species, or species aggregates and each row is a site. The site identity is marked
+A data frame with 265 rows and 16 columns. Each column is a
+species, or species aggregates and each row is a plot. The plot identity is marked
 in the rownames of the data frame. Every entry is given as the number of
-plots that species is observed in within the site (each site has 16 plots, other
-than a small number of exceptions, detailed in pinewood_env.
+individuals of that species that is observed in within the plot.
 }
 \source{
 \url{https://doi.org/10.5285/56a48373-771c-4d4a-8b5a-45ef496c6e55}
@@ -18,8 +17,8 @@ than a small number of exceptions, detailed in pinewood_env.
 pinewood
 }
 \description{
-This is the plant data from a series of plots across native Scots Pine woodlands
-in Scotland surveyed in 1971. It contains 34 plant species measured over 25 sites.
+This is the tree data from a series of plots across native Scots Pine woodlands
+in Scotland surveyed in 1971. It contains 16 tree species measured over 265 plots.
 For further information on this data see Wood and Bunce (2016).
 }
 \details{
