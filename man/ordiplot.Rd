@@ -45,6 +45,9 @@ second the individual draws, default \code{c(1,0.5)}}
 \item{shape}{The shape of the points in the graph, specified as a two-element
 vector with the first being used for the summary points and the second the
 individual draws, default \code{c(18,16)}}
+
+\item{geom}{Which geom from \pkg{ggplot2} is used for the summary statistic
+by default \code{"point"}, or alternatively can be \code{"text"}}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot} object that can be customised using the

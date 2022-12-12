@@ -4,6 +4,14 @@
 #' generalised linear latent variable model approach (\code{method = "gllvm"}), or a
 #' multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
 #'
+#' @details
+#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
+#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
+#'   to be constrained by a correlation matrix between the covariates. With the
+#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
+#'   from a simple distribution with no correlation structure. Both parameterisations
+#'   can be modified using the prior object.
+#'
 #' @param formula The formula of covariates that the species means are modelled from
 #'
 #' @param data Dataframe or list of covariates.
@@ -47,6 +55,9 @@
 #' @param log_lik Whether the log likelihood should be calculated in the generated
 #'   quantities (by default TRUE), required for loo
 #'
+#' @param beta_param The parameterisation of the environmental covariate effects, by
+#'   default \code{"cor"}. See details for further information.
+#'
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
 #' @return A \code{jsdmStanFit} object, comprising a list including the StanFit
@@ -89,6 +100,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               beta_param = "cor",
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
+  beta_param <- match.arg(beta_param, c("cor", "unstruct"))
 
   stopifnot(
     is.logical(species_intercept),

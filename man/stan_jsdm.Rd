@@ -61,6 +61,9 @@ grouping)}
 \item{site_groups}{If the site intercept is grouped, a vector of group identities
 per site}
 
+\item{beta_param}{The parameterisation of the environmental covariate effects, by
+default \code{"cor"}. See details for further information.}
+
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}
 
@@ -83,6 +86,14 @@ object, the data used to fit the model plus a few other bits of information. See
 This function fits joint Species Distribution models in Stan, using either a
 generalised linear latent variable model approach (\code{method = "gllvm"}), or a
 multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
+}
+\details{
+Environmental covariate effects (\code{"betas"}) can be parameterised in two
+ways. With the \code{"cor"} parameterisation all covariate effects are assumed
+to be constrained by a correlation matrix between the covariates. With the
+\code{"unstruct"} parameterisation all covariate effects are assumed to draw
+from a simple distribution with no correlation structure. Both parameterisations
+can be modified using the prior object.
 }
 \section{Methods (by class)}{
 \itemize{

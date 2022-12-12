@@ -18,6 +18,13 @@
 #'   covariance can be modelled together (this will be the covariance used in the
 #'   overall model if the method used has covariance).
 #'
+#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
+#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
+#'   to be constrained by a correlation matrix between the covariates. With the
+#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
+#'   from a simple distribution with no correlation structure. Both parameterisations
+#'   can be modified using the prior object.
+#'
 #' @export
 #'
 #' @param N is number of sites
@@ -43,13 +50,18 @@
 #'   with no grouping). Defaults to no site intercept, grouped is not supported
 #'   currently.
 #'
+#' @param beta_param The parameterisation of the environmental covariate effects, by
+#'   default \code{"cor"}. See details for further information.
+#'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
                           site_intercept = "none",
+                          beta_param = "cor",
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson", "bernoulli"))
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
+  beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   if(site_intercept == "grouped"){
     stop("Grouped site intercept not supported")
   }
@@ -114,6 +126,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "sigmas_preds" = K + 1 * species_intercept,
       "z_preds" = (K + 1 * species_intercept) * S,
       "cor_preds" = K + 1 * species_intercept,
+      "betas" = (K + 1 * species_intercept) * S,
       "a" = N,
       "a_bar" = 1,
       "sigma_a" = 1,
@@ -161,26 +174,32 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   # print(str(x))
 
   # covariate parameters
-  beta_sds <- abs(do.call(
-    match.fun(prior_func[["sigmas_preds"]][[1]]),
-    prior_func[["sigmas_preds"]][[2]]
-  ))
-  z_betas <- matrix(do.call(
-    match.fun(prior_func[["z_preds"]][[1]]),
-    prior_func[["z_preds"]][[2]]
-  ), ncol = S, nrow = J)
-  if (K == 0) {
-    beta_sim <- beta_sds %*% z_betas
-  } else {
-    cor_preds <- do.call(
-      match.fun(prior_func[["cor_preds"]][[1]]),
-      prior_func[["cor_preds"]][[2]]
-    )
-    beta_sim <- (diag(beta_sds) %*% cor_preds) %*% z_betas
+  if(beta_param == "cor"){
+    beta_sds <- abs(do.call(
+      match.fun(prior_func[["sigmas_preds"]][[1]]),
+      prior_func[["sigmas_preds"]][[2]]
+    ))
+    z_betas <- matrix(do.call(
+      match.fun(prior_func[["z_preds"]][[1]]),
+      prior_func[["z_preds"]][[2]]
+    ), ncol = S, nrow = J)
+    if (K == 0) {
+      beta_sim <- beta_sds %*% z_betas
+    } else {
+      cor_preds <- do.call(
+        match.fun(prior_func[["cor_preds"]][[1]]),
+        prior_func[["cor_preds"]][[2]]
+      )
+      beta_sim <- (diag(beta_sds) %*% cor_preds) %*% z_betas
+    }
+  } else if (beta_param == "unstruct"){
+    beta_sim <- matrix(do.call(
+      match.fun(prior_func[["betas"]][[1]]),
+      prior_func[["betas"]][[2]]
+    ), ncol = S, nrow = J)
   }
 
   mu_sim <- x %*% beta_sim
-  # print(str(mu_sim))
 
 
   ## site intercept
@@ -286,10 +305,13 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
 
   pars <- list(
-    betas = beta_sim,
-    beta_sds = beta_sds,
-    z_betas = z_betas
+    betas = beta_sim
   )
+
+  if(beta_param == "cor"){
+    pars$beta_sds <- beta_sds
+    pars$z_betas <- z_betas
+  }
 
   if (site_intercept == "ungrouped") {
     pars$a_bar <- a_bar

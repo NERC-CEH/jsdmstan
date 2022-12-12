@@ -4,6 +4,14 @@
 #' This function returns the Stan code used to fit the model as specified by the data
 #' list, family and method.
 #'
+#' @details
+#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
+#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
+#'   to be constrained by a correlation matrix between the covariates. With the
+#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
+#'   from a simple distribution with no correlation structure. Both parameterisations
+#'   can be modified using the prior object.
+#'
 #' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
 #' @param family The family, one of "\code{"gaussian"}, \code{"bernoulli"},
 #'   \code{"poisson"} or \code{"neg_binomial"}
@@ -14,6 +22,8 @@
 #'   values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
 #'   with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
 #'   grouping)
+#' @param beta_param The parameterisation of the environmental covariate effects, by
+#'   default \code{"cor"}. See details for further information.
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export

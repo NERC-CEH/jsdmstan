@@ -119,6 +119,13 @@ test_that("stan_gllvm fails with wrong inputs", {
     ),
     "Y matrix is not composed of integers"
   )
+
+  expect_error(
+    stan_gllvm(Y = matrix(rnorm(100), nrow = 20),
+               X = matrix(rnorm(60), nrow = 20),
+               family = "bern", D = -1),
+    "Must have at least one latent variable"
+  )
 })
 
 test_that("stan_gllvm returns right type of object", {
@@ -131,6 +138,7 @@ test_that("stan_gllvm returns right type of object", {
     dat_list = gllvm_data, refresh = 0,
     method = "gllvm", site_intercept = "ungrouped",
     family = "bern",
+    beta_param = "unstruct",
     chains = 2, iter = 500
   ))
 
@@ -149,9 +157,9 @@ test_that("stan_gllvm returns right type of object", {
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
   # neg binomial
-  gllvm_data <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "neg_bin")
+  gllvm_data <- gllvm_sim_data(N = 20, S = 8, D = 2, K = 2, family = "neg_bin")
   gllvm_fit <- stan_gllvm(
-    Y = gllvm_data$Y, X = gllvm_data$X,
+    Y = as.data.frame(gllvm_data$Y), X = as.data.frame(gllvm_data$X),
     D = gllvm_data$D, refresh = 0, chains = 2,
     family = "neg_b"
   )
@@ -190,6 +198,7 @@ test_that("stan_mglmm returns right type of object", {
   mglmm_fit <- stan_mglmm(
     Y = mglmm_data$Y, X = mglmm_data$X,
     family = "bern",
+    beta_param = "unstruct",
     refresh = 0, site_intercept = "ungrouped", chains = 2
   )
 
@@ -244,6 +253,7 @@ test_that("site intercept models run", {
                                            data = df, Y = mglmm_data$Y,
                                            site_intercept = "ungrouped",
                                            family = "gaussian",
+                                           beta_param = "unstruct",
                                            refresh = 0, chains = 1, iter = 200
   ))
   expect_s3_class(mglmm_fit, "jsdmStanFit")
@@ -254,6 +264,7 @@ test_that("site intercept models run", {
                                            site_intercept = "grouped",
                                            site_groups = grps,
                                            family = "gaussian",
+                                           beta_param = "cor",
                                            refresh = 0, chains = 1, iter = 200
   ))
   expect_s3_class(mglmm_fit, "jsdmStanFit")

@@ -21,7 +21,8 @@ test_that("gllvm_sim_data errors with bad inputs", {
 })
 
 test_that("gllvm_sim_data returns a list of correct length", {
-  gllvm_sim <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "bern")
+  gllvm_sim <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "bern",
+                              beta_param = "unstruct")
   expect_named(gllvm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X"
   ))
@@ -54,11 +55,13 @@ test_that("mglmm_sim_data errors with bad inputs", {
 
 
 test_that("mglmm_sim_data returns a list of correct length", {
-  mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "bern")
+  mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "bern",
+                              K = 3, species_intercept = FALSE)
   expect_named(mglmm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X"
   ))
   mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "pois",
+                              beta_param = "unstruct",
                               site_intercept = "ungrouped")
   expect_named(mglmm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X"
