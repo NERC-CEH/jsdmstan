@@ -62,9 +62,9 @@ jsdmStanFit_empty <- function() {
 #' @export
 print.jsdmStanFit <- function(x, ...) {
   rhat_prob <- rhat(x)
-  prob_rhat <- names(na.omit(rhat_prob[rhat_prob > 1.01]))
+  prob_rhat <- names(stats::na.omit(rhat_prob[rhat_prob > 1.01]))
   neff_prob <- neff_ratio(x)
-  prob_neff <- names(na.omit(neff_prob[neff_prob < 0.05]))
+  prob_neff <- names(stats::na.omit(neff_prob[neff_prob < 0.05]))
   prob_pars <- union(prob_rhat, prob_neff)
 
   if (length(prob_pars) > 0) {

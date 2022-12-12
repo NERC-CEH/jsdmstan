@@ -463,12 +463,14 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
 #'
 #' @param object The jsdmStanFit model object
 #' @param include_intercept Whether to include the intercept in the plots
-#' @param plotfun Which plot function from mcmc_plot should be used, by default \code{"intervals"}
+#' @param plotfun Which plot function from mcmc_plot should be used, by default
+#'   \code{"intervals"}
 #' @param nrow The number of rows within the plot
 #' @param y_labels Which plots should have annotated y axes
 #' @param widths The widths of the plots
 #'
-#' @return An object of class \code{"bayesplot_grid"}, for more information see [bayesplot::bayesplot_grid()]
+#' @return An object of class \code{"bayesplot_grid"}, for more information see
+#'   [bayesplot::bayesplot_grid()]
 #' @export
 #'
 envplot <- function(object, include_intercept = FALSE,
@@ -509,6 +511,86 @@ envplot <- function(object, include_intercept = FALSE,
   for(i in y_nolabels){
     pl_list[[i]] <- pl_list[[i]] +
       ggplot2::theme(axis.text.y = ggplot2::element_blank())
+  }
+
+  bayesplot::bayesplot_grid(plots = pl_list,
+                            grid_args = list(nrow = nrow,
+                                             widths = widths))
+}
+
+#' Plot modelled correlations between species
+#'
+#' @param object The jsdmStanFit model object
+#' @param species Which species should be included - this plots the correlations
+#'   between the specified species and all other species, so by default if all
+#'   species are included this will result in a plot per species with all other
+#'   species there and thus duplicate entries across all the plots
+#' @param plotfun Which plotting function from bayesplot to use, by default
+#'   \code{"intervals"}
+#' @param nrow How many rows the grid of plots has
+#' @param widths Whether the widths of the different rows of plots should vary
+#' @param ... Other arguments passed to mcmc_plot
+#'
+#' @return An object of class \code{"bayesplot_grid"}, for more information see
+#'   [bayesplot::bayesplot_grid()]
+#' @export
+corrplot <- function(object, species = NULL,
+                     plotfun = "intervals", nrow = NULL, widths = NULL, ...){
+  if (!inherits(object, "jsdmStanFit") | object$jsdm_type != "mglmm")
+    stop("Only objects of class jsdmStanFit with method mglmm are supported")
+
+  if (!is.null(species) & !is.character(species)) {
+    if (any(!is.wholenumber(species))) {
+      stop(paste(
+        "Species must be either a character vector of species names or an",
+        "integer vector of species positions in the input data columns"
+      ))
+    }
+  }
+
+  plotfun <- ifelse(grepl("^mcmc_", plotfun),
+                    plotfun, paste0("mcmc_", plotfun))
+  valid_types <- as.character(bayesplot::available_mcmc())
+  if (!plotfun %in% valid_types) {
+    stop(paste(
+      "plotfun:", plotfun, "is not a valid ppc type. ",
+      "Valid types are:\n", paste(valid_types, collapse = ", ")
+    ))
+  }
+  ppc_fun <- get(plotfun, asNamespace("bayesplot"))
+
+  if (!is.null(species)) {
+    if (is.character(species)) {
+      species_names <- object$species
+      if (any(!(species %in% species_names))) {
+        stop("Species specified are not found in the model fit object")
+      }
+      species <- match(species, species_names)
+    }
+    species_names <- object$species[species]
+  } else{
+    species_names <- object$species
+    species <- seq_along(species_names)
+  }
+
+  compl_pars <- expand.grid(seq_along(object$species),
+                            seq_along(object$species))
+  compl_pars <- compl_pars[compl_pars[,1]>compl_pars[,2],]
+  pl_list <- lapply(species_names, function(nm){
+    x <- match(nm, object$species)
+    pars <- compl_pars[compl_pars[,1] == x | compl_pars[,2] == x,]
+    pars <- paste0("cor_species[",pars[,1],",",pars[,2],"]")
+    suppressMessages(
+      pl <- mcmc_plot(object, plotfun = plotfun,
+                      pars = pars, ...) +
+        ggplot2::scale_y_discrete(labels = object$species[object$species != nm]) +
+        ggplot2::labs(x = nm)
+    )
+    return(pl)
+  })
+
+  if(is.null(nrow)){
+    nrow <- ceiling(length(species)/3)
   }
 
   bayesplot::bayesplot_grid(plots = pl_list,

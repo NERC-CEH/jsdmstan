@@ -22,12 +22,14 @@ envplot(
 
 \item{y_labels}{Which plots should have annotated y axes}
 
-\item{plotfun}{Which plot function from mcmc_plot should be used, by default \code{"intervals"}}
+\item{plotfun}{Which plot function from mcmc_plot should be used, by default
+\code{"intervals"}}
 
 \item{widths}{The widths of the plots}
 }
 \value{
-An object of class \code{"bayesplot_grid"}, for more information see \code{\link[bayesplot:bayesplot_grid]{bayesplot::bayesplot_grid()}}
+An object of class \code{"bayesplot_grid"}, for more information see
+\code{\link[bayesplot:bayesplot_grid]{bayesplot::bayesplot_grid()}}
 }
 \description{
 Plotting environmental effects on species
