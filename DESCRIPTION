@@ -24,15 +24,13 @@ Imports:
     BH,
     bayesplot,
     reshape2,
-    loo
+    loo,
+    rlang
 SystemRequirements: GNU make
 Suggests: 
     testthat (>= 3.0.0),
-    ape,
     knitr,
     rmarkdown,
-    ggplot2,
-    rlang
+    ggplot2
 Config/testthat/edition: 3
-Config/testthat/parallel: true
 VignetteBuilder: knitr

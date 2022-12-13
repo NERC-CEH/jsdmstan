@@ -1,7 +1,7 @@
 # stan_jsdm formula tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 set.seed(5488935)
-mglmm_data <- mglmm_sim_data(N = 100, S = 8, family = "gaussian", K = 3)
+mglmm_data <- mglmm_sim_data(N = 30, S = 8, family = "gaussian", K = 3)
 df <- as.data.frame(mglmm_data$X)
 
 suppressWarnings(mglmm_fit <- stan_jsdm(~ V1 + V2 + V3,
@@ -44,7 +44,7 @@ test_that("summary works", {
 })
 
 test_that("update works", {
-  mglmm_data <- mglmm_sim_data(N = 50, S = 5, family = "gaussian", K = 2)
+  mglmm_data <- mglmm_sim_data(N = 20, S = 5, family = "gaussian", K = 2)
   suppressWarnings(mglmm_fit2 <- update(mglmm_fit,
     newY = mglmm_data$Y,
     newX = mglmm_data$X,
@@ -131,7 +131,7 @@ test_that("stan_gllvm fails with wrong inputs", {
 test_that("stan_gllvm returns right type of object", {
   set.seed(04012022)
   gllvm_data <- gllvm_sim_data(
-    N = 500, S = 16, D = 2, K = 5,
+    N = 36, S = 16, D = 2, K = 5,
     site_intercept = "ungrouped", family = "bern"
   )
   suppressWarnings(gllvm_fit <- stan_jsdm(
@@ -139,30 +139,30 @@ test_that("stan_gllvm returns right type of object", {
     method = "gllvm", site_intercept = "ungrouped",
     family = "bern",
     beta_param = "unstruct",
-    chains = 2, iter = 500
+    chains = 2, iter = 200
   ))
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
   # poisson
   gllvm_data <- jsdm_sim_data(
-    N = 200, S = 12, D = 3, K = 3, family = "pois",
+    N = 55, S = 12, D = 3, K = 3, family = "pois",
     method = "gllvm"
   )
   suppressWarnings(gllvm_fit <- stan_gllvm(
     dat_list = gllvm_data, refresh = 0,
-    chains = 2, iter = 500, family = "pois"
+    chains = 2, iter = 200, family = "pois"
   ))
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 
   # neg binomial
   gllvm_data <- gllvm_sim_data(N = 20, S = 8, D = 2, K = 2, family = "neg_bin")
-  gllvm_fit <- stan_gllvm(
+  suppressWarnings(gllvm_fit <- stan_gllvm(
     Y = as.data.frame(gllvm_data$Y), X = as.data.frame(gllvm_data$X),
-    D = gllvm_data$D, refresh = 0, chains = 2,
+    D = gllvm_data$D, refresh = 0, chains = 2, iter = 200,
     family = "neg_b"
-  )
+  ))
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
 })
@@ -192,21 +192,21 @@ test_that("stan_mglmm fails with wrong inputs", {
 test_that("stan_mglmm returns right type of object", {
   set.seed(04012022)
   mglmm_data <- mglmm_sim_data(
-    N = 100, S = 8, family = "bern",
+    N = 32, S = 8, family = "bern",
     site_intercept = "ungrouped"
   )
-  mglmm_fit <- stan_mglmm(
+  suppressWarnings(mglmm_fit <- stan_mglmm(
     Y = mglmm_data$Y, X = mglmm_data$X,
     family = "bern",
     beta_param = "unstruct",
-    refresh = 0, site_intercept = "ungrouped", chains = 2
-  )
+    refresh = 0, site_intercept = "ungrouped", chains = 2, iter = 200
+  ))
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
   # poisson
   mglmm_data <- jsdm_sim_data(
-    method = "mglmm", N = 200, S = 8, K = 3,
+    method = "mglmm", N = 27, S = 8, K = 3,
     family = "poisson"
   )
   suppressWarnings(mglmm_fit <- stan_jsdm(
@@ -219,7 +219,7 @@ test_that("stan_mglmm returns right type of object", {
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
   # neg bin
-  mglmm_data <- mglmm_sim_data(N = 127, S = 12, K = 2, family = "neg_bin")
+  mglmm_data <- mglmm_sim_data(N = 87, S = 12, K = 2, family = "neg_bin")
   suppressWarnings(mglmm_fit <- stan_mglmm(
     Y = mglmm_data$Y, X = mglmm_data$X,
     family = "neg_bin",
