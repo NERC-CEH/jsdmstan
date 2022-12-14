@@ -60,3 +60,34 @@ test_that("envplot errors when expected", {
     "This beta parameterisation currently unsupported"
   )
 })
+
+test_that("corrplot errors when expected", {
+  expect_error(
+    corrplot(list()),
+    "Only objects of class jsdmStanFit with method mglmm are supported"
+  )
+  test_fit2 <- test_fit
+  test_fit2$jsdm_type <- "gllvm"
+  expect_error(
+    corrplot(test_fit2),
+    "Only objects of class jsdmStanFit with method mglmm are supported"
+  )
+
+  test_fit2$jsdm_type <- "mglmm"
+  expect_error(
+    corrplot(test_fit2, species = -1),
+    "Species must be either a"
+  )
+
+  expect_error(
+    corrplot(test_fit2, plotfun = "argh"),
+    "not a valid ppc type"
+  )
+
+  test_fit2$species <- LETTERS[1:6]
+  expect_error(
+    corrplot(test_fit2, species = LETTERS[9:11]),
+    "Species specified are not found in the model fit object"
+  )
+
+})

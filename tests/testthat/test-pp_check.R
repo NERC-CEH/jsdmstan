@@ -220,3 +220,11 @@ test_that("ordiplot returns appropriate class", {
                  summary_stat = median)
   expect_s3_class(op, "gg")
 })
+
+test_that("corrplot returns appropriate class", {
+  cp <- corrplot(bern_fit, species = 5:9, nrow = 3)
+  expect_s3_class(cp, "bayesplot_grid")
+  expect_length(cp, 5)
+  cp <- corrplot(bern_fit, species = LETTERS[1:3])
+  expect_length(cp, 3)
+})

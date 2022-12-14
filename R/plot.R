@@ -536,7 +536,9 @@ envplot <- function(object, include_intercept = FALSE,
 #' @export
 corrplot <- function(object, species = NULL,
                      plotfun = "intervals", nrow = NULL, widths = NULL, ...){
-  if (!inherits(object, "jsdmStanFit") | object$jsdm_type != "mglmm")
+  if (!inherits(object, "jsdmStanFit"))
+    stop("Only objects of class jsdmStanFit with method mglmm are supported")
+  if(object$jsdm_type != "mglmm")
     stop("Only objects of class jsdmStanFit with method mglmm are supported")
 
   if (!is.null(species) & !is.character(species)) {
