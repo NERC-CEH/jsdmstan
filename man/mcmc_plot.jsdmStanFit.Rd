@@ -82,7 +82,7 @@ mcmc_plot(gllvm_fit)
 # data list)
 mcmc_plot(gllvm_fit,
   plotfun = "recover_intervals",
-  pars = c("LV[2,20]", "sigmas_b[1]", "sigma_L"),
+  pars = c("LV[2,20]", "sigmas_preds[1]", "sigma_L"),
   true = c(
     gllvm_data$pars$LV[2, 20],
     gllvm_data$pars$beta_sds,

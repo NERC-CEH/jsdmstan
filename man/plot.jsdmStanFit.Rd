@@ -85,8 +85,8 @@ mglmm_fit <- stan_mglmm(
 # The default plot:
 plot(mglmm_fit)
 
-# Plotting specifically the L_Rho_species parameters:
-plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
+# Plotting specifically the cor_species parameters:
+plot(mglmm_fit, pars = "cor_species", regexp = TRUE)
 
 # Increasing the number of randomly sampled parameters to plot:
 plot(mglmm_fit, sample_n = 20)

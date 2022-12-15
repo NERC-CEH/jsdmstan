@@ -15,7 +15,7 @@ stan_gllvm(X, ...)
   species_intercept = TRUE,
   dat_list = NULL,
   family,
-  site_intercept = FALSE,
+  site_intercept = "none",
   prior = jsdm_prior(),
   save_data = TRUE,
   iter = 4000,
@@ -39,14 +39,16 @@ assumed to be species}
 species, by default \code{TRUE}}
 
 \item{dat_list}{Alternatively, data can be given to the model as a list containing
-Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an example
-of how this can be formatted.}
+Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an
+example of how this can be formatted.}
 
 \item{family}{The response family for the model, required to be one of
 \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}}
 
-\item{site_intercept}{Whether the model should be fit with a site intercept, by
-default \code{FALSE}}
+\item{site_intercept}{Whether a site intercept should be included, potential
+values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+grouping)}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 

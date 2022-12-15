@@ -7,16 +7,23 @@
 #' respectively.
 #'
 #' @details This simulates data based on a joint species distribution model with
-#'  either a generalised linear latent variable model approach or a multivariate
-#'  generalised linear mixed model approach.
+#'   either a generalised linear latent variable model approach or a multivariate
+#'   generalised linear mixed model approach.
 #'
-#'  Models can be fit with or without "measured predictors", and if measured
-#'  predictors are included then the species have species-specific parameter
-#'  estimates. These can either be simulated completely independently, or have
-#'  information pooled across species. If information is pooled this can be modelled
-#'  as either a random draw from some mean and standard deviation or species
-#'  covariance can be modelled together (this will be the covariance used in the
-#'  overall model if the method used has covariance).
+#'   Models can be fit with or without "measured predictors", and if measured
+#'   predictors are included then the species have species-specific parameter
+#'   estimates. These can either be simulated completely independently, or have
+#'   information pooled across species. If information is pooled this can be modelled
+#'   as either a random draw from some mean and standard deviation or species
+#'   covariance can be modelled together (this will be the covariance used in the
+#'   overall model if the method used has covariance).
+#'
+#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
+#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
+#'   to be constrained by a correlation matrix between the covariates. With the
+#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
+#'   from a simple distribution with no correlation structure. Both parameterisations
+#'   can be modified using the prior object.
 #'
 #' @export
 #'
@@ -29,23 +36,35 @@
 #' @param K is number of covariates, by default \code{0}
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
-#'  \code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular expression
-#'  matching is supported.
+#'   \code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular
+#'   expression matching is supported.
 #'
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
-#'  \code{"mglmm"} - see details for more information.
+#'   \code{"mglmm"} - see details for more information.
 #'
-#' @param species_intercept Whether to include an intercept in the predictors, must be
-#'  \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
+#' @param species_intercept Whether to include an intercept in the predictors, must
+#'   be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
 #'
-#' @param site_intercept Whether to include a site intercept. Defaults to \code{FALSE}.
+#' @param site_intercept Whether a site intercept should be included, potential
+#'   values \code{"none"} (no site intercept) or \code{"ungrouped"} (site intercept
+#'   with no grouping). Defaults to no site intercept, grouped is not supported
+#'   currently.
+#'
+#' @param beta_param The parameterisation of the environmental covariate effects, by
+#'   default \code{"cor"}. See details for further information.
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
-                          site_intercept = FALSE,
+                          site_intercept = "none",
+                          beta_param = "cor",
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson", "bernoulli"))
+  site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
+  beta_param <- match.arg(beta_param, c("cor", "unstruct"))
+  if(site_intercept == "grouped"){
+    stop("Grouped site intercept not supported")
+  }
 
   if (any(!c(is.double(N), is.double(S)))) {
     stop("N and S must be positive integers")
@@ -104,15 +123,16 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "gamma" = "rgamma"
     )
     fun_arg1 <- switch(x,
-      "sigmas_b" = K + 1 * species_intercept,
+      "sigmas_preds" = K + 1 * species_intercept,
       "z_preds" = (K + 1 * species_intercept) * S,
-      "L_Rho_preds" = K + 1 * species_intercept,
+      "cor_preds" = K + 1 * species_intercept,
+      "betas" = (K + 1 * species_intercept) * S,
       "a" = N,
       "a_bar" = 1,
       "sigma_a" = 1,
-      "sigmas_u" = S,
+      "sigmas_species" = S,
       "z_species" = S * N,
-      "L_Rho_species" = S,
+      "cor_species" = S,
       "LV" = D1 * N,
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
@@ -128,9 +148,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
   # build species covariance matrix
   if (method == "mglmm") {
-    L_Rho_species <- do.call(
-      match.fun(prior_func[["L_Rho_species"]][[1]]),
-      prior_func[["L_Rho_species"]][[2]]
+    cor_species <- do.call(
+      match.fun(prior_func[["cor_species"]][[1]]),
+      prior_func[["cor_species"]][[2]]
     )
   }
 
@@ -154,30 +174,36 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   # print(str(x))
 
   # covariate parameters
-  beta_sds <- abs(do.call(
-    match.fun(prior_func[["sigmas_b"]][[1]]),
-    prior_func[["sigmas_b"]][[2]]
-  ))
-  z_betas <- matrix(do.call(
-    match.fun(prior_func[["z_preds"]][[1]]),
-    prior_func[["z_preds"]][[2]]
-  ), ncol = S, nrow = J)
-  if (K == 0) {
-    beta_sim <- beta_sds %*% z_betas
-  } else {
-    L_Rho_preds <- do.call(
-      match.fun(prior_func[["L_Rho_preds"]][[1]]),
-      prior_func[["L_Rho_preds"]][[2]]
-    )
-    beta_sim <- (diag(beta_sds) %*% L_Rho_preds) %*% z_betas
+  if(beta_param == "cor"){
+    beta_sds <- abs(do.call(
+      match.fun(prior_func[["sigmas_preds"]][[1]]),
+      prior_func[["sigmas_preds"]][[2]]
+    ))
+    z_betas <- matrix(do.call(
+      match.fun(prior_func[["z_preds"]][[1]]),
+      prior_func[["z_preds"]][[2]]
+    ), ncol = S, nrow = J)
+    if (K == 0) {
+      beta_sim <- beta_sds %*% z_betas
+    } else {
+      cor_preds <- do.call(
+        match.fun(prior_func[["cor_preds"]][[1]]),
+        prior_func[["cor_preds"]][[2]]
+      )
+      beta_sim <- (diag(beta_sds) %*% cor_preds) %*% z_betas
+    }
+  } else if (beta_param == "unstruct"){
+    beta_sim <- matrix(do.call(
+      match.fun(prior_func[["betas"]][[1]]),
+      prior_func[["betas"]][[2]]
+    ), ncol = S, nrow = J)
   }
 
   mu_sim <- x %*% beta_sim
-  # print(str(mu_sim))
 
 
   ## site intercept
-  if (isTRUE(site_intercept)) {
+  if (site_intercept %in% c("grouped","ungrouped")) {
     a_bar <- do.call(
       match.fun(prior_func[["a_bar"]][[1]]),
       prior_func[["a_bar"]][[2]]
@@ -198,14 +224,14 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if (method == "mglmm") {
     # u covariance
     u_sds <- abs(do.call(
-      match.fun(prior_func[["sigmas_u"]][[1]]),
-      prior_func[["sigmas_u"]][[2]]
+      match.fun(prior_func[["sigmas_species"]][[1]]),
+      prior_func[["sigmas_species"]][[2]]
     ))
     u_ftilde <- matrix(do.call(
       match.fun(prior_func[["z_species"]][[1]]),
       prior_func[["z_species"]][[2]]
     ), nrow = S, ncol = N)
-    u_ij <- t((diag(u_sds) %*% L_Rho_species) %*% u_ftilde)
+    u_ij <- t((diag(u_sds) %*% cor_species) %*% u_ftilde)
   }
 
   if (method == "gllvm") {
@@ -279,12 +305,15 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
 
   pars <- list(
-    betas = beta_sim,
-    beta_sds = beta_sds,
-    z_betas = z_betas
+    betas = beta_sim
   )
 
-  if (isTRUE(site_intercept)) {
+  if(beta_param == "cor"){
+    pars$beta_sds <- beta_sds
+    pars$z_betas <- z_betas
+  }
+
+  if (site_intercept == "ungrouped") {
     pars$a_bar <- a_bar
     pars$sigma_a <- sigma_a
     pars$a <- a
@@ -296,7 +325,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   }
   if (method == "mglmm") {
     pars$u_sds <- u_sds
-    pars$L_Rho_species <- L_Rho_species
+    pars$cor_species <- cor_species
     pars$u_ftilde <- u_ftilde
   }
   if (isTRUE(species_intercept)) {
@@ -307,8 +336,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     }
   }
   output <- list(
-    Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x,
-    site_intercept = as.integer(site_intercept)
+    Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x
   )
 
   return(output)

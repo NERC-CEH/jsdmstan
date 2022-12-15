@@ -51,8 +51,8 @@
 #' # The default plot:
 #' plot(mglmm_fit)
 #'
-#' # Plotting specifically the L_Rho_species parameters:
-#' plot(mglmm_fit, pars = "L_Rho_species", regexp = TRUE)
+#' # Plotting specifically the cor_species parameters:
+#' plot(mglmm_fit, pars = "cor_species", regexp = TRUE)
 #'
 #' # Increasing the number of randomly sampled parameters to plot:
 #' plot(mglmm_fit, sample_n = 20)
@@ -194,7 +194,7 @@ par_sample <- function(pars, parnames, sd = c("sigma", "kappa"), sample_n, regex
 #' # data list)
 #' mcmc_plot(gllvm_fit,
 #'   plotfun = "recover_intervals",
-#'   pars = c("LV[2,20]", "sigmas_b[1]", "sigma_L"),
+#'   pars = c("LV[2,20]", "sigmas_preds[1]", "sigma_L"),
 #'   true = c(
 #'     gllvm_data$pars$LV[2, 20],
 #'     gllvm_data$pars$beta_sds,
@@ -298,6 +298,8 @@ mcmc_plot <- function(x, ...) {
 #' @param shape The shape of the points in the graph, specified as a two-element
 #'   vector with the first being used for the summary points and the second the
 #'   individual draws, default \code{c(18,16)}
+#' @param geom Which geom from \pkg{ggplot2} is used for the summary statistic
+#'   by default \code{"point"}, or alternatively can be \code{"text"}
 #'
 #' @return A [ggplot][ggplot2::ggplot] object that can be customised using the
 #'   \pkg{ggplot2} package
@@ -321,7 +323,8 @@ mcmc_plot <- function(x, ...) {
 #' }
 ordiplot <- function(object, choices = c(1, 2), type = "species",
                      summary_stat = "mean", ndraws = 20, draw_ids = NULL,
-                     size = c(2, 1), alpha = c(1, 0.5), shape = c(18, 16)) {
+                     size = c(2, 1), alpha = c(1, 0.5), shape = c(18, 16),
+                     geom = "point") {
   # try to remove CMD check note
   LV <- NULL
   if (!inherits(object, "jsdmStanFit")) {
@@ -334,6 +337,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
   if (length(choices) != 2L) {
     stop("Only two latent variables can be plotted at once")
   }
+  geom <- match.arg(geom, c("point","text"))
 
   # Extract corrected latent variable scores for species OR sites
   ext_pars <- switch(type,
@@ -416,27 +420,182 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     ggplot2::coord_equal()
 
   if (!is.null(summary_stat)) {
-    graph <- graph +
-      ggplot2::geom_point(
-        data = ord_scores_summary,
-        ggplot2::aes_string(paste0("LV", choices[1]),
-          paste0("LV", choices[2]),
-          colour = "S"
-        ),
-        size = size[1], alpha = alpha[1], shape = shape[1]
-      )
+    if(geom == "point"){
+      graph <- graph +
+        ggplot2::geom_point(
+          data = ord_scores_summary,
+          ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                       .data[[paste0("LV", choices[2])]],
+                       colour = .data[["S"]]
+          ),
+          size = size[1], alpha = alpha[1], shape = shape[1]
+        )
+    } else {
+      graph <- graph +
+        ggplot2::geom_text(
+          data = ord_scores_summary,
+          ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                       .data[[paste0("LV", choices[2])]],
+                       label = switch(type,
+                                      "species" = object$species,
+                                      "sites" = object$sites)
+          ),
+          size = size[1], alpha = alpha[1]
+        )
+    }
   }
 
   if (ndraws > 0 | !is.null(draw_ids)) {
     graph <- graph +
       ggplot2::geom_point(
         data = ord_scores,
-        ggplot2::aes_string(paste0("LV", choices[1]),
-          paste0("LV", choices[2]),
-          colour = "S"
+        ggplot2::aes(.data[[paste0("LV", choices[1])]],
+                     .data[[paste0("LV", choices[2])]],
+                     colour = .data[["S"]]
         ),
         size = size[2], alpha = alpha[2], shape = shape[2]
       )
   }
   graph
+}
+
+#' Plotting environmental effects on species
+#'
+#' @param object The jsdmStanFit model object
+#' @param include_intercept Whether to include the intercept in the plots
+#' @param plotfun Which plot function from mcmc_plot should be used, by default
+#'   \code{"intervals"}
+#' @param nrow The number of rows within the plot
+#' @param y_labels Which plots should have annotated y axes
+#' @param widths The widths of the plots
+#'
+#' @return An object of class \code{"bayesplot_grid"}, for more information see
+#'   [bayesplot::bayesplot_grid()]
+#' @export
+#'
+envplot <- function(object, include_intercept = FALSE,
+                    nrow = NULL, y_labels = NULL,
+                    plotfun = "intervals", widths = NULL){
+  if (!inherits(object, "jsdmStanFit"))
+    stop("Only objects of class jsdmStanFit are supported")
+  preds <- object$preds
+  if(isFALSE(include_intercept)){
+    if(all("preds" == "(Intercept)")){
+      stop("include_intercept is FALSE but there are no other predictors")
+    }
+    preds <- preds[preds != "(Intercept)"]
+  }
+  pn <- get_parnames(object)
+  if(any(grepl("betas", pn))){
+    pl_list <- lapply(preds, function(x){
+      beta_ind <- match(x, object$preds)
+      suppressMessages(
+        pl <- mcmc_plot(object, plotfun = plotfun,
+                pars = paste0("betas\\[",beta_ind,","), regexp = TRUE) +
+          ggplot2::scale_y_discrete(labels = object$species) +
+          ggplot2::labs(x = x)
+      )
+      return(pl)
+    })
+  } else
+    stop("This beta parameterisation currently unsupported")
+
+  if(is.null(nrow)){
+    nrow <- ceiling(length(preds)/3)
+  }
+  if(is.null(y_labels)){
+    ppr <- ceiling(length(preds)/nrow)
+    y_labels <- 1 + ppr*seq(0,nrow-1)
+  }
+  y_nolabels <- seq_along(preds)[!seq_along(preds) %in% y_labels]
+  for(i in y_nolabels){
+    pl_list[[i]] <- pl_list[[i]] +
+      ggplot2::theme(axis.text.y = ggplot2::element_blank())
+  }
+
+  bayesplot::bayesplot_grid(plots = pl_list,
+                            grid_args = list(nrow = nrow,
+                                             widths = widths))
+}
+
+#' Plot modelled correlations between species
+#'
+#' @param object The jsdmStanFit model object
+#' @param species Which species should be included - this plots the correlations
+#'   between the specified species and all other species, so by default if all
+#'   species are included this will result in a plot per species with all other
+#'   species there and thus duplicate entries across all the plots
+#' @param plotfun Which plotting function from bayesplot to use, by default
+#'   \code{"intervals"}
+#' @param nrow How many rows the grid of plots has
+#' @param widths Whether the widths of the different rows of plots should vary
+#' @param ... Other arguments passed to mcmc_plot
+#'
+#' @return An object of class \code{"bayesplot_grid"}, for more information see
+#'   [bayesplot::bayesplot_grid()]
+#' @export
+corrplot <- function(object, species = NULL,
+                     plotfun = "intervals", nrow = NULL, widths = NULL, ...){
+  if (!inherits(object, "jsdmStanFit"))
+    stop("Only objects of class jsdmStanFit with method mglmm are supported")
+  if(object$jsdm_type != "mglmm")
+    stop("Only objects of class jsdmStanFit with method mglmm are supported")
+
+  if (!is.null(species) & !is.character(species)) {
+    if (any(!is.wholenumber(species))) {
+      stop(paste(
+        "Species must be either a character vector of species names or an",
+        "integer vector of species positions in the input data columns"
+      ))
+    }
+  }
+
+  plotfun <- ifelse(grepl("^mcmc_", plotfun),
+                    plotfun, paste0("mcmc_", plotfun))
+  valid_types <- as.character(bayesplot::available_mcmc())
+  if (!plotfun %in% valid_types) {
+    stop(paste(
+      "plotfun:", plotfun, "is not a valid ppc type. ",
+      "Valid types are:\n", paste(valid_types, collapse = ", ")
+    ))
+  }
+  ppc_fun <- get(plotfun, asNamespace("bayesplot"))
+
+  if (!is.null(species)) {
+    if (is.character(species)) {
+      species_names <- object$species
+      if (any(!(species %in% species_names))) {
+        stop("Species specified are not found in the model fit object")
+      }
+      species <- match(species, species_names)
+    }
+    species_names <- object$species[species]
+  } else{
+    species_names <- object$species
+    species <- seq_along(species_names)
+  }
+
+  compl_pars <- expand.grid(seq_along(object$species),
+                            seq_along(object$species))
+  compl_pars <- compl_pars[compl_pars[,1]>compl_pars[,2],]
+  pl_list <- lapply(species_names, function(nm){
+    x <- match(nm, object$species)
+    pars <- compl_pars[compl_pars[,1] == x | compl_pars[,2] == x,]
+    pars <- paste0("cor_species[",pars[,1],",",pars[,2],"]")
+    suppressMessages(
+      pl <- mcmc_plot(object, plotfun = plotfun,
+                      pars = pars, ...) +
+        ggplot2::scale_y_discrete(labels = object$species[object$species != nm]) +
+        ggplot2::labs(x = nm)
+    )
+    return(pl)
+  })
+
+  if(is.null(nrow)){
+    nrow <- ceiling(length(species)/3)
+  }
+
+  bayesplot::bayesplot_grid(plots = pl_list,
+                            grid_args = list(nrow = nrow,
+                                             widths = widths))
 }

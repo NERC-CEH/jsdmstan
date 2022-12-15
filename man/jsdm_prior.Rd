@@ -6,15 +6,16 @@
 \title{Create prior object for jsdmstan models and data simulation}
 \usage{
 jsdm_prior(
-  sigmas_b = "normal(0,1)",
+  sigmas_preds = "normal(0,1)",
   z_preds = "normal(0,1)",
-  L_Rho_preds = "lkj_corr_cholesky(1)",
+  cor_preds = "lkj_corr_cholesky(1)",
+  betas = "normal(0,1)",
   a = "normal(0,1)",
   a_bar = "normal(0,1)",
   sigma_a = "normal(0,1)",
-  sigmas_u = "normal(0,1)",
+  sigmas_species = "normal(0,1)",
   z_species = "normal(0,1)",
-  L_Rho_species = "lkj_corr_cholesky(1)",
+  cor_species = "lkj_corr_cholesky(1)",
   LV = "normal(0,1)",
   L = "normal(0,1)",
   sigma_L = "normal(0,1)",
@@ -25,13 +26,17 @@ jsdm_prior(
 \method{print}{jsdmprior}(x, ...)
 }
 \arguments{
-\item{sigmas_b}{The standard deviation of the covariate effects, constrained to be
-positive (default standard normal)}
+\item{sigmas_preds}{The standard deviation of the covariate effects, constrained
+to be positive (default standard normal)}
 
 \item{z_preds}{The covariate effects (default standard normal)}
 
-\item{L_Rho_preds}{The correlation matrix on the covariate effects (npred by npred
-matrix represented as a Cholesky factor of a correlation matrix)}
+\item{cor_preds}{The correlation matrix on the covariate effects (npred by npred
+matrix represented as a Cholesky factor of a correlation matrix) (default
+\code{"lkj_corr_cholesky(1)"})}
+
+\item{betas}{If covariate effects are unstructured, the prior on the covariate
+effects}
 
 \item{a}{The site level intercepts (default standard normal)}
 
@@ -40,14 +45,14 @@ matrix represented as a Cholesky factor of a correlation matrix)}
 \item{sigma_a}{The standard deviation of the site level intercepts, constrained to
 be positive and default prior is half standard normal}
 
-\item{sigmas_u}{For MGLMM method, the standard deviations of the species
+\item{sigmas_species}{For MGLMM method, the standard deviations of the species
 covariances, constrained to be positive (default half standard normal)}
 
 \item{z_species}{For MGLMM method, the S by N matrix of species covariance by site
 (default standard normal)}
 
-\item{L_Rho_species}{For MGLMM method, the correlation between species represented
-as a Cholesky factor correlation matrix, default \code{"lkj_corr_cholesky(1)"}}
+\item{cor_species}{For MGLMM method, the correlation between species represented
+as a Cholesky factor correlation matrix (default \code{"lkj_corr_cholesky(1)"})}
 
 \item{LV}{For GLLVM method, the per site latent variable loadings (default
 standard normal)}
@@ -59,10 +64,10 @@ standard normal)}
 to be positive (default standard normal)}
 
 \item{sigma}{For Gaussian response, the standard deviation parameter. Constrained
-to be positive, default standard normal}
+to be positive (default standard normal)}
 
 \item{kappa}{For negative binomial response, the negative binomial variance
-parameter. Constrained to be positive, default standard normal}
+parameter. Constrained to be positive (default standard normal)}
 
 \item{x}{Object of class \code{jsdmprior}}
 
@@ -81,15 +86,14 @@ Each prior has to be specified as a character string corresponding to the
 appropriate stan command. The most common versions of these are supported by the
 simulated data functions, however there are functions that can be fed to the stan
 fitting procedure that will not be able to be used as input for \code{\link[=jsdm_sim_data]{jsdm_sim_data()}}.
-Parameters \code{sigmas_b}, \code{sigma_a}, \code{sigmas_u}, \code{sigma_L},
-\code{sigma}, and \code{kappa} are fixed to be positive
-only in the stan code and this cannot be changed. Parameters \code{L_Rho_preds}
-and \code{L_Rho_species} are assumed to be the Cholesky factor of a correlation
-matrix. All other parameters are real numbers. For all parameters that represent
-vectors or matrices the prior has to be the same across the entire vector or
-matrix (note that for the species latent variable loadings in a GLLVM model the
-prior is set on the non-zero matrix components \code{L} and not on the entire
-matrix).
+Parameters \code{sigmas_preds}, \code{sigma_a}, \code{sigmas_species},
+\code{sigma_L}, \code{sigma}, and \code{kappa} are fixed to be positive only in
+the stan code and this cannot be changed. Parameters \code{cor_preds} and
+\code{cor_species} are assumed to be the Cholesky factor of a correlation matrix.
+All other parameters are real numbers. For all parameters that represent vectors
+or matrices the prior has to be the same across the entire vector or matrix (note
+that for the species latent variable loadings in a GLLVM model the prior is set on
+the non-zero matrix components \code{L} and not on the entire matrix).
 
 Prior distributions supported by \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} are \code{"normal(mean, sd)"},
 \code{"student_t(df, mu, sigma)"}, \code{"cauchy(location, scale)"},
@@ -102,7 +106,7 @@ Prior distributions supported by \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} a
 
 }}
 \examples{
-pr <- jsdm_prior(L_Rho_preds = "normal(0,10)")
+pr <- jsdm_prior(kappa = "gamma(0.01,0.01)")
 pr
 
 }

@@ -12,13 +12,24 @@ test_that("gllvm_sim_data errors with bad inputs", {
     "N and S must be positive integers"
   )
 
+  expect_error(
+    gllvm_sim_data(N = 200, S = 5, D = 3, family = "neg_bin",
+                   site_intercept = "grouped"),
+    "Grouped site intercept not supported"
+  )
+
 })
 
 test_that("gllvm_sim_data returns a list of correct length", {
-  gllvm_sim <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "bern")
+  gllvm_sim <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "bern",
+                              beta_param = "unstruct")
   expect_named(gllvm_sim, c(
-    "Y", "pars", "N", "S", "D", "K", "X",
-    "site_intercept"
+    "Y", "pars", "N", "S", "D", "K", "X"
+  ))
+  gllvm_sim <- gllvm_sim_data(N = 100, S = 8, D = 2, family = "bern",
+                              site_intercept = "ungrouped")
+  expect_named(gllvm_sim, c(
+    "Y", "pars", "N", "S", "D", "K", "X"
   ))
 })
 
@@ -35,14 +46,25 @@ test_that("mglmm_sim_data errors with bad inputs", {
     mglmm_sim_data(N = "a", S = 10, family = "neg_bin"),
     "N and S must be positive integers"
   )
+  expect_error(
+    mglmm_sim_data(N = 200, S = 5, family = "gaussian",
+                   site_intercept = "grouped"),
+    "Grouped site intercept not supported"
+  )
 })
 
 
 test_that("mglmm_sim_data returns a list of correct length", {
-  mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "bern")
+  mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "bern",
+                              K = 3, species_intercept = FALSE)
   expect_named(mglmm_sim, c(
-    "Y", "pars", "N", "S", "D", "K", "X",
-    "site_intercept"
+    "Y", "pars", "N", "S", "D", "K", "X"
+  ))
+  mglmm_sim <- mglmm_sim_data(N = 100, S = 8, family = "pois",
+                              beta_param = "unstruct",
+                              site_intercept = "ungrouped")
+  expect_named(mglmm_sim, c(
+    "Y", "pars", "N", "S", "D", "K", "X"
   ))
 })
 
@@ -55,8 +77,7 @@ test_that("prior specification works", {
     )
   )
   expect_named(jsdm_sim, c(
-    "Y", "pars", "N", "S", "D", "K", "X",
-    "site_intercept"
+    "Y", "pars", "N", "S", "D", "K", "X"
   ))
   jsdm_sim <- jsdm_sim_data(
     N = 50, S = 8, D = 2,
