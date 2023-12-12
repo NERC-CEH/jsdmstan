@@ -5,10 +5,10 @@
 \alias{loo}
 \title{Efficient approximate leave-one-out cross-validation using the \pkg{loo} package}
 \usage{
-\method{loo}{jsdmStanFit}(object, ...)
+\method{loo}{jsdmStanFit}(x, ...)
 }
 \arguments{
-\item{object}{The jsdmStanFit model object}
+\item{x}{The jsdmStanFit model object}
 
 \item{...}{Other arguments passed to the \code{\link[loo]{loo}} function}
 }

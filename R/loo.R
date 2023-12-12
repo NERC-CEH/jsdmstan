@@ -4,7 +4,7 @@
 #' approximate leave-one-out (LOO) cross-validation for Bayesian models using Pareto
 #' smoothed importance sampling (PSIS).
 #'
-#' @param object The jsdmStanFit model object
+#' @param x The jsdmStanFit model object
 #' @param ... Other arguments passed to the \code{\link[loo]{loo}} function
 #' @importFrom loo loo
 #' @export
@@ -14,6 +14,6 @@
 #'   \code{\link[loo]{loo}} documentation
 #'
 #'
-loo.jsdmStanFit <- function(object, ...) {
-  rstan::loo(object$fit, ...)
+loo.jsdmStanFit <- function(x, ...) {
+  rstan::loo(x$fit, ...)
 }
