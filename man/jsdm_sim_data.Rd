@@ -15,7 +15,7 @@ jsdm_sim_data(
   method = c("gllvm", "mglmm"),
   species_intercept = TRUE,
   site_intercept = "none",
-  beta_param = "cor",
+  beta_param = "unstruct",
   prior = jsdm_prior()
 )
 
@@ -48,7 +48,7 @@ with no grouping). Defaults to no site intercept, grouped is not supported
 currently.}
 
 \item{beta_param}{The parameterisation of the environmental covariate effects, by
-default \code{"cor"}. See details for further information.}
+default \code{"unstruct"}. See details for further information.}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 

@@ -10,7 +10,7 @@
 \usage{
 rgampois(n, mu, scale)
 
-rlkj(n, eta = 1, cholesky = TRUE)
+rlkj(n, eta = 1, cholesky = FALSE)
 
 rinvgamma(n, shape, scale)
 

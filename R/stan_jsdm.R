@@ -56,7 +56,7 @@
 #'   quantities (by default TRUE), required for loo
 #'
 #' @param beta_param The parameterisation of the environmental covariate effects, by
-#'   default \code{"cor"}. See details for further information.
+#'   default \code{"unstruct"}. See details for further information.
 #'
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
@@ -97,7 +97,7 @@ stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
 stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
                               dat_list = NULL, family, site_intercept = "none",
                               D = NULL, prior = jsdm_prior(), site_groups = NULL,
-                              beta_param = "cor",
+                              beta_param = "unstruct",
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))

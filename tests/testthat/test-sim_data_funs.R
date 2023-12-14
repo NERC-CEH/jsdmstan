@@ -68,6 +68,23 @@ test_that("mglmm_sim_data returns a list of correct length", {
   ))
 })
 
+test_that("jsdm_sim_data returns all appropriate pars", {
+  mglmm_sim <- jsdm_sim_data(100,12,family = "gaussian", method = "mglmm",
+                             beta_param = "cor")
+  expect_named(mglmm_sim$pars, c(
+    "betas","sigmas_preds","z_preds","sigmas_species",
+    "cor_species","z_species","sigma"
+  ))
+  gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "neg_bin", method = "gllvm",
+                             beta_param = "unstruct",
+                             site_intercept = "ungrouped")
+  expect_named(gllvm_sim$pars, c(
+    "betas","a_bar","sigma_a","a","L","LV","sigma_L","kappa"
+  ))
+
+
+})
+
 test_that("prior specification works", {
   jsdm_sim <- jsdm_sim_data(
     N = 100, S = 8, K = 2, family = "gaus", method = "mglmm",

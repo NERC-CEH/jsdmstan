@@ -30,8 +30,8 @@
 #'   to be positive (default standard normal)
 #' @param z_preds The covariate effects (default standard normal)
 #' @param cor_preds The correlation matrix on the covariate effects (npred by npred
-#'   matrix represented as a Cholesky factor of a correlation matrix) (default
-#'   \code{"lkj_corr_cholesky(1)"})
+#'   correlation matrix) (default
+#'   \code{"lkj_corr(1)"})
 #' @param betas If covariate effects are unstructured, the prior on the covariate
 #'   effects
 #' @param a The site level intercepts (default standard normal)
@@ -43,7 +43,7 @@
 #' @param z_species For MGLMM method, the S by N matrix of species covariance by site
 #'   (default standard normal)
 #' @param cor_species For MGLMM method, the correlation between species represented
-#'   as a Cholesky factor correlation matrix (default \code{"lkj_corr_cholesky(1)"})
+#'   as a nspecies by nspecies correlation matrix (default \code{"lkj_corr(1)"})
 #' @param LV For GLLVM method, the per site latent variable loadings (default
 #'   standard normal)
 #' @param L For GLLVM method, the non-zero species latent variable loadings (default
@@ -64,14 +64,14 @@
 #'
 jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        z_preds = "normal(0,1)",
-                       cor_preds = "lkj_corr_cholesky(1)",
+                       cor_preds = "lkj_corr(1)",
                        betas = "normal(0,1)",
                        a = "normal(0,1)",
                        a_bar = "normal(0,1)",
                        sigma_a = "normal(0,1)",
                        sigmas_species = "normal(0,1)",
                        z_species = "normal(0,1)",
-                       cor_species = "lkj_corr_cholesky(1)",
+                       cor_species = "lkj_corr(1)",
                        LV = "normal(0,1)",
                        L = "normal(0,1)",
                        sigma_L = "normal(0,1)",

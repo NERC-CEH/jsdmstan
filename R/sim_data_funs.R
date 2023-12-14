@@ -51,13 +51,13 @@
 #'   currently.
 #'
 #' @param beta_param The parameterisation of the environmental covariate effects, by
-#'   default \code{"cor"}. See details for further information.
+#'   default \code{"unstruct"}. See details for further information.
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
                           site_intercept = "none",
-                          beta_param = "cor",
+                          beta_param = "unstruct",
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson", "bernoulli"))
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
@@ -96,6 +96,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "normal",
       "inv_gamma",
       "lkj_corr_cholesky",
+      "lkj_corr",
       "student_t",
       "cauchy",
       "gamma"
@@ -118,6 +119,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "normal" = "rnorm",
       "inv_gamma" = "rinvgamma",
       "lkj_corr_cholesky" = "rlkj",
+      "lkj_corr" = "rlkj",
       "student_t" = "rstudentt",
       "cauchy" = "rcauchy",
       "gamma" = "rgamma"
@@ -140,6 +142,12 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "kappa" = 1
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
+
+    if(x == "cor_preds" & grepl("lkj_corr_cholesky\\(",prior$cor_species))
+      fun_args <- c(fun_args,1)
+    if(x == "cor_species" & grepl("lkj_corr_cholesky\\(",prior$cor_species))
+      fun_args <- c(fun_args,1)
+
 
     return(list(fun_name, fun_args))
   })
@@ -175,22 +183,22 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
   # covariate parameters
   if(beta_param == "cor"){
-    beta_sds <- abs(do.call(
+    sigmas_preds <- abs(do.call(
       match.fun(prior_func[["sigmas_preds"]][[1]]),
       prior_func[["sigmas_preds"]][[2]]
     ))
-    z_betas <- matrix(do.call(
+    z_preds <- matrix(do.call(
       match.fun(prior_func[["z_preds"]][[1]]),
       prior_func[["z_preds"]][[2]]
     ), ncol = S, nrow = J)
     if (K == 0) {
-      beta_sim <- beta_sds %*% z_betas
+      beta_sim <- sigmas_preds %*% z_preds
     } else {
       cor_preds <- do.call(
         match.fun(prior_func[["cor_preds"]][[1]]),
         prior_func[["cor_preds"]][[2]]
       )
-      beta_sim <- (diag(beta_sds) %*% cor_preds) %*% z_betas
+      beta_sim <- (diag(sigmas_preds) %*% cor_preds) %*% z_preds
     }
   } else if (beta_param == "unstruct"){
     beta_sim <- matrix(do.call(
@@ -223,15 +231,15 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
   if (method == "mglmm") {
     # u covariance
-    u_sds <- abs(do.call(
+    sigmas_species <- abs(do.call(
       match.fun(prior_func[["sigmas_species"]][[1]]),
       prior_func[["sigmas_species"]][[2]]
     ))
-    u_ftilde <- matrix(do.call(
+    z_species <- matrix(do.call(
       match.fun(prior_func[["z_species"]][[1]]),
       prior_func[["z_species"]][[2]]
     ), nrow = S, ncol = N)
-    u_ij <- t((diag(u_sds) %*% cor_species) %*% u_ftilde)
+    u_ij <- t((diag(sigmas_species) %*% cor_species) %*% z_species)
   }
 
   if (method == "gllvm") {
@@ -254,7 +262,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       }
     }
 
-    L_sigma <- abs(do.call(
+    sigma_L <- abs(do.call(
       match.fun(prior_func[["sigma_L"]][[1]]),
       prior_func[["sigma_L"]][[2]]
     ))
@@ -264,7 +272,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       prior_func[["LV"]][[2]]
     ), nrow = D, ncol = N)
 
-    LV_sum <- (L * L_sigma) %*% LV
+    LV_sum <- (L * sigma_L) %*% LV
   }
 
   # variance parameters
@@ -309,8 +317,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   )
 
   if(beta_param == "cor"){
-    pars$beta_sds <- beta_sds
-    pars$z_betas <- z_betas
+    pars$sigmas_preds <- sigmas_preds
+    pars$z_preds <- z_preds
   }
 
   if (site_intercept == "ungrouped") {
@@ -321,12 +329,18 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if (method == "gllvm") {
     pars$L <- L
     pars$LV <- LV
-    pars$L_sigma <- L_sigma
+    pars$sigma_L <- sigma_L
   }
   if (method == "mglmm") {
-    pars$u_sds <- u_sds
+    pars$sigmas_species <- sigmas_species
     pars$cor_species <- cor_species
-    pars$u_ftilde <- u_ftilde
+    pars$z_species <- z_species
+  }
+  if (response == "gaussian") {
+    pars$sigma <- sigma
+  }
+  if (response == "neg_binomial") {
+    pars$kappa <- kappa
   }
   if (isTRUE(species_intercept)) {
     if (K > 0) {
@@ -440,7 +454,7 @@ rgbeta <-
 #' @rdname sim_helpers
 #' @export
 rlkj <-
-  function(n, eta = 1, cholesky = TRUE) {
+  function(n, eta = 1, cholesky = FALSE) {
     if (n < 2) {
       stop("Dimension of correlation matrix must be >= 2")
     }

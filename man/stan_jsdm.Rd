@@ -19,7 +19,7 @@ stan_jsdm(X, ...)
   D = NULL,
   prior = jsdm_prior(),
   site_groups = NULL,
-  beta_param = "cor",
+  beta_param = "unstruct",
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
@@ -62,7 +62,7 @@ grouping)}
 per site}
 
 \item{beta_param}{The parameterisation of the environmental covariate effects, by
-default \code{"cor"}. See details for further information.}
+default \code{"unstruct"}. See details for further information.}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}

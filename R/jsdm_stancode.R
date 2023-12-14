@@ -105,13 +105,13 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   vector<lower=0>[K] sigmas_preds;
   matrix[K, S] z_preds;
   // covariance matrix on betas by predictors
-  cholesky_factor_corr[K] cor_preds;", "unstruct" = "
+  corr_matrix[K] cor_preds;", "unstruct" = "
   matrix[K, S] betas;")
   mglmm_spcov_pars <- "
   // species covariances
   vector<lower=0>[S] sigmas_species;
   matrix[S, N] z_species;
-  cholesky_factor_corr[S] cor_species;"
+  corr_matrix[S] cor_species;"
   gllvm_pars <- "
   // Factor parameters
   vector[M] L; // Non-zero factor loadings

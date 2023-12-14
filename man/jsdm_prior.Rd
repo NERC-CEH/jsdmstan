@@ -8,14 +8,14 @@
 jsdm_prior(
   sigmas_preds = "normal(0,1)",
   z_preds = "normal(0,1)",
-  cor_preds = "lkj_corr_cholesky(1)",
+  cor_preds = "lkj_corr(1)",
   betas = "normal(0,1)",
   a = "normal(0,1)",
   a_bar = "normal(0,1)",
   sigma_a = "normal(0,1)",
   sigmas_species = "normal(0,1)",
   z_species = "normal(0,1)",
-  cor_species = "lkj_corr_cholesky(1)",
+  cor_species = "lkj_corr(1)",
   LV = "normal(0,1)",
   L = "normal(0,1)",
   sigma_L = "normal(0,1)",
@@ -32,8 +32,8 @@ to be positive (default standard normal)}
 \item{z_preds}{The covariate effects (default standard normal)}
 
 \item{cor_preds}{The correlation matrix on the covariate effects (npred by npred
-matrix represented as a Cholesky factor of a correlation matrix) (default
-\code{"lkj_corr_cholesky(1)"})}
+correlation matrix) (default
+\code{"lkj_corr(1)"})}
 
 \item{betas}{If covariate effects are unstructured, the prior on the covariate
 effects}
@@ -52,7 +52,7 @@ covariances, constrained to be positive (default half standard normal)}
 (default standard normal)}
 
 \item{cor_species}{For MGLMM method, the correlation between species represented
-as a Cholesky factor correlation matrix (default \code{"lkj_corr_cholesky(1)"})}
+as a nspecies by nspecies correlation matrix (default \code{"lkj_corr(1)"})}
 
 \item{LV}{For GLLVM method, the per site latent variable loadings (default
 standard normal)}

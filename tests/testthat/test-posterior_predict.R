@@ -4,7 +4,7 @@ bern_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
 colnames(bern_pred_data) <- c("V1", "V2")
 suppressWarnings(bern_fit <- stan_gllvm(
   dat_list = bern_sim_data, family = "bern",
-  refresh = 0, iter = 1000, chains = 2
+  refresh = 0, iter = 500, chains = 2
 ))
 
 test_that("posterior linpred errors appropriately", {
@@ -65,8 +65,8 @@ test_that("posterior_(lin)pred works with gllvm", {
   expect_false(any(sapply(bern_pred, function(x) x < 0)))
 
   bern_pred2 <- posterior_predict(bern_fit,
-    newdata = bern_pred_data,
-    ndraws = 50, list_index = "species"
+                                  newdata = bern_pred_data,
+                                  ndraws = 50, list_index = "species"
   )
 
   expect_length(bern_pred2, 9)
@@ -79,7 +79,7 @@ pois_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
 colnames(pois_pred_data) <- c("V1", "V2")
 suppressWarnings(pois_fit <- stan_mglmm(
   dat_list = pois_sim_data, family = "pois",
-  refresh = 0, chains = 2
+  refresh = 0, chains = 2, iter = 500
 ))
 test_that("posterior_(lin)pred works with mglmm", {
   pois_pred <- posterior_predict(pois_fit, ndraws = 100)
@@ -89,11 +89,36 @@ test_that("posterior_(lin)pred works with mglmm", {
   expect_false(any(sapply(pois_pred, function(x) x < 0)))
 
   pois_pred2 <- posterior_predict(pois_fit,
-    newdata = pois_pred_data,
-    ndraws = 50, list_index = "species"
+                                  newdata = pois_pred_data,
+                                  ndraws = 50, list_index = "species"
   )
 
   expect_length(pois_pred2, 9)
   expect_false(any(sapply(pois_pred2, anyNA)))
   expect_false(any(sapply(pois_pred2, function(x) x < 0)))
+})
+
+negb_sim_data <- mglmm_sim_data(N = 100, S = 9, K = 2, family = "neg_bin",
+                                site_intercept = "ungrouped")
+negb_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
+colnames(negb_pred_data) <- c("V1", "V2")
+suppressWarnings(negb_fit <- stan_mglmm(
+  dat_list = negb_sim_data, family = "neg_bin",
+  refresh = 0, chains = 2, iter = 500
+))
+test_that("posterior_(lin)pred works with mglmm and negbin", {
+  negb_pred <- posterior_predict(negb_fit, ndraws = 100)
+
+  expect_length(negb_pred, 100)
+  expect_false(any(sapply(negb_pred, anyNA)))
+  expect_false(any(sapply(negb_pred, function(x) x < 0)))
+
+  negb_pred2 <- posterior_predict(negb_fit,
+                                  newdata = negb_pred_data,
+                                  ndraws = 50, list_index = "species"
+  )
+
+  expect_length(negb_pred2, 9)
+  expect_false(any(sapply(negb_pred2, anyNA)))
+  expect_false(any(sapply(negb_pred2, function(x) x < 0)))
 })

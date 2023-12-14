@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 ```{r setup}
 library(jsdmstan)
 library(ggplot2)
-set.seed(82631729)
+set.seed(8264372)
 ```
 
 # Joint Species Distribution Models
@@ -74,8 +74,8 @@ This default behaviour can be overridden through specifying the `beta_param` arg
 First we can use the in-built functions for simulating data according to the MGLMM model - we'll choose to simulate 15 species over 200 sites with 2 environmental covariates. The species are assumed to follow a Poisson distribution (with a log-link), and we use the defaults of including a species-specific intercept but no site-specific intercept. At the moment only default priors (standard normal distribution) are supported. We can do this using either the `jsdm_sim_data` function with `method = "mglmm"` or with the `mglmm_sim_data` function which just calls `jsdm_sim_data` in the background.
 
 ```{r}
-nsites <- 25
-nspecies <- 6
+nsites <- 60
+nspecies <- 8
 ncovar <- 2
 mglmm_test_data <- mglmm_sim_data(N = nsites, S = nspecies, 
                                   K = ncovar, family = "pois")
@@ -160,16 +160,15 @@ As we have run the above model on simulated data and the original data list cont
 
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_hist",
-          pars = c("sigmas_preds[1]","sigmas_preds[2]",
-                   "sigmas_preds[3]"),
-          true = mglmm_test_data$pars$beta_sds)
+          pars = paste0("sigmas_species[",1:8,"]"),
+          true = mglmm_test_data$pars$sigmas_species)
 ```
 
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
-          pars = paste0("cor_species[",rep(1:nspecies, nspecies),",",
-                        rep(1:nspecies, each = nspecies),"]"),
-          true = c(mglmm_test_data$pars$cor_species)) +
+          pars = paste0("cor_species[",rep(1:nspecies, nspecies:1),",",
+                        unlist(sapply(1:8, ":",8)),"]"),
+          true = c(mglmm_test_data$pars$cor_species[lower.tri(mglmm_test_data$pars$cor_species, diag = TRUE)])) +
   theme(axis.text.x = element_text(angle = 90))
 ```
 
@@ -182,7 +181,8 @@ The model fitting workflow for latent variable models is very similar to that ab
 set.seed(3562251)
 gllvm_test_data <- gllvm_sim_data(N = 32, S = 7, D = 2, family = "gaussian",
                                   prior = jsdm_prior(sigma = "student_t(3,0,1)",
-                                                     sigmas_preds = "student_t(3,0,1)"))
+                                                     sigmas_preds = "student_t(3,0,1)"),
+                                  beta_param = "cor")
 ```
 
 
@@ -191,6 +191,7 @@ gllvm_fit <- stan_jsdm(Y = gllvm_test_data$Y, X = gllvm_test_data$X,
                        D = gllvm_test_data$D,  
                        family = "gaussian",
                        method = "gllvm", 
+                       beta_param = "cor",
                        prior = jsdm_prior(sigma = "student_t(3,0,1)",
                                           sigmas_preds = "student_t(3,0,1)"),
                        refresh = 0)
