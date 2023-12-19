@@ -14,6 +14,7 @@ jsdm_sim_data(
   family,
   method = c("gllvm", "mglmm"),
   species_intercept = TRUE,
+  Ntrials = NULL,
   site_intercept = "none",
   beta_param = "unstruct",
   prior = jsdm_prior()
@@ -33,53 +34,57 @@ mglmm_sim_data(...)
 \item{K}{is number of covariates, by default \code{0}}
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
-\code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular
-expression matching is supported.}
+\code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+or \code{"bernoulli"}. Regular expression matching is supported.}
 
 \item{method}{is the jSDM method to use, currently either \code{"gllvm"} or
 \code{"mglmm"} - see details for more information.}
 
-\item{species_intercept}{Whether to include an intercept in the predictors, must
-be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.}
+\item{species_intercept}{Whether to include an intercept in the predictors,
+must be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.}
+
+\item{Ntrials}{For the binomial distribution the number of trials, given as
+either a single integer which is assumed to be constant across sites or as
+a site-length vector of integers.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
-values \code{"none"} (no site intercept) or \code{"ungrouped"} (site intercept
-with no grouping). Defaults to no site intercept, grouped is not supported
-currently.}
+values \code{"none"} (no site intercept) or \code{"ungrouped"} (site
+intercept with no grouping). Defaults to no site intercept, grouped is not
+supported currently.}
 
-\item{beta_param}{The parameterisation of the environmental covariate effects, by
-default \code{"unstruct"}. See details for further information.}
+\item{beta_param}{The parameterisation of the environmental covariate
+effects, by default \code{"unstruct"}. See details for further information.}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{...}{Arguments passed to jsdm_sim_data}
 }
 \description{
-The \code{jsdm_sim_data} function can simulate data with either a multivariate
-generalised mixed model (MGLMM) or a generalised linear latent variable model
-(GLLVM). The \code{gllvm_sim_data} and \code{mglmm_sim_data} are aliases for
-\code{jsdm_sim_data} that set \code{method} to \code{"gllvm"} and \code{"mglmm"}
-respectively.
+The \code{jsdm_sim_data} function can simulate data with either a
+multivariate generalised mixed model (MGLMM) or a generalised linear latent
+variable model (GLLVM). The \code{gllvm_sim_data} and \code{mglmm_sim_data}
+are aliases for \code{jsdm_sim_data} that set \code{method} to \code{"gllvm"}
+and \code{"mglmm"} respectively.
 }
 \details{
 This simulates data based on a joint species distribution model with
-either a generalised linear latent variable model approach or a multivariate
-generalised linear mixed model approach.
+either a generalised linear latent variable model approach or a
+multivariate generalised linear mixed model approach.
 
 Models can be fit with or without "measured predictors", and if measured
 predictors are included then the species have species-specific parameter
 estimates. These can either be simulated completely independently, or have
-information pooled across species. If information is pooled this can be modelled
-as either a random draw from some mean and standard deviation or species
-covariance can be modelled together (this will be the covariance used in the
-overall model if the method used has covariance).
+information pooled across species. If information is pooled this can be
+modelled as either a random draw from some mean and standard deviation or
+species covariance can be modelled together (this will be the covariance
+used in the overall model if the method used has covariance).
 
-Environmental covariate effects (\code{"betas"}) can be parameterised in two
-ways. With the \code{"cor"} parameterisation all covariate effects are assumed
-to be constrained by a correlation matrix between the covariates. With the
-\code{"unstruct"} parameterisation all covariate effects are assumed to draw
-from a simple distribution with no correlation structure. Both parameterisations
-can be modified using the prior object.
+Environmental covariate effects (\code{"betas"}) can be parameterised in
+two ways. With the \code{"cor"} parameterisation all covariate effects are
+assumed to be constrained by a correlation matrix between the covariates.
+With the \code{"unstruct"} parameterisation all covariate effects are
+assumed to draw from a simple distribution with no correlation structure.
+Both parameterisations can be modified using the prior object.
 }
 \section{Functions}{
 \itemize{

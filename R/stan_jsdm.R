@@ -27,7 +27,8 @@
 #' @param D The number of latent variables within a GLLVM model
 #'
 #' @param family The response family for the model, required to be one of
-#'   \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}
+#'   \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"}, \code{"binomial"}
+#'   or \code{"neg_binomial"}
 #'
 #' @param species_intercept Whether the model should be fit with an intercept by
 #'   species, by default \code{TRUE}
@@ -43,6 +44,10 @@
 #'
 #' @param site_groups If the site intercept is grouped, a vector of group identities
 #'   per site
+#'
+#' @param Ntrials For the binomial distribution the number of trials, given as
+#'   either a single integer which is assumed to be constant across sites or as
+#'   a site-length vector of integers.
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 #'
@@ -97,9 +102,10 @@ stan_jsdm <- function(X, ...) UseMethod("stan_jsdm")
 stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, method,
                               dat_list = NULL, family, site_intercept = "none",
                               D = NULL, prior = jsdm_prior(), site_groups = NULL,
-                              beta_param = "unstruct",
+                              beta_param = "unstruct", Ntrials = NULL,
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
-  family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
+  family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
+                                "neg_binomial","binomial"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
 
   stopifnot(
@@ -115,7 +121,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = dat_list, phylo = FALSE,
     family = family, method = method, nu05 = "1",
-    delta = 1e-5
+    delta = 1e-5, Ntrials = Ntrials
   )
 
   # Create stancode
@@ -221,7 +227,7 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept, phylo,
-                          method, nu05, delta, site_groups) {
+                          method, nu05, delta, site_groups, Ntrials) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -283,6 +289,9 @@ validate_data <- function(Y, D, X, species_intercept,
       data_list$nu05 <- nu05
       data_list$delta <- delta
     }
+    if(family == "binomial"){
+      data_list$Ntrials <- Ntrials
+    }
   } else {
     if (!all(c("Y", "K", "S", "N", "X") %in% names(dat_list))) {
       stop("If supplying data as a list must have entries Y, K, S, N, X")
@@ -295,6 +304,12 @@ validate_data <- function(Y, D, X, species_intercept,
     if (!isFALSE(phylo)) {
       if (!all(c("Dmat", "nu05", "delta") %in% names(dat_list))) {
         stop("Phylo models require Dmat, nu05 and delta in dat_list")
+      }
+    }
+
+    if (identical(family, "binomial")) {
+      if (!all(c("Ntrials") %in% names(dat_list))) {
+        stop("Binomial models require Ntrials in dat_list")
       }
     }
 
@@ -334,9 +349,25 @@ validate_data <- function(Y, D, X, species_intercept,
     ))) {
       stop("Y matrix is not binary")
     }
-  } else if (family %in% c("poisson", "neg_binomial")) {
+  } else if (family %in% c("poisson", "neg_binomial", "binomial")) {
     if (!any(apply(data_list$Y, 1:2, is.wholenumber))) {
       stop("Y matrix is not composed of integers")
+    }
+  }
+
+  # Check if Ntrials is appropriate given
+  if(identical(family, "binomial")) {
+    if(is.null(data_list$Ntrials)){
+      stop("Number of trials must be specified for the binomial distribution")
+    }
+    if(!is.double(data_list$Ntrials) & !is.integer(data_list$Ntrials)){
+      stop("Ntrials must be a positive integer")
+    }
+    if(!(length(data_list$Ntrials) %in% c(1, data_list$N))){
+      stop("Ntrials must be of length 1 or N")
+    }
+    if(length(data_list$Ntrials) == 1L){
+      data_list$Ntrials <- rep(data_list$Ntrials, data_list$N)
     }
   }
 
