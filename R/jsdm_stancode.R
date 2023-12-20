@@ -63,26 +63,29 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   data <- paste(
     " int<lower=1> N; // Number of sites
   int<lower=1> S; // Number of species
-", ifelse(method == "gllvm",
+",
+ifelse(method == "gllvm",
       " int<lower=1> D; // Number of latent dimensions", ""
     ),
- ifelse(family == "binomial",
-        " int<lower=0> Ntrials[N]; // Number of trials",""),
     "
   int<lower=0> K; // Number of predictor variables
   matrix[N, K] X; // Predictor matrix
-", ifelse(site_intercept == "grouped",
+",
+ifelse(site_intercept == "grouped",
             "
   int<lower=1> ngrp; // Number of groups in site intercept
   int<lower=0, upper = ngrp> grps[N]; // Vector matching sites to groups
-  ",""),
+ ",""),
   switch(family,
       "gaussian" = "real",
       "bernoulli" = "int<lower=0,upper=1>",
       "neg_binomial" = "int<lower=0>",
       "poisson" = "int<lower=0>",
       "binomial" = "int<lower=0>"
-    ), "Y[N,S]; //Species matrix"
+    ), "Y[N,S]; //Species matrix",
+ ifelse(family == "binomial",
+        "
+  int<lower=0> Ntrials[N]; // Number of trials","")
   )
   transformed_data <- ifelse(method == "gllvm", "
   // Ensures identifiability of the model - no rotation of factors

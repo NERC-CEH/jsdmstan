@@ -96,18 +96,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   }
 
   if(response == "binomial"){
-    if(is.null(Ntrials)){
-      stop("Number of trials must be specified for the binomial distribution")
-    }
-    if(!is.double(Ntrials) & !is.integer(Ntrials)){
-      stop("Ntrials must be a positive integer")
-    }
-    if(!(length(Ntrials) %in% c(1, N))){
-      stop("Ntrials must be of length 1 or N")
-    }
-    if(length(Ntrials) == 1L){
-      Ntrials <- rep(Ntrials, N)
-    }
+    Ntrials <- ntrials_check(Ntrials = Ntrials, N = N)
   }
 
   # prior object breakdown
@@ -533,4 +522,20 @@ rinvgamma <- function(n, shape, scale) {
 #' @export
 rstudentt <- function(n, df, mu, sigma) {
   mu + sigma * stats::rt(n, df = df)
+}
+
+ntrials_check <- function(Ntrials, N){
+  if(is.null(Ntrials)){
+    stop("Number of trials must be specified for the binomial distribution")
+  }
+  if(!is.double(Ntrials) & !is.integer(Ntrials)){
+    stop("Ntrials must be a positive integer")
+  }
+  if(!(length(Ntrials) %in% c(1, N))){
+    stop("Ntrials must be of length 1 or N")
+  }
+  if(length(Ntrials) == 1L){
+    Ntrials <- rep(Ntrials, N)
+  }
+  Ntrials
 }

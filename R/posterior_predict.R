@@ -220,8 +220,12 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
   if (object$family == "neg_binomial") {
     mod_kappa <- rstan::extract(object$fit, pars = "kappa", permuted = FALSE)
   }
-  if(object$family == "binomial" & is.null(newdata)) {
-    Ntrials <- object$data_list$Ntrials
+  if(object$family == "binomial"){
+    if(is.null(newdata)) {
+      Ntrials <- object$data_list$Ntrials
+    } else {
+      Ntrials <- ntrials_check(Ntrials, nrow(newdata))
+    }
   }
 
   n_sites <- length(object$sites)

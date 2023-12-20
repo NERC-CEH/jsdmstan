@@ -119,9 +119,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   data_list <- validate_data(
     Y = Y, X = X, species_intercept = species_intercept,
     D = D, site_intercept = site_intercept, site_groups = site_groups,
-    dat_list = dat_list, phylo = FALSE,
-    family = family, method = method, nu05 = "1",
-    delta = 1e-5, Ntrials = Ntrials
+    dat_list = dat_list,
+    family = family, method = method, Ntrials = Ntrials
   )
 
   # Create stancode
@@ -226,8 +225,8 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 # Internal ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 validate_data <- function(Y, D, X, species_intercept,
-                          dat_list, family, site_intercept, phylo,
-                          method, nu05, delta, site_groups, Ntrials) {
+                          dat_list, family, site_intercept,
+                          method, site_groups, Ntrials) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -252,6 +251,10 @@ validate_data <- function(Y, D, X, species_intercept,
       X <- matrix(1, nrow = N, ncol = 1)
       colnames(X) <- "(Intercept)"
     } else {
+      if(is.null(colnames(X))){
+        message("No column names specified for X, assigning names")
+        colnames(X) <- paste0("V",seq_len(ncol(X)))
+      }
       K <- ncol(X) + 1 * species_intercept
       if(is.data.frame(X)){
         X <- as.matrix(X)
@@ -284,11 +287,6 @@ validate_data <- function(Y, D, X, species_intercept,
       data_list$ngrp <- ngrp
       data_list$grps <- grps
     }
-    if (!isFALSE(phylo)) {
-      data_list$Dmat <- phylo
-      data_list$nu05 <- nu05
-      data_list$delta <- delta
-    }
     if(family == "binomial"){
       data_list$Ntrials <- Ntrials
     }
@@ -299,12 +297,6 @@ validate_data <- function(Y, D, X, species_intercept,
 
     if (!("D" %in% names(dat_list)) & method == "gllvm") {
       stop("If supplying data as a list must have a D entry")
-    }
-
-    if (!isFALSE(phylo)) {
-      if (!all(c("Dmat", "nu05", "delta") %in% names(dat_list))) {
-        stop("Phylo models require Dmat, nu05 and delta in dat_list")
-      }
     }
 
     if (identical(family, "binomial")) {
@@ -357,18 +349,7 @@ validate_data <- function(Y, D, X, species_intercept,
 
   # Check if Ntrials is appropriate given
   if(identical(family, "binomial")) {
-    if(is.null(data_list$Ntrials)){
-      stop("Number of trials must be specified for the binomial distribution")
-    }
-    if(!is.double(data_list$Ntrials) & !is.integer(data_list$Ntrials)){
-      stop("Ntrials must be a positive integer")
-    }
-    if(!(length(data_list$Ntrials) %in% c(1, data_list$N))){
-      stop("Ntrials must be of length 1 or N")
-    }
-    if(length(data_list$Ntrials) == 1L){
-      data_list$Ntrials <- rep(data_list$Ntrials, data_list$N)
-    }
+    data_list$Ntrials <- ntrials_check(data_list$Ntrials, data_list$N)
   }
 
   return(data_list)
