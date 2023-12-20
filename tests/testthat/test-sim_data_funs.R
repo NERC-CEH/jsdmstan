@@ -18,6 +18,11 @@ test_that("gllvm_sim_data errors with bad inputs", {
     "Grouped site intercept not supported"
   )
 
+  expect_error(
+    gllvm_sim_data(N = 200, S = 8, D = 2, family = "binomial", Ntrials = "1"),
+    "Ntrials must be a positive integer"
+  )
+
 })
 
 test_that("gllvm_sim_data returns a list of correct length", {
@@ -51,6 +56,16 @@ test_that("mglmm_sim_data errors with bad inputs", {
                    site_intercept = "grouped"),
     "Grouped site intercept not supported"
   )
+
+  expect_error(
+    mglmm_sim_data(N = 100, S = 5, family = "binomial"),
+    "Number of trials must be specified"
+  )
+
+  expect_error(
+    mglmm_sim_data(N = 50, S = 8, family = "binomial", Ntrials = c(1,3)),
+    "Ntrials must be of length"
+  )
 })
 
 
@@ -66,13 +81,19 @@ test_that("mglmm_sim_data returns a list of correct length", {
   expect_named(mglmm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X"
   ))
+  gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "binomial", method = "gllvm",
+                             Ntrials = 19)
+  expect_named(gllvm_sim, c(
+    "Y", "pars", "N", "S", "D", "K", "X", "Ntrials"
+  ))
+  expect_length(gllvm_sim$Ntrials, 100)
 })
 
 test_that("jsdm_sim_data returns all appropriate pars", {
   mglmm_sim <- jsdm_sim_data(100,12,family = "gaussian", method = "mglmm",
-                             beta_param = "cor")
+                             beta_param = "cor", K = 3)
   expect_named(mglmm_sim$pars, c(
-    "betas","sigmas_preds","z_preds","sigmas_species",
+    "betas","sigmas_preds","z_preds","cor_preds","sigmas_species",
     "cor_species","z_species","sigma"
   ))
   gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "neg_bin", method = "gllvm",
@@ -81,6 +102,7 @@ test_that("jsdm_sim_data returns all appropriate pars", {
   expect_named(gllvm_sim$pars, c(
     "betas","a_bar","sigma_a","a","L","LV","sigma_L","kappa"
   ))
+
 
 
 })

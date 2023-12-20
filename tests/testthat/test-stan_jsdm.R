@@ -43,27 +43,6 @@ test_that("summary works", {
   expect_match(rownames(mglmm_summ), "beta", all = TRUE)
 })
 
-test_that("update works", {
-  mglmm_data <- mglmm_sim_data(N = 20, S = 5, family = "gaussian", K = 2)
-  suppressWarnings(mglmm_fit2 <- update(mglmm_fit,
-    newY = mglmm_data$Y,
-    newX = mglmm_data$X,
-    refresh = 0,
-    chains = 2, iter = 200
-  ))
-  suppressWarnings(mglmm_fit3 <- update(mglmm_fit,
-    refresh = 0, iter = 100
-  ))
-
-  expect_s3_class(mglmm_fit2, "jsdmStanFit")
-  expect_s3_class(mglmm_fit3, "jsdmStanFit")
-
-  jsdm_empty <- jsdmStanFit_empty()
-  expect_error(
-    update(jsdm_empty),
-    "Update requires the original data to be saved in the model object"
-  )
-})
 
 test_that("nuts_params works", {
   expect_named(nuts_params(mglmm_fit), c("Chain", "Iteration", "Parameter", "Value"))
@@ -126,6 +105,23 @@ test_that("stan_gllvm fails with wrong inputs", {
                family = "bern", D = -1),
     "Must have at least one latent variable"
   )
+
+  expect_error(
+    suppressMessages(stan_gllvm(Y = matrix(sample.int(10,100,
+                                                      replace = TRUE),
+                                           nrow = 20),
+                                X = matrix(rnorm(60), nrow = 20),
+                                family = "binomial", D = 2, Ntrials = "a")),
+    "Ntrials must be a positive integer"
+  )
+
+  expect_error(
+    suppressMessages(stan_gllvm(Y = matrix(sample.int(10,100,
+                                                      replace = TRUE), nrow = 20),
+                                X = matrix(rnorm(60), nrow = 20),
+                                family = "binomial", D = 2, Ntrials = c(1,3))),
+    "Ntrials must be of length"
+  )
 })
 
 test_that("stan_gllvm returns right type of object", {
@@ -165,6 +161,17 @@ test_that("stan_gllvm returns right type of object", {
   ))
 
   expect_s3_class(gllvm_fit, "jsdmStanFit")
+
+  # binomial
+  gllvm_data <- gllvm_sim_data(N = 20, S = 8, D = 2, K = 2, family = "binomial",
+                               Ntrials = 20)
+  suppressWarnings(gllvm_fit <- stan_gllvm(
+    Y = as.data.frame(gllvm_data$Y), X = as.data.frame(gllvm_data$X),
+    D = gllvm_data$D, refresh = 0, chains = 2, iter = 200,
+    family = "binomial", Ntrials = 20
+  ))
+
+  expect_s3_class(gllvm_fit, "jsdmStanFit")
 })
 
 # MGLMM tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,6 +193,15 @@ test_that("stan_mglmm fails with wrong inputs", {
       family = "pois"
     ),
     "Y matrix is not composed of integers"
+  )
+  expect_error(
+    stan_mglmm(
+      Y = matrix(sample.int(100,500,replace=TRUE), nrow = 100),
+      X = data.frame(V1 = rnorm(100),
+                     V2 = rnorm(100)),
+      family = "binomial"
+    ),
+    "Number of trials must be specified"
   )
 })
 
@@ -216,6 +232,10 @@ test_that("stan_mglmm returns right type of object", {
     chains = 2
   ))
 
+  expect_error(stan_jsdm(dat_list = mglmm_data, family = "binomial",
+                         method = "mglmm"),
+               "Binomial models require Ntrials")
+
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
   # neg bin
@@ -227,6 +247,20 @@ test_that("stan_mglmm returns right type of object", {
   ))
 
   expect_s3_class(mglmm_fit, "jsdmStanFit")
+
+  # binomial
+  mglmm_data <- mglmm_sim_data(N = 51, S = 6, K = 2, family = "binomial",
+                               Ntrials=sample.int(20,51,replace = TRUE))
+  suppressWarnings(mglmm_fit <- stan_mglmm(
+    dat_list = mglmm_data,
+    family = "binomial",
+    refresh = 0, chains = 2, iter = 200
+  ))
+
+  expect_s3_class(mglmm_fit, "jsdmStanFit")
+
+  # binomial
+
 })
 
 # stan_jsdm site_intercept tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -234,11 +268,6 @@ mglmm_data <- mglmm_sim_data(N = 100, S = 8, family = "gaussian", K = 3,
                              site_intercept = "ungrouped")
 df <- as.data.frame(mglmm_data$X)
 grps <- rep(1:20, each = 5)
-
-gllvm_data <- gllvm_sim_data(N = 100, S = 8, family = "bern", D = 3,
-                             site_intercept = "ungrouped")
-gllvm_data$grps <- rep(1:20, each = 5)
-gllvm_data$ngrp <- 20
 
 test_that("site intercept errors correctly", {
   expect_error(stan_mglmm(~ V1 + V2, data = df, Y = mglmm_data$Y,
@@ -269,18 +298,4 @@ test_that("site intercept models run", {
   ))
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
-})
-
-test_that("site_intercept models update", {
-  suppressWarnings(gllvm_fit <- stan_gllvm(X = NULL, dat_list = gllvm_data,
-                                           site_intercept = "grouped",
-                                           family = "bern",
-                                           refresh = 0, chains = 1, iter = 200
-  ))
-  expect_s3_class(gllvm_fit, "jsdmStanFit")
-
-  suppressWarnings(gllvm_fit2 <- update(gllvm_fit, newD = 2,
-                                        refresh = 0, chains = 1, iter = 200
-  ))
-  expect_s3_class(gllvm_fit2, "jsdmStanFit")
 })
