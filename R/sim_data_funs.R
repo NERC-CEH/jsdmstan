@@ -1,29 +1,29 @@
 #' Generate simulated data within a variety of jSDM methodologies
 #'
-#' The \code{jsdm_sim_data} function can simulate data with either a multivariate
-#' generalised mixed model (MGLMM) or a generalised linear latent variable model
-#' (GLLVM). The \code{gllvm_sim_data} and \code{mglmm_sim_data} are aliases for
-#' \code{jsdm_sim_data} that set \code{method} to \code{"gllvm"} and \code{"mglmm"}
-#' respectively.
+#' The \code{jsdm_sim_data} function can simulate data with either a
+#' multivariate generalised mixed model (MGLMM) or a generalised linear latent
+#' variable model (GLLVM). The \code{gllvm_sim_data} and \code{mglmm_sim_data}
+#' are aliases for \code{jsdm_sim_data} that set \code{method} to \code{"gllvm"}
+#' and \code{"mglmm"} respectively.
 #'
 #' @details This simulates data based on a joint species distribution model with
-#'   either a generalised linear latent variable model approach or a multivariate
-#'   generalised linear mixed model approach.
+#'   either a generalised linear latent variable model approach or a
+#'   multivariate generalised linear mixed model approach.
 #'
 #'   Models can be fit with or without "measured predictors", and if measured
 #'   predictors are included then the species have species-specific parameter
 #'   estimates. These can either be simulated completely independently, or have
-#'   information pooled across species. If information is pooled this can be modelled
-#'   as either a random draw from some mean and standard deviation or species
-#'   covariance can be modelled together (this will be the covariance used in the
-#'   overall model if the method used has covariance).
+#'   information pooled across species. If information is pooled this can be
+#'   modelled as either a random draw from some mean and standard deviation or
+#'   species covariance can be modelled together (this will be the covariance
+#'   used in the overall model if the method used has covariance).
 #'
-#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
-#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
-#'   to be constrained by a correlation matrix between the covariates. With the
-#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
-#'   from a simple distribution with no correlation structure. Both parameterisations
-#'   can be modified using the prior object.
+#'   Environmental covariate effects (\code{"betas"}) can be parameterised in
+#'   two ways. With the \code{"cor"} parameterisation all covariate effects are
+#'   assumed to be constrained by a correlation matrix between the covariates.
+#'   With the \code{"unstruct"} parameterisation all covariate effects are
+#'   assumed to draw from a simple distribution with no correlation structure.
+#'   Both parameterisations can be modified using the prior object.
 #'
 #' @export
 #'
@@ -36,30 +36,36 @@
 #' @param K is number of covariates, by default \code{0}
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
-#'   \code{"neg_binomial"}, \code{"poisson"} or \code{"bernoulli"}. Regular
-#'   expression matching is supported.
+#'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+#'   or \code{"bernoulli"}. Regular expression matching is supported.
 #'
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
 #'   \code{"mglmm"} - see details for more information.
 #'
-#' @param species_intercept Whether to include an intercept in the predictors, must
-#'   be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
+#' @param species_intercept Whether to include an intercept in the predictors,
+#'   must be \code{TRUE} if \code{K} is \code{0}. Defaults to \code{TRUE}.
+#'
+#' @param Ntrials For the binomial distribution the number of trials, given as
+#'   either a single integer which is assumed to be constant across sites or as
+#'   a site-length vector of integers.
 #'
 #' @param site_intercept Whether a site intercept should be included, potential
-#'   values \code{"none"} (no site intercept) or \code{"ungrouped"} (site intercept
-#'   with no grouping). Defaults to no site intercept, grouped is not supported
-#'   currently.
+#'   values \code{"none"} (no site intercept) or \code{"ungrouped"} (site
+#'   intercept with no grouping). Defaults to no site intercept, grouped is not
+#'   supported currently.
 #'
-#' @param beta_param The parameterisation of the environmental covariate effects, by
-#'   default \code{"unstruct"}. See details for further information.
+#' @param beta_param The parameterisation of the environmental covariate
+#'   effects, by default \code{"unstruct"}. See details for further information.
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
+                          Ntrials = NULL,
                           site_intercept = "none",
                           beta_param = "unstruct",
                           prior = jsdm_prior()) {
-  response <- match.arg(family, c("gaussian", "neg_binomial", "poisson", "bernoulli"))
+  response <- match.arg(family, c("gaussian", "neg_binomial", "poisson",
+                                  "bernoulli", "binomial"))
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   if(site_intercept == "grouped"){
@@ -87,6 +93,10 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
 
   if (class(prior)[1] != "jsdmprior") {
     stop("prior object must be of class jsdmprior, produced by jsdm_prior()")
+  }
+
+  if(response == "binomial"){
+    Ntrials <- ntrials_check(Ntrials = Ntrials, N = N)
   }
 
   # prior object breakdown
@@ -305,7 +315,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
         ),
         "gaussian" = stats::rnorm(1, mu_ij, sigma),
         "poisson" = stats::rpois(1, exp(mu_ij)),
-        "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij))
+        "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
+        "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij))
       )
     }
   }
@@ -319,6 +330,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if(beta_param == "cor"){
     pars$sigmas_preds <- sigmas_preds
     pars$z_preds <- z_preds
+    if(K != 0){
+      pars$cor_preds <- cor_preds
+    }
   }
 
   if (site_intercept == "ungrouped") {
@@ -352,6 +366,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   output <- list(
     Y = Y, pars = pars, N = N, S = S, D = D, K = J, X = x
   )
+  if(response == "binomial"){
+    output$Ntrials <- Ntrials
+  }
 
   return(output)
 }
@@ -431,7 +448,7 @@ rgampois <- function(n, mu, scale) {
 }
 
 inv_logit <- function(x) {
-  1 / (1 + exp(x))
+  1 / (1 + exp(-x))
 }
 
 
@@ -505,4 +522,20 @@ rinvgamma <- function(n, shape, scale) {
 #' @export
 rstudentt <- function(n, df, mu, sigma) {
   mu + sigma * stats::rt(n, df = df)
+}
+
+ntrials_check <- function(Ntrials, N){
+  if(is.null(Ntrials)){
+    stop("Number of trials must be specified for the binomial distribution")
+  }
+  if(!is.double(Ntrials) & !is.integer(Ntrials)){
+    stop("Ntrials must be a positive integer")
+  }
+  if(!(length(Ntrials) %in% c(1, N))){
+    stop("Ntrials must be of length 1 or N")
+  }
+  if(length(Ntrials) == 1L){
+    Ntrials <- rep(Ntrials, N)
+  }
+  Ntrials
 }

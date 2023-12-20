@@ -12,6 +12,7 @@
   ndraws = NULL,
   draw_ids = NULL,
   list_index = "draws",
+  Ntrials = NULL,
   ...
 )
 }
@@ -31,6 +32,10 @@ number of samples.}
 
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}
+
+\item{Ntrials}{For the binomial distribution the number of trials, given as
+either a single integer which is assumed to be constant across sites or as
+a site-length vector of integers.}
 
 \item{...}{Currently unused}
 }

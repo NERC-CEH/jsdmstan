@@ -20,6 +20,7 @@ stan_jsdm(X, ...)
   prior = jsdm_prior(),
   site_groups = NULL,
   beta_param = "unstruct",
+  Ntrials = NULL,
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
@@ -47,7 +48,8 @@ Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsd
 example of how this can be formatted.}
 
 \item{family}{The response family for the model, required to be one of
-\code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"} or \code{"neg_binomial"}}
+\code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"}, \code{"binomial"}
+or \code{"neg_binomial"}}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
 values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
@@ -63,6 +65,10 @@ per site}
 
 \item{beta_param}{The parameterisation of the environmental covariate effects, by
 default \code{"unstruct"}. See details for further information.}
+
+\item{Ntrials}{For the binomial distribution the number of trials, given as
+either a single integer which is assumed to be constant across sites or as
+a site-length vector of integers.}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}

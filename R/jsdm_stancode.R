@@ -36,7 +36,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
                           log_lik = TRUE, site_intercept = "none",
                           beta_param = "cor") {
   # checks
-  family <- match.arg(family, c("gaussian", "bernoulli", "poisson", "neg_binomial"))
+  family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
+                                "neg_binomial","binomial"))
   method <- match.arg(method, c("gllvm", "mglmm"))
   beta_param <- match.arg(beta_param, c("cor","unstruct"))
   site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
@@ -62,23 +63,29 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   data <- paste(
     " int<lower=1> N; // Number of sites
   int<lower=1> S; // Number of species
- ", ifelse(method == "gllvm",
-      "int<lower=1> D; // Number of latent dimensions", ""
+",
+ifelse(method == "gllvm",
+      " int<lower=1> D; // Number of latent dimensions", ""
     ),
     "
   int<lower=0> K; // Number of predictor variables
   matrix[N, K] X; // Predictor matrix
-", ifelse(site_intercept == "grouped",
+",
+ifelse(site_intercept == "grouped",
             "
   int<lower=1> ngrp; // Number of groups in site intercept
   int<lower=0, upper = ngrp> grps[N]; // Vector matching sites to groups
-  ",""),
+ ",""),
   switch(family,
       "gaussian" = "real",
       "bernoulli" = "int<lower=0,upper=1>",
       "neg_binomial" = "int<lower=0>",
-      "poisson" = "int<lower=0>"
-    ), "Y[N,S]; //Species matrix"
+      "poisson" = "int<lower=0>",
+      "binomial" = "int<lower=0>"
+    ), "Y[N,S]; //Species matrix",
+ ifelse(family == "binomial",
+        "
+  int<lower=0> Ntrials[N]; // Number of trials","")
   )
   transformed_data <- ifelse(method == "gllvm", "
   // Ensures identifiability of the model - no rotation of factors
@@ -255,7 +262,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   kappa ~ ", prior[["kappa"]], ";
 "),
       "bern" = "",
-      "poisson" = ""
+      "poisson" = "",
+      "binomial" = ""
     )
   )
   model_pt2 <- paste(
@@ -265,7 +273,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
       "gaussian" = "normal(mu[i,], sigma);",
       "bernoulli" = "bernoulli_logit(mu[i,]);",
       "neg_binomial" = "neg_binomial_2_log(mu[i,], kappa);",
-      "poisson" = "poisson_log(mu[i,]);"
+      "poisson" = "poisson_log(mu[i,]);",
+      "binomial" = "binomial_logit(Ntrials[i], mu[i,]);"
     )
   )
 
@@ -316,18 +325,12 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
       for(j in 1:S) {
         log_lik[i, j] = ",
       switch(family,
-        "gaussian" = "normal_lpdf",
-        "bernoulli" = "bernoulli_logit_lpmf",
-        "neg_binomial" = "neg_binomial_2_log_lpmf",
-        "poisson" = "poisson_log_lpmf"
-      ),
-      "(Y[i, j] | linpred[i, j]",
-      switch(family,
-        "gaussian" = ", sigma)",
-        "bernoulli" = ")",
-        "neg_binomial" = ", kappa)",
-        "poisson" = ")"
-      ), ";
+        "gaussian" = "normal_lpdf(Y[i, j] | linpred[i, j], sigma);",
+        "bernoulli" = "bernoulli_logit_lpmf(Y[i, j] | linpred[i, j]);",
+        "neg_binomial" = "neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa);",
+        "poisson" = "poisson_log_lpmf(Y[i, j] | linpred[i, j]);",
+        "binomial" = "binomial_logit_lpmf(Y[i, j] | Ntrials[i], linpred[i, j]);"
+      ),"
       }
     }
   }

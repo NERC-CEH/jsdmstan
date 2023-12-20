@@ -122,3 +122,31 @@ test_that("posterior_(lin)pred works with mglmm and negbin", {
   expect_false(any(sapply(negb_pred2, anyNA)))
   expect_false(any(sapply(negb_pred2, function(x) x < 0)))
 })
+
+bino_sim_data <- gllvm_sim_data(N = 100, S = 9, K = 2, family = "binomial",
+                                site_intercept = "ungrouped", D = 2,
+                                Ntrials = 20)
+bino_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
+colnames(bino_pred_data) <- c("V1", "V2")
+suppressWarnings(bino_fit <- stan_mglmm(
+  dat_list = bino_sim_data, family = "binomial",
+  refresh = 0, chains = 2, iter = 500
+))
+test_that("posterior_(lin)pred works with gllvm and bino", {
+  bino_pred <- posterior_predict(bino_fit, ndraws = 100)
+
+  expect_length(bino_pred, 100)
+  expect_false(any(sapply(bino_pred, anyNA)))
+  expect_false(any(sapply(bino_pred, function(x) x < 0)))
+  expect_false(any(sapply(bino_pred, function(x) x > 20)))
+
+  bino_pred2 <- posterior_predict(bino_fit,
+                                  newdata = bino_pred_data, Ntrials = 16,
+                                  ndraws = 50, list_index = "species"
+  )
+
+  expect_length(bino_pred2, 9)
+  expect_false(any(sapply(bino_pred2, anyNA)))
+  expect_false(any(sapply(bino_pred2, function(x) x < 0)))
+  expect_false(any(sapply(bino_pred2, function(x) x > 16)))
+})

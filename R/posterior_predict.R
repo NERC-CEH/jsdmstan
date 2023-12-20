@@ -161,7 +161,8 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
           "gaussian" = x,
           "bernoulli" = inv_logit(x),
           "poisson" = exp(x),
-          "neg_binomial" = exp(x)
+          "neg_binomial" = exp(x),
+          "binomial" = inv_logit(x)
         )
       })
     }
@@ -184,6 +185,10 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'
 #' @inheritParams posterior_linpred.jsdmStanFit
 #'
+#' @param Ntrials For the binomial distribution the number of trials, given as
+#'   either a single integer which is assumed to be constant across sites or as
+#'   a site-length vector of integers.
+#'
 #' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'   the list will have length equal to the number of draws with each element of
 #'   the list being a site x species matrix. If the list_index is \code{"species"} the
@@ -200,7 +205,8 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           newdata_type = "X", ndraws = NULL,
                                           draw_ids = NULL,
-                                          list_index = "draws", ...) {
+                                          list_index = "draws",
+                                          Ntrials = NULL, ...) {
   transform <- ifelse(object$family == "gaussian", FALSE, TRUE)
   post_linpred <- posterior_linpred(object,
     newdata = newdata, ndraws = ndraws,
@@ -214,20 +220,36 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
   if (object$family == "neg_binomial") {
     mod_kappa <- rstan::extract(object$fit, pars = "kappa", permuted = FALSE)
   }
+  if(object$family == "binomial"){
+    if(is.null(newdata)) {
+      Ntrials <- object$data_list$Ntrials
+    } else {
+      Ntrials <- ntrials_check(Ntrials, nrow(newdata))
+    }
+  }
 
   n_sites <- length(object$sites)
   n_species <- length(object$species)
 
-  post_pred <- lapply(post_linpred, function(x, family = object$family) {
-    x2 <- x
-    x2 <- apply(x2, 1:2, function(x) {
-      switch(object$family,
-        "gaussian" = stats::rnorm(1, x, mod_sigma),
-        "bernoulli" = stats::rbinom(1, 1, x),
-        "poisson" = stats::rpois(1, x),
-        "neg_binomial" = rgampois(1, x, mod_kappa)
-      )
-    })
+  post_pred <- lapply(seq_along(post_linpred),
+                      function(x, family = object$family) {
+    x2 <- post_linpred[[x]]
+    if(family == "binomial"){
+      for(i in 1:nrow(x2)){
+        for(j in 1:ncol(x2)){
+          x2[i,j] <- stats::rbinom(1, Ntrials[i], x2[i,j])
+        }
+      }
+    } else {
+      x2 <- apply(x2, 1:2, function(x) {
+        switch(object$family,
+               "gaussian" = stats::rnorm(1, x, mod_sigma),
+               "bernoulli" = stats::rbinom(1, 1, x),
+               "poisson" = stats::rpois(1, x),
+               "neg_binomial" = rgampois(1, x, mod_kappa)
+        )
+      })
+    }
     x2
   })
 
