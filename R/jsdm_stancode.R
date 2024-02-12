@@ -127,10 +127,10 @@ ifelse(site_intercept == "grouped",
   matrix[D, N] LV_uncor; // Per-site latent variable"
   var_pars <- switch(family,
     "gaussian" = "
-  real<lower=0> sigma; // Gaussian parameters",
+  real<lower=0> sigma[S]; // Gaussian parameters",
     "bernoulli" = "",
     "neg_binomial" = "
-  real<lower=0> kappa; // neg_binomial parameters",
+  real<lower=0> kappa[S]; // neg_binomial parameters",
     "poisson" = ""
   )
 
@@ -325,9 +325,9 @@ ifelse(site_intercept == "grouped",
       for(j in 1:S) {
         log_lik[i, j] = ",
       switch(family,
-        "gaussian" = "normal_lpdf(Y[i, j] | linpred[i, j], sigma);",
+        "gaussian" = "normal_lpdf(Y[i, j] | linpred[i, j], sigma[j]);",
         "bernoulli" = "bernoulli_logit_lpmf(Y[i, j] | linpred[i, j]);",
-        "neg_binomial" = "neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa);",
+        "neg_binomial" = "neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa[j]);",
         "poisson" = "poisson_log_lpmf(Y[i, j] | linpred[i, j]);",
         "binomial" = "binomial_logit_lpmf(Y[i, j] | Ntrials[i], linpred[i, j]);"
       ),"

@@ -148,8 +148,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "LV" = D1 * N,
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
-      "sigma" = 1,
-      "kappa" = 1
+      "sigma" = S,
+      "kappa" = S
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
@@ -311,9 +311,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       Y[i, j] <- switch(response,
         "neg_binomial" = rgampois(1,
           mu = exp(mu_ij),
-          scale = kappa
+          scale = kappa[j]
         ),
-        "gaussian" = stats::rnorm(1, mu_ij, sigma),
+        "gaussian" = stats::rnorm(1, mu_ij, sigma[j]),
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
         "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij))
@@ -354,6 +354,12 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     pars$sigma <- sigma
   }
   if (response == "neg_binomial") {
+    pars$kappa <- kappa
+  }
+  if(response == "gaussian"){
+    pars$sigma <- sigma
+  }
+  if(response == "neg_binomial"){
     pars$kappa <- kappa
   }
   if (isTRUE(species_intercept)) {

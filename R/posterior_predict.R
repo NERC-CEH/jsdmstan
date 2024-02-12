@@ -241,14 +241,16 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
         }
       }
     } else {
-      x2 <- apply(x2, 1:2, function(x) {
-        switch(object$family,
-               "gaussian" = stats::rnorm(1, x, mod_sigma),
-               "bernoulli" = stats::rbinom(1, 1, x),
-               "poisson" = stats::rpois(1, x),
-               "neg_binomial" = rgampois(1, x, mod_kappa)
-        )
-      })
+      for(i in seq_len(nrow(x2))){
+        for(j in seq_len(ncol(x2))){
+          x2[i,j] <- switch(object$family,
+                            "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[j]),
+                            "bernoulli" = stats::rbinom(1, 1, x2[i,j]),
+                            "poisson" = stats::rpois(1, x2[i,j]),
+                            "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[j])
+          )
+      }
+      }
     }
     x2
   })
