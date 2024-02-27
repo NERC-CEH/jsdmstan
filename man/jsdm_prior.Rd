@@ -20,7 +20,8 @@ jsdm_prior(
   L = "normal(0,1)",
   sigma_L = "normal(0,1)",
   sigma = "normal(0,1)",
-  kappa = "normal(0,1)"
+  kappa = "normal(0,1)",
+  zi = "beta(1,1)"
 )
 
 \method{print}{jsdmprior}(x, ...)
@@ -68,6 +69,9 @@ to be positive (default standard normal)}
 
 \item{kappa}{For negative binomial response, the negative binomial variance
 parameter. Constrained to be positive (default standard normal)}
+
+\item{zi}{For zero-inflated poisson, the proportion of inflated zeros (default
+beta distribution with both alpha and beta parameters set to 1).}
 
 \item{x}{Object of class \code{jsdmprior}}
 

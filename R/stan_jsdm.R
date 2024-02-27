@@ -26,9 +26,10 @@
 #'
 #' @param D The number of latent variables within a GLLVM model
 #'
-#' @param family The response family for the model, required to be one of
-#'   \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"}, \code{"binomial"}
-#'   or \code{"neg_binomial"}
+#' @param family is the response family, must be one of \code{"gaussian"},
+#'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+#'   \code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+#'   matching is supported.
 #'
 #' @param species_intercept Whether the model should be fit with an intercept by
 #'   species, by default \code{TRUE}
@@ -105,7 +106,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               beta_param = "unstruct", Ntrials = NULL,
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
-                                "neg_binomial","binomial"))
+                                "neg_binomial","binomial", "zero_inflated_poisson"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
 
   stopifnot(
@@ -341,7 +342,8 @@ validate_data <- function(Y, D, X, species_intercept,
     ))) {
       stop("Y matrix is not binary")
     }
-  } else if (family %in% c("poisson", "neg_binomial", "binomial")) {
+  } else if (family %in% c("poisson", "neg_binomial", "binomial",
+                           "zero_inflated_poisson")) {
     if (!any(apply(data_list$Y, 1:2, is.wholenumber))) {
       stop("Y matrix is not composed of integers")
     }

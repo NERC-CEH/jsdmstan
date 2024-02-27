@@ -19,8 +19,10 @@ jsdm_stancode(
 \arguments{
 \item{method}{The method, one of \code{"gllvm"} or \code{"mglmm"}}
 
-\item{family}{The family, one of "\code{"gaussian"}, \code{"bernoulli"},
-\code{"poisson"} or \code{"neg_binomial"}}
+\item{family}{is the response family, must be one of \code{"gaussian"},
+\code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+\code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+matching is supported.}
 
 \item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 

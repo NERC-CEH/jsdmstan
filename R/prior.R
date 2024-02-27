@@ -54,6 +54,8 @@
 #'   to be positive (default standard normal)
 #' @param kappa For negative binomial response, the negative binomial variance
 #'   parameter. Constrained to be positive (default standard normal)
+#' @param zi For zero-inflated poisson, the proportion of inflated zeros (default
+#'   beta distribution with both alpha and beta parameters set to 1).
 #'
 #' @return An object of class \code{"jsdmprior"} taking the form of a named list
 #' @export
@@ -76,7 +78,8 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        L = "normal(0,1)",
                        sigma_L = "normal(0,1)",
                        sigma = "normal(0,1)",
-                       kappa = "normal(0,1)") {
+                       kappa = "normal(0,1)",
+                       zi = "beta(1,1)") {
   res <- list(
     sigmas_preds = sigmas_preds, z_preds = z_preds, cor_preds = cor_preds,
     betas = betas,
@@ -84,7 +87,7 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
     sigmas_species = sigmas_species, z_species = z_species,
     cor_species = cor_species,
     LV = LV, L = L, sigma_L = sigma_L,
-    sigma = sigma, kappa = kappa
+    sigma = sigma, kappa = kappa, zi = zi
   )
   if (!(all(sapply(res, is.character)))) {
     stop("All arguments must be supplied as character vectors")
@@ -107,11 +110,11 @@ print.jsdmprior <- function(x, ...) {
       rep("site_intercept", 3),
       rep("mglmm", 3),
       rep("gllvm", 3),
-      "gaussian", "neg_binomial"
+      "gaussian", "neg_binomial","zero_inflated_poisson"
     ),
     Constraint = c(
       "lower=0", rep("none", 5), rep("lower=0", 2),
-      rep("none", 4), rep("lower=0", 3)
+      rep("none", 4), rep("lower=0", 3),"lower=0,upper=1"
     ),
     Prior = unlist(unname(x))
   )

@@ -32,7 +32,8 @@
 #'   list will have length equal to the number of species with each element of
 #'   the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 #'   list will have length equal to the number of sites with each element of the
-#'   list being a draws x species matrix.
+#'   list being a draws x species matrix. Note that in the zero-inflated case this is
+#'   only the linear predictor of the non-zero-inflated part of the model.
 #'
 #' @seealso [posterior_predict.jsdmStanFit()]
 #'
@@ -95,39 +96,17 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
   }
 
   model_est <- extract(object, pars = model_pars)
-
   n_iter <- dim(model_est[[1]])[1]
 
-  if (!is.null(draw_ids)) {
-    if (max(draw_ids) > n_iter) {
-      stop(paste(
-        "Maximum of draw_ids (", max(draw_ids),
-        ") is greater than number of iterations (", n_iter, ")"
-      ))
-    }
+  draw_id <- draw_id_check(draw_ids = draw_ids, n_iter = n_iter, ndraws = ndraws)
 
-    draw_id <- draw_ids
-  } else {
-    if (!is.null(ndraws)) {
-      if (n_iter < ndraws) {
-        warning(paste(
-          "There are fewer samples than ndraws specified, defaulting",
-          "to using all iterations"
-        ))
-        ndraws <- n_iter
-      }
-      draw_id <- sample.int(n_iter, ndraws)
-      model_est <- lapply(model_est, function(x) {
-        switch(length(dim(x)),
-          `1` = x[draw_id, drop = FALSE],
-          `2` = x[draw_id, , drop = FALSE],
-          `3` =  x[draw_id, , , drop = FALSE]
-        )
-      })
-    } else {
-      draw_id <- seq_len(n_iter)
-    }
-  }
+  model_est <- lapply(model_est, function(x) {
+    switch(length(dim(x)),
+           `1` = x[draw_id, drop = FALSE],
+           `2` = x[draw_id, , drop = FALSE],
+           `3` =  x[draw_id, , , drop = FALSE]
+    )
+  })
 
   model_pred_list <- lapply(seq_along(draw_id), function(d) {
     if (method == "gllvm") {
@@ -162,7 +141,8 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
           "bernoulli" = inv_logit(x),
           "poisson" = exp(x),
           "neg_binomial" = exp(x),
-          "binomial" = inv_logit(x)
+          "binomial" = inv_logit(x),
+          "zero_inflated_poisson" = exp(x)
         )
       })
     }
@@ -208,24 +188,37 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           list_index = "draws",
                                           Ntrials = NULL, ...) {
   transform <- ifelse(object$family == "gaussian", FALSE, TRUE)
+  if (!is.null(ndraws) & !is.null(draw_ids)) {
+    message("Both ndraws and draw_ids have been specified, ignoring ndraws")
+  }
+  if (!is.null(draw_ids)) {
+    if (any(!is.wholenumber(draw_ids))) {
+      stop("draw_ids must be a vector of positive integers")
+    }
+  }
+  n_iter <- length(object$fit@stan_args)*(object$fit@stan_args[[1]]$iter -
+                                            object$fit@stan_args[[1]]$warmup)
+  draw_id <- draw_id_check(draw_ids = draw_ids, n_iter = n_iter, ndraws = ndraws)
+
+
   post_linpred <- posterior_linpred(object,
-    newdata = newdata, ndraws = ndraws,
-    newdata_type = newdata_type, draw_ids = draw_ids,
+    newdata = newdata,
+    newdata_type = newdata_type, draw_ids = draw_id,
     transform = transform, list_index = "draws"
   )
 
   if (object$family == "gaussian") {
-    mod_sigma <- rstan::extract(object$fit, pars = "sigma", permuted = FALSE)
-  }
-  if (object$family == "neg_binomial") {
-    mod_kappa <- rstan::extract(object$fit, pars = "kappa", permuted = FALSE)
-  }
-  if(object$family == "binomial"){
+    mod_sigma <- extract(object, pars = "sigma")[[1]][draw_id,]
+  } else  if (object$family == "neg_binomial") {
+    mod_kappa <- extract(object, pars = "kappa")[[1]][draw_id,]
+  } else  if(object$family == "binomial"){
     if(is.null(newdata)) {
       Ntrials <- object$data_list$Ntrials
     } else {
       Ntrials <- ntrials_check(Ntrials, nrow(newdata))
     }
+  } else if(object$family == "zero_inflated_poisson"){
+    mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
   }
 
   n_sites <- length(object$sites)
@@ -243,11 +236,13 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     } else {
       for(i in seq_len(nrow(x2))){
         for(j in seq_len(ncol(x2))){
-          x2[i,j] <- switch(object$family,
-                            "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[j]),
-                            "bernoulli" = stats::rbinom(1, 1, x2[i,j]),
-                            "poisson" = stats::rpois(1, x2[i,j]),
-                            "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[j])
+          x2[i,j] <- switch(
+            object$family,
+            "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[x,j]),
+            "bernoulli" = stats::rbinom(1, 1, x2[i,j]),
+            "poisson" = stats::rpois(1, x2[i,j]),
+            "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[x,j]),
+            "zero_inflated_poisson" = stats::rbinom(1, 1, mod_zi[x,j])*stats::rpois(1, x2[i,j])
           )
       }
       }
@@ -296,4 +291,31 @@ switch_indices <- function(res_list, list_index) {
   } else {
     stop("List index not valid")
   }
+}
+
+draw_id_check <- function(draw_ids, n_iter, ndraws){
+  if (!is.null(draw_ids)) {
+    if (max(draw_ids) > n_iter) {
+      stop(paste(
+        "Maximum of draw_ids (", max(draw_ids),
+        ") is greater than number of iterations (", n_iter, ")"
+      ))
+    }
+
+    draw_id <- draw_ids
+  } else {
+    if (!is.null(ndraws)) {
+      if (n_iter < ndraws) {
+        warning(paste(
+          "There are fewer samples than ndraws specified, defaulting",
+          "to using all iterations"
+        ))
+        ndraws <- n_iter
+      }
+      draw_id <- sample.int(n_iter, ndraws)
+    } else {
+      draw_id <- seq_len(n_iter)
+    }
+  }
+  return(draw_id)
 }

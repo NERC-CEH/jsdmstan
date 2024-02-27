@@ -357,7 +357,7 @@ multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
   post_args$object <- object
   post_args$list_index <- "draws"
   post_args$draw_ids <- draw_ids
-  post_args$ndraws <- ndraws
+  # post_args$ndraws <- ndraws
 
   post_res <- do.call(post_fun, post_args)
 

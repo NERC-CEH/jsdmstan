@@ -46,7 +46,8 @@ the list being a site x species matrix. If the list_index is \code{"species"} th
 list will have length equal to the number of species with each element of
 the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 list will have length equal to the number of sites with each element of the
-list being a draws x species matrix.
+list being a draws x species matrix. Note that in the zero-inflated case this is
+only the linear predictor of the non-zero-inflated part of the model.
 }
 \description{
 Extract the posterior draws of the linear predictor, possibly transformed by

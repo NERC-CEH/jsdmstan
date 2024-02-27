@@ -37,7 +37,8 @@
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   or \code{"bernoulli"}. Regular expression matching is supported.
+#'   \code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+#'   matching is supported.
 #'
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
 #'   \code{"mglmm"} - see details for more information.
@@ -65,7 +66,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
                           beta_param = "unstruct",
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson",
-                                  "bernoulli", "binomial"))
+                                  "bernoulli", "binomial", "zero_inflated_poisson"))
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   if(site_intercept == "grouped"){
@@ -109,7 +110,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "lkj_corr",
       "student_t",
       "cauchy",
-      "gamma"
+      "gamma",
+      "beta"
     )
   }))) {
     stop(paste(
@@ -132,7 +134,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "lkj_corr" = "rlkj",
       "student_t" = "rstudentt",
       "cauchy" = "rcauchy",
-      "gamma" = "rgamma"
+      "gamma" = "rgamma",
+      "beta" = "rbeta"
     )
     fun_arg1 <- switch(x,
       "sigmas_preds" = K + 1 * species_intercept,
@@ -149,7 +152,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
       "sigma" = S,
-      "kappa" = S
+      "kappa" = S,
+      "zi" = S
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
@@ -296,6 +300,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       match.fun(prior_func[["kappa"]][[1]]),
       prior_func[["kappa"]][[2]]
     ))
+  } else if (response  == "zero_inflated_poisson") {
+    zi <- do.call(
+      match.fun(prior_func[["zi"]][[1]]),
+      prior_func[["zi"]][[2]]
+    )
   }
   # print(str(sigma))
 
@@ -316,7 +325,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
         "gaussian" = stats::rnorm(1, mu_ij, sigma[j]),
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
-        "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij))
+        "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij)),
+        "zero_inflated_poisson" = stats::rbinom(1, 1, zi[j])*stats::rpois(1, exp(mu_ij))
       )
     }
   }
@@ -361,6 +371,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   }
   if(response == "neg_binomial"){
     pars$kappa <- kappa
+  }
+  if(response == "zero_inflated_poisson"){
+    pars$zi <- zi
   }
   if (isTRUE(species_intercept)) {
     if (K > 0) {
