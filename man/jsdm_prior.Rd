@@ -70,8 +70,9 @@ to be positive (default standard normal)}
 \item{kappa}{For negative binomial response, the negative binomial variance
 parameter. Constrained to be positive (default standard normal)}
 
-\item{zi}{For zero-inflated poisson, the proportion of inflated zeros (default
-beta distribution with both alpha and beta parameters set to 1).}
+\item{zi}{For zero-inflated poisson or negative binomial, the proportion of
+inflated zeros (default beta distribution with both alpha and beta parameters
+set to 1).}
 
 \item{x}{Object of class \code{jsdmprior}}
 

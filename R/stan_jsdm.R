@@ -28,7 +28,7 @@
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   \code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+#'   \code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
 #'   matching is supported.
 #'
 #' @param species_intercept Whether the model should be fit with an intercept by
@@ -106,7 +106,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               beta_param = "unstruct", Ntrials = NULL,
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
-                                "neg_binomial","binomial", "zero_inflated_poisson"))
+                                "neg_binomial","binomial", "zi_poisson",
+                                "zi_neg_binomial"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
 
   stopifnot(
@@ -343,15 +344,36 @@ validate_data <- function(Y, D, X, species_intercept,
       stop("Y matrix is not binary")
     }
   } else if (family %in% c("poisson", "neg_binomial", "binomial",
-                           "zero_inflated_poisson")) {
+                           "zi_poisson", "zi_neg_binomial")) {
     if (!any(apply(data_list$Y, 1:2, is.wholenumber))) {
       stop("Y matrix is not composed of integers")
     }
   }
 
+  # check to make sure no completely blank columns in Y
+  if(any(apply(data_list$Y, 2, function(x) all(x == 0)))){
+    stop("Y contains an empty column, which cannot work for this model")
+  }
+
   # Check if Ntrials is appropriate given
   if(identical(family, "binomial")) {
     data_list$Ntrials <- ntrials_check(data_list$Ntrials, data_list$N)
+  }
+
+  # create zeros/non-zeros for zero-inflated poisson
+  if(grepl("zi_",family)) {
+    if(any(apply(data_list$Y, 2, min)>0)){
+      stop("Zero-inflated distributions require zeros to be present in all Y values.")
+    }
+    data_list$N_zero <- colSums(data_list$Y==0)
+    data_list$N_nonzero <- colSums(data_list$Y>0)
+    data_list$Sum_nonzero <- sum(data_list$N_nonzero)
+    data_list$Sum_zero <- sum(data_list$N_zero)
+    data_list$Y_nz <- c(as.matrix(data_list$Y))[c(as.matrix(data_list$Y))>0]
+    data_list$nn <- rep(1:data_list$N,data_list$S)[c(data_list$Y>0)]
+    data_list$ss <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y>0)]
+    data_list$nz <- rep(1:data_list$N,data_list$S)[c(data_list$Y==0)]
+    data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
   }
 
   return(data_list)

@@ -37,7 +37,8 @@
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   \code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+#'   \code{"bernoulli"}, \code{"zi_poisson"}, or
+#'   \code{"zi_neg_binomial"}. Regular expression
 #'   matching is supported.
 #'
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
@@ -66,9 +67,13 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
                           beta_param = "unstruct",
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson",
-                                  "bernoulli", "binomial", "zero_inflated_poisson"))
+                                  "bernoulli", "binomial", "zi_poisson",
+                                  "zi_neg_binomial"))
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
+  if(missing(method)){
+    stop("method argument needs to be specified")
+  }
   if(site_intercept == "grouped"){
     stop("Grouped site intercept not supported")
   }
@@ -300,11 +305,20 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       match.fun(prior_func[["kappa"]][[1]]),
       prior_func[["kappa"]][[2]]
     ))
-  } else if (response  == "zero_inflated_poisson") {
+  } else if (response  == "zi_poisson") {
     zi <- do.call(
       match.fun(prior_func[["zi"]][[1]]),
       prior_func[["zi"]][[2]]
     )
+  } else if (response  == "zi_neg_binomial") {
+    zi <- do.call(
+      match.fun(prior_func[["zi"]][[1]]),
+      prior_func[["zi"]][[2]]
+    )
+    kappa <- abs(do.call(
+      match.fun(prior_func[["kappa"]][[1]]),
+      prior_func[["kappa"]][[2]]
+    ))
   }
   # print(str(sigma))
 
@@ -326,7 +340,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
         "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij)),
-        "zero_inflated_poisson" = stats::rbinom(1, 1, zi[j])*stats::rpois(1, exp(mu_ij))
+        "zi_poisson" = (1-stats::rbinom(1, 1, zi[j]))*stats::rpois(1, exp(mu_ij)),
+        "zi_neg_binomial" = (1-stats::rbinom(1, 1, zi[j]))*rgampois(1, mu = exp(mu_ij), scale = kappa[j])
       )
     }
   }
@@ -372,8 +387,12 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if(response == "neg_binomial"){
     pars$kappa <- kappa
   }
-  if(response == "zero_inflated_poisson"){
+  if(response == "zi_poisson"){
     pars$zi <- zi
+  }
+  if(response == "zi_neg_binomial"){
+    pars$zi <- zi
+    pars$kappa <- kappa
   }
   if (isTRUE(species_intercept)) {
     if (K > 0) {

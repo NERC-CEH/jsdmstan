@@ -142,7 +142,8 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
           "poisson" = exp(x),
           "neg_binomial" = exp(x),
           "binomial" = inv_logit(x),
-          "zero_inflated_poisson" = exp(x)
+          "zi_poisson" = exp(x),
+          "zi_neg_binomial" = exp(x)
         )
       })
     }
@@ -157,36 +158,40 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
   return(model_pred_list)
 }
 
-#' Draw from the posterior predictive distribution
+#'Draw from the posterior predictive distribution
 #'
-#' Draw from the posterior predictive distribution of the outcome.
+#'Draw from the posterior predictive distribution of the outcome.
 #'
-#' @aliases posterior_predict
+#'@aliases posterior_predict
 #'
-#' @inheritParams posterior_linpred.jsdmStanFit
+#'@inheritParams posterior_linpred.jsdmStanFit
 #'
-#' @param Ntrials For the binomial distribution the number of trials, given as
-#'   either a single integer which is assumed to be constant across sites or as
-#'   a site-length vector of integers.
+#'@param Ntrials For the binomial distribution the number of trials, given as either
+#'  a single integer which is assumed to be constant across sites or as a site-length
+#'  vector of integers.
 #'
-#' @return A list of linear predictors. If list_index is \code{"draws"} (the default)
-#'   the list will have length equal to the number of draws with each element of
-#'   the list being a site x species matrix. If the list_index is \code{"species"} the
-#'   list will have length equal to the number of species with each element of
-#'   the list being a draws x sites matrix. If the list_index is \code{"sites"} the
-#'   list will have length equal to the number of sites with each element of
-#'   the list being a draws x species matrix.
+#'@param include_zi For the zero-inflated poisson distribution, whether to include
+#'  the zero-inflation in the prediction. Defaults to \code{TRUE}.
 #'
-#' @seealso [posterior_linpred.jsdmStanFit()]
+#'@return A list of linear predictors. If list_index is \code{"draws"} (the default)
+#'  the list will have length equal to the number of draws with each element of the
+#'  list being a site x species matrix. If the list_index is \code{"species"} the
+#'  list will have length equal to the number of species with each element of the
+#'  list being a draws x sites matrix. If the list_index is \code{"sites"} the list
+#'  will have length equal to the number of sites with each element of the list being
+#'  a draws x species matrix.
 #'
-#' @importFrom rstantools posterior_predict
-#' @export posterior_predict
-#' @export
+#'@seealso [posterior_linpred.jsdmStanFit()]
+#'
+#'@importFrom rstantools posterior_predict
+#'@export posterior_predict
+#'@export
 posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           newdata_type = "X", ndraws = NULL,
                                           draw_ids = NULL,
                                           list_index = "draws",
-                                          Ntrials = NULL, ...) {
+                                          Ntrials = NULL,
+                                          include_zi = TRUE, ...) {
   transform <- ifelse(object$family == "gaussian", FALSE, TRUE)
   if (!is.null(ndraws) & !is.null(draw_ids)) {
     message("Both ndraws and draw_ids have been specified, ignoring ndraws")
@@ -217,8 +222,11 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     } else {
       Ntrials <- ntrials_check(Ntrials, nrow(newdata))
     }
-  } else if(object$family == "zero_inflated_poisson"){
+  } else if(object$family == "zi_poisson"){
     mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
+  } else if(object$family == "zi_neg_binomial"){
+    mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
+    mod_kappa <- extract(object, pars = "kappa")[[1]][draw_id,]
   }
 
   n_sites <- length(object$sites)
@@ -242,7 +250,16 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
             "bernoulli" = stats::rbinom(1, 1, x2[i,j]),
             "poisson" = stats::rpois(1, x2[i,j]),
             "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[x,j]),
-            "zero_inflated_poisson" = stats::rbinom(1, 1, mod_zi[x,j])*stats::rpois(1, x2[i,j])
+            "zi_poisson" = if(isTRUE(include_zi)){
+              (1-stats::rbinom(1, 1, mod_zi[x,j]))*stats::rpois(1, x2[i,j])
+            } else {
+              stats::rpois(1, x2[i,j])
+            },
+            "zi_neg_binomial" = if(isTRUE(include_zi)){
+              (1-stats::rbinom(1, 1, mod_zi[x,j]))*rgampois(1, x2[i,j], mod_kappa[x,j])
+            } else {
+              rgampois(1, x2[i,j], mod_kappa[x,j])
+            }
           )
       }
       }

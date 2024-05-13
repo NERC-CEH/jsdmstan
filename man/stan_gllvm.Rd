@@ -44,7 +44,7 @@ example of how this can be formatted.}
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-\code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
 matching is supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential

@@ -54,8 +54,9 @@
 #'   to be positive (default standard normal)
 #' @param kappa For negative binomial response, the negative binomial variance
 #'   parameter. Constrained to be positive (default standard normal)
-#' @param zi For zero-inflated poisson, the proportion of inflated zeros (default
-#'   beta distribution with both alpha and beta parameters set to 1).
+#' @param zi For zero-inflated poisson or negative binomial, the proportion of
+#'   inflated zeros (default beta distribution with both alpha and beta parameters
+#'   set to 1).
 #'
 #' @return An object of class \code{"jsdmprior"} taking the form of a named list
 #' @export
@@ -110,7 +111,7 @@ print.jsdmprior <- function(x, ...) {
       rep("site_intercept", 3),
       rep("mglmm", 3),
       rep("gllvm", 3),
-      "gaussian", "neg_binomial","zero_inflated_poisson"
+      "gaussian", "neg_binomial","zero_inflation"
     ),
     Constraint = c(
       "lower=0", rep("none", 5), rep("lower=0", 2),

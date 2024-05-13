@@ -35,7 +35,8 @@ mglmm_sim_data(...)
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-\code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+\code{"bernoulli"}, \code{"zi_poisson"}, or
+\code{"zi_neg_binomial"}. Regular expression
 matching is supported.}
 
 \item{method}{is the jSDM method to use, currently either \code{"gllvm"} or

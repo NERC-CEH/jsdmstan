@@ -146,10 +146,13 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
     # prepare plotting arguments
     ppc_args <- list(y = y, yrep = yrep)
 
-    for_pred <- union(
-      names(dots) %in% names(formals(jsdm_statsummary)),
-      names(dots) %in% names(formals(posterior_linpred.jsdmStanFit))
+    for_pred <- names(dots) %in% union(union(
+      names(formals(jsdm_statsummary)),
+      names(formals(posterior_linpred.jsdmStanFit))
+    ),
+    names(formals(posterior_predict.jsdmStanFit))
     )
+
     ppc_args <- c(ppc_args, dots[!for_pred])
 
     do.call(ppc_fun, ppc_args)

@@ -15,7 +15,8 @@
 #' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   \code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+#'   \code{"bernoulli"}, \code{"zi_poisson"}, or
+#'    \code{"zi_neg_binomial"}. Regular expression
 #'   matching is supported.
 #' @param prior The prior, given as the result of a call to [jsdm_prior()]
 #' @param log_lik Whether the log likelihood should be calculated in the generated
@@ -39,7 +40,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
                           beta_param = "cor") {
   # checks
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
-                                "neg_binomial","binomial","zero_inflated_poisson"))
+                                "neg_binomial","binomial","zi_poisson",
+                                "zi_neg_binomial"))
   method <- match.arg(method, c("gllvm", "mglmm"))
   beta_param <- match.arg(beta_param, c("cor","unstruct"))
   site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
@@ -83,13 +85,23 @@ ifelse(site_intercept == "grouped",
       "bernoulli" = "int<lower=0,upper=1>",
       "neg_binomial" = "int<lower=0>",
       "poisson" = "int<lower=0>",
-      "zero_inflated_poisson" = "int<lower=0>",
+      "zi_poisson" = "int<lower=0>",
+      "zi_neg_binomial" = "int<lower=0>",
       "binomial" = "int<lower=0>"
     ), "Y[N,S]; //Species matrix",
  ifelse(family == "binomial",
         "
-  int<lower=0> Ntrials[N]; // Number of trials","")
-  )
+  int<lower=0> Ntrials[N]; // Number of trials",""),
+  ifelse(grepl("zi_", family),"
+  int<lower=0> N_zero[S]; // number of zeros per species
+  int<lower=0> N_nonzero[S]; //number of nonzeros per species
+  int<lower=0> Sum_nonzero; //Total number of nonzeros across all species
+  int<lower=0> Sum_zero; //Total number of zeros across all species
+  int<lower=0> Y_nz[Sum_nonzero]; //Y values for nonzeros
+  int<lower=0> ss[Sum_nonzero]; //species index for Y_nz
+  int<lower=0> nn[Sum_nonzero]; //site index for Y_nz
+  int<lower=0> sz[Sum_zero]; //species index for Y_z
+  int<lower=0> nz[Sum_zero]; //site index for Y_z",""))
   transformed_data <- ifelse(method == "gllvm", "
   // Ensures identifiability of the model - no rotation of factors
   int<lower=1> M;
@@ -135,7 +147,10 @@ ifelse(site_intercept == "grouped",
     "neg_binomial" = "
   real<lower=0> kappa[S]; // neg_binomial parameters",
     "poisson" = "",
-    "zero_inflated_poisson" = "
+    "zi_poisson" = "
+  real<lower=0,upper=1> zi[S]; // zero-inflation parameter",
+  "zi_neg_binomial" = "
+  real<lower=0> kappa[S]; // neg_binomial parameters
   real<lower=0,upper=1> zi[S]; // zero-inflation parameter"
   )
 
@@ -220,10 +235,22 @@ ifelse(site_intercept == "grouped",
   ")
   model <- paste("
   matrix[N,S] mu;
-  ", switch(method,
+  ", ifelse(grepl("zi_",family),"
+  real mu_nz[Sum_nonzero];
+  real mu_z[Sum_zero];
+  int pos;
+  int neg;",""),
+  switch(method,
     "gllvm" = gllvm_model,
     "mglmm" = mglmm_model
-  ))
+  ),ifelse(grepl("zi_",family),"
+  for(i in 1:Sum_nonzero){
+    mu_nz[i] = mu[nn[i],ss[i]];
+  }
+  for(i in 1:Sum_zero){
+    mu_z[i] = mu[nz[i],sz[i]];
+  }
+  ",""))
   model_priors <- paste(
     ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
   // Site-level intercept priors
@@ -269,13 +296,18 @@ ifelse(site_intercept == "grouped",
       "bern" = "",
       "poisson" = "",
       "binomial" = "",
-      "zero_inflated_poisson" = paste("
+      "zi_poisson" = paste("
   //zero-inflation parameter
   zi ~ ", prior[["zi"]], ";
+"),
+"zi_neg_binomial" = paste("
+  //zero-inflation parameter
+  zi ~ ", prior[["zi"]], ";
+  kappa ~ ", prior[["kappa"]], ";
 ")
     )
   )
-  model_pt2 <- if(family != "zero_inflated_poisson"){ paste(
+  model_pt2 <- if(!grepl("zi_", family)){ paste(
     "
   for(i in 1:N) Y[i,] ~ ",
     switch(family,
@@ -285,20 +317,29 @@ ifelse(site_intercept == "grouped",
       "poisson" = "poisson_log(mu[i,]);",
       "binomial" = "binomial_logit(Ntrials[i], mu[i,]);"
     )
-  )} else{"
-    for(n in 1:N){
-      for(s in 1:S){
-        if (Y[n,s] == 0){
-          target += log_sum_exp(bernoulli_lpmf(1 | zi[s]),
-                                bernoulli_lpmf(0 |zi[s])
-                                + poisson_log_lpmf(Y[n,s] | mu[n,s]));
-        } else {
-          target += bernoulli_lpmf(0 | zi[s])
-          + poisson_log_lpmf(Y[n,s] | mu[n,s]);
-        }
-      }
-    }
-"
+  )} else{paste("
+  pos = 1;
+  neg = 1;
+  for(s in 1:S){
+    target
+      += N_zero[s]
+           * log_sum_exp(log(zi[s]),
+                         log1m(zi[s])
+                           +",
+  switch(family,
+         "zi_poisson" = "poisson_log_lpmf(0 | segment(mu_z, neg, N_zero[s])));",
+         "zi_neg_binomial" = "neg_binomial_2_log_lpmf(0 | segment(mu_z, neg, N_zero[s]), kappa[s]));"),"
+    target += N_nonzero[s] * log1m(zi[s]);
+    target +=",
+    switch(family,
+           "zi_poisson" = "poisson_log_lpmf(segment(Y_nz,pos,N_nonzero[s]) |
+                                 segment(mu_nz, pos, N_nonzero[s]));",
+           "zi_neg_binomial" = "neg_binomial_2_log_lpmf(segment(Y_nz,pos,N_nonzero[s]) |
+                                 segment(mu_nz, pos, N_nonzero[s]), kappa[s]);"),"
+    pos = pos + N_nonzero[s];
+    neg = neg + N_zero[s];
+  }
+")
   }
 
   generated_quantities <- paste(
@@ -352,13 +393,21 @@ ifelse(site_intercept == "grouped",
         "neg_binomial" = "log_lik[i, j] = neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa[j]);",
         "poisson" = "log_lik[i, j] = poisson_log_lpmf(Y[i, j] | linpred[i, j]);",
         "binomial" = "log_lik[i, j] = binomial_logit_lpmf(Y[i, j] | Ntrials[i], linpred[i, j]);",
-        "zero_inflated_poisson" = "if (Y[i,j] == 0){
+        "zi_poisson" = "if (Y[i,j] == 0){
           log_lik[i, j] = log_sum_exp(bernoulli_lpmf(1 | zi[j]),
                           bernoulli_lpmf(0 |zi[j])
                           + poisson_log_lpmf(Y[i,j] | linpred[i,j]));
             } else {
               log_lik[i, j] = bernoulli_lpmf(0 | zi[j])
               + poisson_log_lpmf(Y[i,j] | linpred[i,j]);
+            }",
+        "zi_neg_binomial" = "if (Y[i,j] == 0){
+          log_lik[i, j] = log_sum_exp(bernoulli_lpmf(1 | zi[j]),
+                          bernoulli_lpmf(0 |zi[j])
+                          + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j], kappa[j]));
+            } else {
+              log_lik[i, j] = bernoulli_lpmf(0 | zi[j])
+              + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j], kappa[j]);
             }"
       ),"
       }

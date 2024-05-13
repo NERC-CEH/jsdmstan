@@ -21,7 +21,8 @@ jsdm_stancode(
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-\code{"bernoulli"}, or \code{"zero_inflated_poisson"}. Regular expression
+\code{"bernoulli"}, \code{"zi_poisson"}, or
+\code{"zi_neg_binomial"}. Regular expression
 matching is supported.}
 
 \item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
