@@ -9,7 +9,6 @@
 #'   Summary functions are provided, as are interfaces to the \pkg{bayesplot}
 #'   plotting functions
 #'
-#' @docType package
 #' @name jsdmstan-package
 #' @aliases jsdmstan
 #' @import Rcpp
