@@ -87,6 +87,12 @@ test_that("mglmm_sim_data returns a list of correct length", {
     "Y", "pars", "N", "S", "D", "K", "X", "Ntrials"
   ))
   expect_length(gllvm_sim$Ntrials, 100)
+  gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "zi_neg_binomial", method = "gllvm",
+                             Ntrials = 19)
+  expect_named(gllvm_sim, c(
+    "Y", "pars", "N", "S", "D", "K", "X"
+  ))
+  expect_equal(dim(gllvm_sim$Y),c(100,12))
 })
 
 test_that("jsdm_sim_data returns all appropriate pars", {
@@ -103,7 +109,12 @@ test_that("jsdm_sim_data returns all appropriate pars", {
     "betas","a_bar","sigma_a","a","L","LV","sigma_L","kappa"
   ))
 
-
+  gllvm_sim2 <- jsdm_sim_data(100,12,D=2,family = "zi_poisson", method = "gllvm",
+                              beta_param = "unstruct",
+                              site_intercept = "ungrouped")
+  expect_named(gllvm_sim2$pars, c(
+    "betas","a_bar","sigma_a","a","L","LV","sigma_L","zi"
+  ))
 
 })
 

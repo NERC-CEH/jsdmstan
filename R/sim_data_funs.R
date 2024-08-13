@@ -269,9 +269,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     L <- matrix(nrow = S, ncol = D)
 
     idx2 <- 0
-    for (i in 1:(D - 1)) {
-      for (j in (i + 1):(D)) {
-        L[i, j] <- 0
+    if(D > 1){
+      for (i in 1:(D - 1)) {
+        for (j in (i + 1):(D)) {
+          L[i, j] <- 0
+        }
       }
     }
     for (j in 1:D) {
@@ -346,6 +348,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     }
   }
   # print(str(Y))
+  if(any(apply(Y, 2, function(x) all(x == 0)))){
+    message(paste("Y contains an entirely empty column, which will not work for",
+                  "jsdm fitting, it is recommended that the simulation is run again."))
+  }
+
 
 
   pars <- list(

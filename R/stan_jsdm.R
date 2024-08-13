@@ -11,6 +11,13 @@
 #'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
 #'   from a simple distribution with no correlation structure. Both parameterisations
 #'   can be modified using the prior object.
+#'   Families supported are the Gaussian family, the negative binomial family,
+#'   the Poisson family, the binomial family (with number of trials specificied
+#'   using the \code{Ntrials} parameter), the Bernoulli family (the special case
+#'   of the binomial family where number of trials is equal to one), the
+#'   zero-inflated Poisson and the zero-inflated negative binomial. For both
+#'   zero-inflated families the zero-inflation is assumed to be a species-specific
+#'   constant.
 #'
 #' @param formula The formula of covariates that the species means are modelled from
 #'

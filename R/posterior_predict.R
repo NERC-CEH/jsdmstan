@@ -111,7 +111,12 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
   model_pred_list <- lapply(seq_along(draw_id), function(d) {
     if (method == "gllvm") {
       if (orig_data_used) {
-        LV_sum <- t((model_est$Lambda[d, , ] * model_est$sigma_L[d]) %*% model_est$LV[d, , ])
+        if(object$n_latent>1){
+          LV_sum <- t((model_est$Lambda[d, , ] * model_est$sigma_L[d]) %*% model_est$LV[d, , ])
+        } else{
+          LV_sum <- t((matrix(model_est$Lambda[d, , ], ncol = 1) * model_est$sigma_L[d])
+                      %*% matrix(model_est$LV[d, , ], nrow = 1))
+        }
       } else {
         LV_sum <- 0
       }
