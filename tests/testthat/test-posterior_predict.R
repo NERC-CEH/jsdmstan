@@ -177,6 +177,11 @@ suppressWarnings(zinb_fit <- stan_mglmm(
   dat_list = zinb_sim_data, family = "zi_neg_binomial",zi_param="covariate",
   refresh = 0, chains = 2, iter = 500
 ))
+test_that("zi_neg_bin print works okay", {
+  expect_output(print(zinb_fit$family),
+                "is modelled in response to")
+})
+
 test_that("posterior_(lin)pred works with gllvm and zinb", {
   zinb_pred <- posterior_predict(zinb_fit, ndraws = 100)
 

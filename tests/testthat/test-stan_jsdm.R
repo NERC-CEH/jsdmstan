@@ -299,3 +299,23 @@ test_that("site intercept models run", {
   expect_s3_class(mglmm_fit, "jsdmStanFit")
 
 })
+
+
+set.seed(9598098)
+zip_sim_data <- gllvm_sim_data(N = 100, S = 7, D = 2, K = 2, family = "zi_poisson",
+                               zi_param = "covariate")
+
+test_that("zi_poisson works okay", {
+  suppressWarnings(zip_fit <- stan_gllvm(
+    dat_list = zip_sim_data, family = "zi_poisson",zi_param="covariate",
+    refresh = 0, chains = 2, iter = 200
+  ))
+  expect_s3_class(zip_fit, "jsdmStanFit")
+  expect_s3_class(zip_fit$family, "jsdmStanFamily")
+  expect_output(print(zip_fit$family),
+                "is modelled in response to")
+  expect_named(zip_fit$family,
+               c("family" ,"params" ,"params_dataresp","preds","data_list"))
+  expect_named(zip_fit$family$data_list, "zi_X")
+})
+

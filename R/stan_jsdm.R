@@ -476,7 +476,6 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
     fam$preds <- colnames(data_list$zi_X)
     fam$data_list <- list(zi_X = data_list$zi_X)
   }
-  print(str(fam$preds))
 
   model_output <- list(
     fit = model_fit,
