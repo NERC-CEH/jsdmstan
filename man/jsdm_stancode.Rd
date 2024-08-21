@@ -11,7 +11,8 @@ jsdm_stancode(
   prior = jsdm_prior(),
   log_lik = TRUE,
   site_intercept = "none",
-  beta_param = "cor"
+  beta_param = "cor",
+  zi_param = "constant"
 )
 
 \method{print}{jsdmstan_model}(x, ...)
@@ -19,8 +20,11 @@ jsdm_stancode(
 \arguments{
 \item{method}{The method, one of \code{"gllvm"} or \code{"mglmm"}}
 
-\item{family}{The family, one of "\code{"gaussian"}, \code{"bernoulli"},
-\code{"poisson"} or \code{"neg_binomial"}}
+\item{family}{is the response family, must be one of \code{"gaussian"},
+\code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+\code{"bernoulli"}, \code{"zi_poisson"}, or
+\code{"zi_neg_binomial"}. Regular expression
+matching is supported.}
 
 \item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
@@ -34,6 +38,10 @@ grouping)}
 
 \item{beta_param}{The parameterisation of the environmental covariate effects, by
 default \code{"cor"}. See details for further information.}
+
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
 
 \item{x}{The jsdm_stancode object}
 

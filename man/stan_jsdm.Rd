@@ -21,6 +21,8 @@ stan_jsdm(X, ...)
   site_groups = NULL,
   beta_param = "unstruct",
   Ntrials = NULL,
+  zi_param = "constant",
+  zi_X = NULL,
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
@@ -47,9 +49,10 @@ species, by default \code{TRUE}}
 Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an
 example of how this can be formatted.}
 
-\item{family}{The response family for the model, required to be one of
-\code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"}, \code{"binomial"}
-or \code{"neg_binomial"}}
+\item{family}{is the response family, must be one of \code{"gaussian"},
+\code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
+matching is supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
 values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
@@ -69,6 +72,15 @@ default \code{"unstruct"}. See details for further information.}
 \item{Ntrials}{For the binomial distribution the number of trials, given as
 either a single integer which is assumed to be constant across sites or as
 a site-length vector of integers.}
+
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
+
+\item{zi_X}{If \code{zi = "covariate"}, the matrix of environmental predictors
+that the zero-inflation is modelled in response to. If there is not already
+an intercept column (identified by all values being equal to one), one will
+be added to the front of the matrix.}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}
@@ -100,6 +112,13 @@ to be constrained by a correlation matrix between the covariates. With the
 \code{"unstruct"} parameterisation all covariate effects are assumed to draw
 from a simple distribution with no correlation structure. Both parameterisations
 can be modified using the prior object.
+Families supported are the Gaussian family, the negative binomial family,
+the Poisson family, the binomial family (with number of trials specificied
+using the \code{Ntrials} parameter), the Bernoulli family (the special case
+of the binomial family where number of trials is equal to one), the
+zero-inflated Poisson and the zero-inflated negative binomial. For both
+zero-inflated families the zero-inflation is assumed to be a species-specific
+constant.
 }
 \section{Methods (by class)}{
 \itemize{

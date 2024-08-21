@@ -42,9 +42,10 @@ species, by default \code{TRUE}}
 Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an
 example of how this can be formatted.}
 
-\item{family}{The response family for the model, required to be one of
-\code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"}, \code{"binomial"}
-or \code{"neg_binomial"}}
+\item{family}{is the response family, must be one of \code{"gaussian"},
+\code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
+matching is supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
 values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept

@@ -37,7 +37,9 @@
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   or \code{"bernoulli"}. Regular expression matching is supported.
+#'   \code{"bernoulli"}, \code{"zi_poisson"}, or
+#'   \code{"zi_neg_binomial"}. Regular expression
+#'   matching is supported.
 #'
 #' @param method is the jSDM method to use, currently either \code{"gllvm"} or
 #'   \code{"mglmm"} - see details for more information.
@@ -57,17 +59,34 @@
 #' @param beta_param The parameterisation of the environmental covariate
 #'   effects, by default \code{"unstruct"}. See details for further information.
 #'
+#' @param zi_param For the zero-inflated families, whether the zero-inflation parameter
+#'   is a species-specific constant (default, \code{"constant"}), or varies by
+#'   environmental covariates (\code{"covariate"}).
+#'
+#' @param zi_k If \code{zi="covariate"}, the number of environmental covariates
+#'   that the zero-inflation parameter responds to. The default (\code{NULL}) is
+#'   that the zero-inflation parameter responds to exactly the same covariate matrix
+#'   as the mean parameter. Otherwise, a different set of random environmental
+#'   covariates are generated, plus an intercept (not included in zi_k) and used
+#'   to predict zero-inflation
+#'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
                           Ntrials = NULL,
                           site_intercept = "none",
                           beta_param = "unstruct",
+                          zi_param = "constant", zi_k = NULL,
                           prior = jsdm_prior()) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson",
-                                  "bernoulli", "binomial"))
+                                  "bernoulli", "binomial", "zi_poisson",
+                                  "zi_neg_binomial"))
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
+  zi_param <- match.arg(zi_param, c("constant","covariate"))
+  if(missing(method)){
+    stop("method argument needs to be specified")
+  }
   if(site_intercept == "grouped"){
     stop("Grouped site intercept not supported")
   }
@@ -99,6 +118,18 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     Ntrials <- ntrials_check(Ntrials = Ntrials, N = N)
   }
 
+  if (!is.null(zi_k)) {
+    if(zi_k < 1 | zi_k %% 1 != 0){
+      stop("zi_k must be either NULL or a positive integer")
+    }
+  }
+
+  if(is.null(zi_k)){
+    ZI_K <- K
+  } else{
+    ZI_K <- zi_k
+  }
+
   # prior object breakdown
   prior_split <- lapply(prior, strsplit, split = "\\(|\\)|,")
   if (!all(sapply(prior_split, function(x) {
@@ -109,7 +140,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "lkj_corr",
       "student_t",
       "cauchy",
-      "gamma"
+      "gamma",
+      "beta"
     )
   }))) {
     stop(paste(
@@ -132,7 +164,8 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "lkj_corr" = "rlkj",
       "student_t" = "rstudentt",
       "cauchy" = "rcauchy",
-      "gamma" = "rgamma"
+      "gamma" = "rgamma",
+      "beta" = "rbeta"
     )
     fun_arg1 <- switch(x,
       "sigmas_preds" = K + 1 * species_intercept,
@@ -149,7 +182,9 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
       "sigma" = S,
-      "kappa" = S
+      "kappa" = S,
+      "zi" = S,
+      "zi_betas" = S*(ZI_K+1)
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
@@ -175,12 +210,12 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   # now do covariates - if K = NULL then do intercept only
   if (K == 0) {
     x <- matrix(1, nrow = N, ncol = 1)
-    colnames(x) <- "Intercept"
+    colnames(x) <- "(Intercept)"
     J <- 1
   } else if (isTRUE(species_intercept)) {
     x <- matrix(stats::rnorm(N * K), ncol = K, nrow = N)
     colnames(x) <- paste0("V", 1:K)
-    x <- cbind(Intercept = 1, x)
+    x <- cbind("(Intercept)" = 1, x)
     J <- K + 1
   } else if (isFALSE(species_intercept)) {
     x <- matrix(stats::rnorm(N * K), ncol = K, nrow = N)
@@ -260,9 +295,11 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
     L <- matrix(nrow = S, ncol = D)
 
     idx2 <- 0
-    for (i in 1:(D - 1)) {
-      for (j in (i + 1):(D)) {
-        L[i, j] <- 0
+    if(D > 1){
+      for (i in 1:(D - 1)) {
+        for (j in (i + 1):(D)) {
+          L[i, j] <- 0
+        }
       }
     }
     for (j in 1:D) {
@@ -296,9 +333,50 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
       match.fun(prior_func[["kappa"]][[1]]),
       prior_func[["kappa"]][[2]]
     ))
+  } else if (response  == "zi_poisson") {
+    if(zi_param == "covariate"){
+      zi_betas <- matrix(do.call(
+        match.fun(prior_func[["zi_betas"]][[1]]),
+        prior_func[["zi_betas"]][[2]]
+      ), ncol = S)
+    } else {
+      zi <- do.call(
+        match.fun(prior_func[["zi"]][[1]]),
+        prior_func[["zi"]][[2]]
+      )
+    }
+  } else if (response  == "zi_neg_binomial") {
+    if(zi_param == "covariate"){
+      zi_betas <- matrix(do.call(
+        match.fun(prior_func[["zi_betas"]][[1]]),
+        prior_func[["zi_betas"]][[2]]
+      ), ncol = S)
+    } else {
+      zi <- do.call(
+        match.fun(prior_func[["zi"]][[1]]),
+        prior_func[["zi"]][[2]]
+      )
+    }
+    kappa <- abs(do.call(
+      match.fun(prior_func[["kappa"]][[1]]),
+      prior_func[["kappa"]][[2]]
+    ))
   }
   # print(str(sigma))
 
+  # zero-inflation in case of covariates
+  if(grepl("zi_", response) & zi_param == "covariate"){
+    if(is.null(zi_k)){
+      zi_X <- x
+    } else {
+      zi_X <- matrix(stats::rnorm(N * zi_k), ncol = zi_k, nrow = N)
+      colnames(zi_X) <- paste0("V", 1:zi_k)
+      zi_X <- cbind("(Intercept)" = 1, zi_X)
+    }
+    zi <- inv_logit(zi_X %*% zi_betas)
+  }
+
+  # generate Y
   Y <- matrix(nrow = N, ncol = S)
   for (i in 1:N) {
     for (j in 1:S) {
@@ -316,11 +394,24 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
         "gaussian" = stats::rnorm(1, mu_ij, sigma[j]),
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
-        "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij))
+        "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij)),
+        "zi_poisson" = (1-stats::rbinom(
+          1, 1,
+          ifelse(zi_param == "covariate",
+                 zi[i,j],zi[j])))*stats::rpois(1, exp(mu_ij)),
+        "zi_neg_binomial" = (1-stats::rbinom(
+          1, 1,
+          ifelse(zi_param == "covariate",
+                 zi[i,j],zi[j])))*rgampois(1, mu = exp(mu_ij), scale = kappa[j])
       )
     }
   }
-  # print(str(Y))
+
+  if(any(apply(Y, 2, function(x) all(x == 0)))){
+    message(paste("Y contains an entirely empty column, which will not work for",
+                  "jsdm fitting, it is recommended that the simulation is run again."))
+  }
+
 
 
   pars <- list(
@@ -362,6 +453,16 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   if(response == "neg_binomial"){
     pars$kappa <- kappa
   }
+  if(grepl("zi_", response)){
+    if(zi_param == "constant"){
+      pars$zi <- zi
+    } else if(zi_param == "covariate"){
+      pars$zi_betas <- zi_betas
+    }
+  }
+  if(response == "zi_neg_binomial"){
+    pars$kappa <- kappa
+  }
   if (isTRUE(species_intercept)) {
     if (K > 0) {
       x <- x[, 2:ncol(x)]
@@ -374,6 +475,10 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   )
   if(response == "binomial"){
     output$Ntrials <- Ntrials
+  }
+  if(grepl("zi_", response) & zi_param == "covariate"){
+    output$zi_k <- ZI_K + 1
+    output$zi_X <- zi_X
   }
 
   return(output)

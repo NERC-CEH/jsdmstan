@@ -8,11 +8,6 @@ suppressWarnings(bern_fit <- stan_gllvm(
 ))
 
 test_that("posterior linpred errors appropriately", {
-  expect_error(
-    posterior_linpred(bern_fit, newdata_type = "F"),
-    "Currently only data on covariates is supported."
-  )
-
 
   expect_error(posterior_linpred(bern_fit, list_index = "bored"))
 
@@ -29,10 +24,6 @@ test_that("posterior linpred errors appropriately", {
 })
 
 test_that("posterior predictive errors appropriately", {
-  expect_error(
-    posterior_predict(bern_fit, newdata_type = "F"),
-    "Currently only data on covariates is supported."
-  )
 
   expect_error(
     posterior_predict(bern_fit, draw_ids = c(-5,-1,0)),
@@ -128,7 +119,7 @@ bino_sim_data <- gllvm_sim_data(N = 100, S = 9, K = 2, family = "binomial",
                                 Ntrials = 20)
 bino_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
 colnames(bino_pred_data) <- c("V1", "V2")
-suppressWarnings(bino_fit <- stan_mglmm(
+suppressWarnings(bino_fit <- stan_gllvm(
   dat_list = bino_sim_data, family = "binomial",
   refresh = 0, chains = 2, iter = 500
 ))
@@ -149,4 +140,61 @@ test_that("posterior_(lin)pred works with gllvm and bino", {
   expect_false(any(sapply(bino_pred2, anyNA)))
   expect_false(any(sapply(bino_pred2, function(x) x < 0)))
   expect_false(any(sapply(bino_pred2, function(x) x > 16)))
+})
+
+set.seed(86738873)
+zip_sim_data <- gllvm_sim_data(N = 100, S = 7, K = 2, family = "zi_poisson",
+                               site_intercept = "ungrouped", D = 1)
+zip_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
+colnames(zip_pred_data) <- c("V1", "V2")
+suppressWarnings(zip_fit <- stan_gllvm(
+  dat_list = zip_sim_data, family = "zi_poisson",
+  refresh = 0, chains = 2, iter = 500
+))
+test_that("posterior_(lin)pred works with gllvm and zip", {
+  zip_pred <- posterior_predict(zip_fit, ndraws = 100)
+
+  expect_length(zip_pred, 100)
+  expect_false(any(sapply(zip_pred, anyNA)))
+  expect_false(any(sapply(zip_pred, function(x) x < 0)))
+
+  zip_pred2 <- posterior_predict(zip_fit,
+                                 newdata = zip_pred_data,
+                                 ndraws = 50, list_index = "species"
+  )
+
+  expect_length(zip_pred2, 7)
+  expect_false(any(sapply(zip_pred2, anyNA)))
+  expect_false(any(sapply(zip_pred2, function(x) x < 0)))
+})
+
+set.seed(9598098)
+zinb_sim_data <- mglmm_sim_data(N = 100, S = 7, K = 2, family = "zi_neg_binomial",
+                               site_intercept = "ungrouped", zi_param = "covariate")
+zinb_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
+colnames(zinb_pred_data) <- c("V1", "V2")
+suppressWarnings(zinb_fit <- stan_mglmm(
+  dat_list = zinb_sim_data, family = "zi_neg_binomial",zi_param="covariate",
+  refresh = 0, chains = 2, iter = 500
+))
+test_that("zi_neg_bin print works okay", {
+  expect_output(print(zinb_fit$family),
+                "is modelled in response to")
+})
+
+test_that("posterior_(lin)pred works with gllvm and zinb", {
+  zinb_pred <- posterior_predict(zinb_fit, ndraws = 100)
+
+  expect_length(zinb_pred, 100)
+  expect_false(any(sapply(zinb_pred, anyNA)))
+  expect_false(any(sapply(zinb_pred, function(x) x < 0)))
+
+  zinb_pred2 <- posterior_predict(zinb_fit,
+                                 newdata = zinb_pred_data,
+                                 ndraws = 50, list_index = "species"
+  )
+
+  expect_length(zinb_pred2, 7)
+  expect_false(any(sapply(zinb_pred2, anyNA)))
+  expect_false(any(sapply(zinb_pred2, function(x) x < 0)))
 })

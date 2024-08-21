@@ -10,7 +10,7 @@
 #'  A length one character vector describing type of jSDM
 #'  }
 #'  \item{\code{family}}{
-#'  A character vector describing response family
+#'  A jsdmStanFamily object describing characteristics of family
 #'  }
 #'  \item{\code{species}}{
 #'  A character vector of the species names
@@ -35,7 +35,7 @@
 jsdmStanFit_empty <- function() {
   res <- list(
     jsdm_type = "None",
-    family = character(),
+    family = jsdmStanFamily_empty(),
     species = character(),
     sites = character(),
     preds = character(),
@@ -77,6 +77,7 @@ print.jsdmStanFit <- function(x, ...) {
   "  Number of species: ", length(x$species), "\n",
   "  Number of sites: ", length(x$sites), "\n",
   "  Number of predictors: ", length(x$preds), "\n",
+  print(x$family),
   "\n",
   "Model run on ", length(x$fit@stan_args), " chains with ",
   x$fit@stan_args[[1]]$iter, " iterations per chain (",

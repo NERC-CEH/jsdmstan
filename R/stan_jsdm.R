@@ -11,6 +11,13 @@
 #'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
 #'   from a simple distribution with no correlation structure. Both parameterisations
 #'   can be modified using the prior object.
+#'   Families supported are the Gaussian family, the negative binomial family,
+#'   the Poisson family, the binomial family (with number of trials specificied
+#'   using the \code{Ntrials} parameter), the Bernoulli family (the special case
+#'   of the binomial family where number of trials is equal to one), the
+#'   zero-inflated Poisson and the zero-inflated negative binomial. For both
+#'   zero-inflated families the zero-inflation is assumed to be a species-specific
+#'   constant.
 #'
 #' @param formula The formula of covariates that the species means are modelled from
 #'
@@ -26,9 +33,10 @@
 #'
 #' @param D The number of latent variables within a GLLVM model
 #'
-#' @param family The response family for the model, required to be one of
-#'   \code{"gaussian"}, \code{"bernoulli"}, \code{"poisson"}, \code{"binomial"}
-#'   or \code{"neg_binomial"}
+#' @param family is the response family, must be one of \code{"gaussian"},
+#'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
+#'   \code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
+#'   matching is supported.
 #'
 #' @param species_intercept Whether the model should be fit with an intercept by
 #'   species, by default \code{TRUE}
@@ -62,6 +70,15 @@
 #'
 #' @param beta_param The parameterisation of the environmental covariate effects, by
 #'   default \code{"unstruct"}. See details for further information.
+#'
+#' @param zi_param For the zero-inflated families, whether the zero-inflation parameter
+#'   is a species-specific constant (default, \code{"constant"}), or varies by
+#'   environmental covariates (\code{"covariate"}).
+#'
+#' @param zi_X If \code{zi = "covariate"}, the matrix of environmental predictors
+#'   that the zero-inflation is modelled in response to. If there is not already
+#'   an intercept column (identified by all values being equal to one), one will
+#'   be added to the front of the matrix.
 #'
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
@@ -103,10 +120,22 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               dat_list = NULL, family, site_intercept = "none",
                               D = NULL, prior = jsdm_prior(), site_groups = NULL,
                               beta_param = "unstruct", Ntrials = NULL,
+                              zi_param = "constant", zi_X = NULL,
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
-                                "neg_binomial","binomial"))
+                                "neg_binomial","binomial", "zi_poisson",
+                                "zi_neg_binomial"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
+  zi_param <- match.arg(zi_param, c("constant","covariate"))
+  if(grepl("zi", family) & zi_param == "covariate"){
+    if(is.null(zi_X) & is.null(dat_list)){
+      message("If zi_param = 'covariate' and no zi_X matrix is supplied then the X matrix is used")
+      zi_X <- X
+    }
+  } else{
+    zi_X <- NULL
+  }
+
 
   stopifnot(
     is.logical(species_intercept),
@@ -120,7 +149,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     Y = Y, X = X, species_intercept = species_intercept,
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = dat_list,
-    family = family, method = method, Ntrials = Ntrials
+    family = family, method = method, Ntrials = Ntrials,
+    zi_X = zi_X
   )
 
   # Create stancode
@@ -128,7 +158,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     family = family,
     method = method, prior = prior,
     log_lik = log_lik, site_intercept = site_intercept,
-    beta_param = beta_param
+    beta_param = beta_param, zi_param = zi_param
   )
 
   # Compile model
@@ -226,7 +256,8 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept,
-                          method, site_groups, Ntrials) {
+                          method, site_groups, Ntrials,
+                          zi_X) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -264,6 +295,16 @@ validate_data <- function(Y, D, X, species_intercept,
         colnames(X)[1] <- "(Intercept)"
       }
     }
+    if(grepl("zi", family) & !is.null(zi_X)){
+      if(is.null(colnames(zi_X))){
+        message("No column names specified for zi_X, assigning names")
+        colnames(zi_X) <- paste0("V",seq_len(ncol(zi_X)))
+      }
+      if(!any(apply(zi_X, 2, function(x) all(x == 1)))){
+        zi_X <- cbind("(Intercept)" = 1, zi_X)
+      }
+      zi_k <- ncol(zi_X)
+    }
 
     if(site_intercept == "grouped"){
       if(length(site_groups) != N)
@@ -290,6 +331,14 @@ validate_data <- function(Y, D, X, species_intercept,
     if(family == "binomial"){
       data_list$Ntrials <- Ntrials
     }
+    if(grepl("zi_",family) & !is.null(zi_X)){
+      data_list$zi_k <- zi_k
+      data_list$zi_X <- zi_X
+
+      if(nrow(zi_X) != N){
+        stop("Number of rows of zi_X must be equal to number of rows of X")
+      }
+    }
   } else {
     if (!all(c("Y", "K", "S", "N", "X") %in% names(dat_list))) {
       stop("If supplying data as a list must have entries Y, K, S, N, X")
@@ -302,6 +351,12 @@ validate_data <- function(Y, D, X, species_intercept,
     if (identical(family, "binomial")) {
       if (!all(c("Ntrials") %in% names(dat_list))) {
         stop("Binomial models require Ntrials in dat_list")
+      }
+    }
+
+    if (grepl("zi_", family) & !is.null(zi_X)) {
+      if (!all(c("zi_X","zi_k") %in% names(dat_list))) {
+        stop("Zero-inflated models with the covariate parameterisation of zi require zi_X and zi_k in dat_list")
       }
     }
 
@@ -341,15 +396,37 @@ validate_data <- function(Y, D, X, species_intercept,
     ))) {
       stop("Y matrix is not binary")
     }
-  } else if (family %in% c("poisson", "neg_binomial", "binomial")) {
+  } else if (family %in% c("poisson", "neg_binomial", "binomial",
+                           "zi_poisson", "zi_neg_binomial")) {
     if (!any(apply(data_list$Y, 1:2, is.wholenumber))) {
       stop("Y matrix is not composed of integers")
     }
   }
 
+  # check to make sure no completely blank columns in Y
+  if(any(apply(data_list$Y, 2, function(x) all(x == 0)))){
+    stop("Y contains an empty column, which cannot work for this model")
+  }
+
   # Check if Ntrials is appropriate given
   if(identical(family, "binomial")) {
     data_list$Ntrials <- ntrials_check(data_list$Ntrials, data_list$N)
+  }
+
+  # create zeros/non-zeros for zero-inflated poisson
+  if(grepl("zi_",family)) {
+    if(any(apply(data_list$Y, 2, min)>0)){
+      stop("Zero-inflated distributions require zeros to be present in all Y values.")
+    }
+    data_list$N_zero <- colSums(data_list$Y==0)
+    data_list$N_nonzero <- colSums(data_list$Y>0)
+    data_list$Sum_nonzero <- sum(data_list$N_nonzero)
+    data_list$Sum_zero <- sum(data_list$N_zero)
+    data_list$Y_nz <- c(as.matrix(data_list$Y))[c(as.matrix(data_list$Y))>0]
+    data_list$nn <- rep(1:data_list$N,data_list$S)[c(data_list$Y>0)]
+    data_list$ss <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y>0)]
+    data_list$nz <- rep(1:data_list$N,data_list$S)[c(data_list$Y==0)]
+    data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
   }
 
   return(data_list)
@@ -381,11 +458,29 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
   } else {
     list()
   }
+  fam <- list(family = family,
+              params = switch(family,
+                              "gaussian" = "sigma",
+                              "bernoulli" = character(),
+                              "poisson" = character(),
+                              "neg_binomial" = "kappa",
+                              "binomial" = character(),
+                              "zi_poisson" = "zi",
+                              "zi_neg_binomial" = c("kappa","zi")),
+              params_dataresp= character(),
+              preds = character(),
+              data_list = list())
+  class(fam) <- "jsdmStanFamily"
+  if(isTRUE(save_data) & ("zi_X" %in% names(data_list))){
+    fam$params_dataresp <- "zi"
+    fam$preds <- colnames(data_list$zi_X)
+    fam$data_list <- list(zi_X = data_list$zi_X)
+  }
 
   model_output <- list(
     fit = model_fit,
     jsdm_type = method,
-    family = family,
+    family = fam,
     species = species,
     sites = sites,
     preds = preds,

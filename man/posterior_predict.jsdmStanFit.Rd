@@ -8,11 +8,11 @@
 \method{posterior_predict}{jsdmStanFit}(
   object,
   newdata = NULL,
-  newdata_type = "X",
   ndraws = NULL,
   draw_ids = NULL,
   list_index = "draws",
   Ntrials = NULL,
+  include_zi = TRUE,
   ...
 )
 }
@@ -20,9 +20,6 @@
 \item{object}{The model object}
 
 \item{newdata}{New data, by default \code{NULL} and uses original data}
-
-\item{newdata_type}{What form is the new data in, at the moment only
-supplying covariates is supported.}
 
 \item{ndraws}{Number of draws, by default the number of samples in the
 posterior. Will be sampled randomly from the chains if fewer than the
@@ -33,20 +30,23 @@ number of samples.}
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}
 
-\item{Ntrials}{For the binomial distribution the number of trials, given as
-either a single integer which is assumed to be constant across sites or as
-a site-length vector of integers.}
+\item{Ntrials}{For the binomial distribution the number of trials, given as either
+a single integer which is assumed to be constant across sites or as a site-length
+vector of integers.}
+
+\item{include_zi}{For the zero-inflated poisson distribution, whether to include
+the zero-inflation in the prediction. Defaults to \code{TRUE}.}
 
 \item{...}{Currently unused}
 }
 \value{
 A list of linear predictors. If list_index is \code{"draws"} (the default)
-the list will have length equal to the number of draws with each element of
-the list being a site x species matrix. If the list_index is \code{"species"} the
-list will have length equal to the number of species with each element of
-the list being a draws x sites matrix. If the list_index is \code{"sites"} the
-list will have length equal to the number of sites with each element of
-the list being a draws x species matrix.
+the list will have length equal to the number of draws with each element of the
+list being a site x species matrix. If the list_index is \code{"species"} the
+list will have length equal to the number of species with each element of the
+list being a draws x sites matrix. If the list_index is \code{"sites"} the list
+will have length equal to the number of sites with each element of the list being
+a draws x species matrix.
 }
 \description{
 Draw from the posterior predictive distribution of the outcome.

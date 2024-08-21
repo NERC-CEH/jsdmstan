@@ -11,7 +11,6 @@
   newdata = NULL,
   ndraws = NULL,
   draw_ids = NULL,
-  newdata_type = "X",
   list_index = "draws",
   ...
 )
@@ -31,9 +30,6 @@ number of samples.}
 
 \item{draw_ids}{The IDs of the draws to be used, as a numeric vector}
 
-\item{newdata_type}{What form is the new data in, at the moment only
-supplying covariates is supported.}
-
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}
 
@@ -46,7 +42,8 @@ the list being a site x species matrix. If the list_index is \code{"species"} th
 list will have length equal to the number of species with each element of
 the list being a draws x sites matrix. If the list_index is \code{"sites"} the
 list will have length equal to the number of sites with each element of the
-list being a draws x species matrix.
+list being a draws x species matrix. Note that in the zero-inflated case this is
+only the linear predictor of the non-zero-inflated part of the model.
 }
 \description{
 Extract the posterior draws of the linear predictor, possibly transformed by

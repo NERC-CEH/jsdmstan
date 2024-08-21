@@ -17,6 +17,8 @@ jsdm_sim_data(
   Ntrials = NULL,
   site_intercept = "none",
   beta_param = "unstruct",
+  zi_param = "constant",
+  zi_k = NULL,
   prior = jsdm_prior()
 )
 
@@ -35,7 +37,9 @@ mglmm_sim_data(...)
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-or \code{"bernoulli"}. Regular expression matching is supported.}
+\code{"bernoulli"}, \code{"zi_poisson"}, or
+\code{"zi_neg_binomial"}. Regular expression
+matching is supported.}
 
 \item{method}{is the jSDM method to use, currently either \code{"gllvm"} or
 \code{"mglmm"} - see details for more information.}
@@ -54,6 +58,17 @@ supported currently.}
 
 \item{beta_param}{The parameterisation of the environmental covariate
 effects, by default \code{"unstruct"}. See details for further information.}
+
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
+
+\item{zi_k}{If \code{zi="covariate"}, the number of environmental covariates
+that the zero-inflation parameter responds to. The default (\code{NULL}) is
+that the zero-inflation parameter responds to exactly the same covariate matrix
+as the mean parameter. Otherwise, a different set of random environmental
+covariates are generated, plus an intercept (not included in zi_k) and used
+to predict zero-inflation}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 

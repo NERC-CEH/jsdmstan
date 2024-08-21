@@ -1,3 +1,4 @@
+set.seed(23359)
 test_that("gllvm_sim_data errors with bad inputs", {
   expect_error(
     gllvm_sim_data(
@@ -21,6 +22,12 @@ test_that("gllvm_sim_data errors with bad inputs", {
   expect_error(
     gllvm_sim_data(N = 200, S = 8, D = 2, family = "binomial", Ntrials = "1"),
     "Ntrials must be a positive integer"
+  )
+
+  expect_error(
+    gllvm_sim_data(N = 200, S = 8, D = 2, family = "zi_poisson",
+                   zi_param = "covariate", zi_k = -2),
+    "zi_k must be either NULL or a positive integer"
   )
 
 })
@@ -87,6 +94,12 @@ test_that("mglmm_sim_data returns a list of correct length", {
     "Y", "pars", "N", "S", "D", "K", "X", "Ntrials"
   ))
   expect_length(gllvm_sim$Ntrials, 100)
+  gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "zi_neg_binomial", method = "gllvm",
+                             zi_param = "covariate")
+  expect_named(gllvm_sim, c(
+    "Y", "pars", "N", "S", "D", "K", "X", "zi_k", "zi_X"
+  ))
+  expect_equal(dim(gllvm_sim$Y),c(100,12))
 })
 
 test_that("jsdm_sim_data returns all appropriate pars", {
@@ -103,7 +116,21 @@ test_that("jsdm_sim_data returns all appropriate pars", {
     "betas","a_bar","sigma_a","a","L","LV","sigma_L","kappa"
   ))
 
+  gllvm_sim2 <- jsdm_sim_data(100,12,D=2,family = "zi_poisson", method = "gllvm",
+                              beta_param = "unstruct",
+                              site_intercept = "ungrouped")
+  expect_named(gllvm_sim2$pars, c(
+    "betas","a_bar","sigma_a","a","L","LV","sigma_L","zi"
+  ))
 
+
+  gllvm_sim3 <- jsdm_sim_data(100,9,K=2,D=2,family = "zi_neg_bin", method = "gllvm",
+                              beta_param = "unstruct",
+                              site_intercept = "ungrouped", zi_param = "covariate",
+                              zi_k = 1)
+  expect_named(gllvm_sim3$pars, c(
+    "betas","a_bar","sigma_a","a","L","LV","sigma_L","zi_betas","kappa"
+  ))
 
 })
 
