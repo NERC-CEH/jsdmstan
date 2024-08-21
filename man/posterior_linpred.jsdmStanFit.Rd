@@ -11,7 +11,6 @@
   newdata = NULL,
   ndraws = NULL,
   draw_ids = NULL,
-  newdata_type = "X",
   list_index = "draws",
   ...
 )
@@ -30,9 +29,6 @@ posterior. Will be sampled randomly from the chains if fewer than the
 number of samples.}
 
 \item{draw_ids}{The IDs of the draws to be used, as a numeric vector}
-
-\item{newdata_type}{What form is the new data in, at the moment only
-supplying covariates is supported.}
 
 \item{list_index}{Whether to return the output list indexed by the number of
 draws (default), species, or site.}

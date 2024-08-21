@@ -21,6 +21,8 @@ stan_jsdm(X, ...)
   site_groups = NULL,
   beta_param = "unstruct",
   Ntrials = NULL,
+  zi_param = "constant",
+  zi_X = NULL,
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
@@ -70,6 +72,15 @@ default \code{"unstruct"}. See details for further information.}
 \item{Ntrials}{For the binomial distribution the number of trials, given as
 either a single integer which is assumed to be constant across sites or as
 a site-length vector of integers.}
+
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
+
+\item{zi_X}{If \code{zi = "covariate"}, the matrix of environmental predictors
+that the zero-inflation is modelled in response to. If there is not already
+an intercept column (identified by all values being equal to one), one will
+be added to the front of the matrix.}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}

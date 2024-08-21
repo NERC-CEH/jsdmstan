@@ -10,6 +10,7 @@
   newX = NULL,
   newD = NULL,
   newNtrials = NULL,
+  newZi_X = NULL,
   save_data = TRUE,
   ...
 )
@@ -25,6 +26,11 @@
 
 \item{newNtrials}{New number of trials (binomial model only), by default
 \code{NULL}}
+
+\item{newZi_X}{New predictor data for the zi parameter in zero-inflated models,
+by default \code{NULL}. In cases where the model was originally fit with the
+same X and zi_X data and only newX is supplied to update.jsdmStanFit the zi_X
+data will also be set to newX.}
 
 \item{save_data}{Whether to save the data in the jsdmStanFit object, by default
 \code{TRUE}}

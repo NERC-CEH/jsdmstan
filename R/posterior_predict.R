@@ -19,9 +19,6 @@
 #'
 #' @param draw_ids The IDs of the draws to be used, as a numeric vector
 #'
-#' @param newdata_type What form is the new data in, at the moment only
-#'   supplying covariates is supported.
-#'
 #' @param list_index Whether to return the output list indexed by the number of
 #'   draws (default), species, or site.
 #' @param ... Currently unused
@@ -42,23 +39,15 @@
 #' @export
 posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
                                           newdata = NULL, ndraws = NULL,
-                                          draw_ids = NULL, newdata_type = "X",
+                                          draw_ids = NULL,
                                           list_index = "draws", ...) {
-  if (newdata_type != "X") {
-    stop("Currently only data on covariates is supported.")
-  }
   stopifnot(is.logical(transform))
-  if (isTRUE(transform) & object$family == "gaussian") {
+  if (isTRUE(transform) & object$family$family == "gaussian") {
     warning("No inverse-link transform performed for Gaussian response models.")
   }
-  if (!is.null(ndraws) & !is.null(draw_ids)) {
-    message("Both ndraws and draw_ids have been specified, ignoring ndraws")
-  }
-  if (!is.null(draw_ids)) {
-    if (any(!is.wholenumber(draw_ids))) {
-      stop("draw_ids must be a vector of positive integers")
-    }
-  }
+
+  foopred_checks(object = object, transform = transform, newdata = newdata,
+                 ndraws = ndraws, draw_ids = draw_ids, list_index = list_index)
 
 
   list_index <- match.arg(list_index, c("draws", "species", "sites"))
@@ -69,19 +58,12 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
   method <- object$jsdm_type
   orig_data_used <- is.null(newdata)
 
-  if (is.null(newdata) & length(object$data_list) == 0) {
-    stop(paste(
-      "Original data must be included in model object if no new data",
-      "is provided."
-    ))
-  }
   if (is.null(newdata)) {
     newdata <- object$data_list$X
   }
 
   newdata <- validate_newdata(newdata,
-    preds = object$preds,
-    newdata_type = newdata_type
+    preds = object$preds
   )
 
   model_pars <- "betas"
@@ -141,7 +123,7 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
     )
     if (isTRUE(transform)) {
       mu <- apply(mu, 1:2, function(x) {
-        switch(object$family,
+        switch(object$family$family,
           "gaussian" = x,
           "bernoulli" = inv_logit(x),
           "poisson" = exp(x),
@@ -192,12 +174,12 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'@export posterior_predict
 #'@export
 posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
-                                          newdata_type = "X", ndraws = NULL,
+                                          ndraws = NULL,
                                           draw_ids = NULL,
                                           list_index = "draws",
                                           Ntrials = NULL,
                                           include_zi = TRUE, ...) {
-  transform <- ifelse(object$family == "gaussian", FALSE, TRUE)
+  transform <- ifelse(object$family$family == "gaussian", FALSE, TRUE)
   if (!is.null(ndraws) & !is.null(draw_ids)) {
     message("Both ndraws and draw_ids have been specified, ignoring ndraws")
   }
@@ -213,32 +195,39 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
 
   post_linpred <- posterior_linpred(object,
     newdata = newdata,
-    newdata_type = newdata_type, draw_ids = draw_id,
+    draw_ids = draw_id,
     transform = transform, list_index = "draws"
   )
 
-  if (object$family == "gaussian") {
+  if (object$family$family == "gaussian") {
     mod_sigma <- extract(object, pars = "sigma")[[1]][draw_id,]
-  } else  if (object$family == "neg_binomial") {
-    mod_kappa <- extract(object, pars = "kappa")[[1]][draw_id,]
-  } else  if(object$family == "binomial"){
+  } else  if(object$family$family == "binomial"){
     if(is.null(newdata)) {
       Ntrials <- object$data_list$Ntrials
     } else {
       Ntrials <- ntrials_check(Ntrials, nrow(newdata))
     }
-  } else if(object$family == "zi_poisson"){
+  }
+  if(grepl("zi",object$family$family) & !("zi" %in% object$family$params_dataresp) & isTRUE(include_zi)){
     mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
-  } else if(object$family == "zi_neg_binomial"){
-    mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
+  }
+  if(grepl("neg_binomial",object$family$family)) {
     mod_kappa <- extract(object, pars = "kappa")[[1]][draw_id,]
+  }
+
+  if("zi" %in% object$family$params_dataresp & isTRUE(include_zi)){
+    post_zipred <- posterior_zipred(object,
+                                     newdata = newdata,
+                                     draw_ids = draw_id,
+                                     transform = transform, list_index = "draws"
+    )
   }
 
   n_sites <- length(object$sites)
   n_species <- length(object$species)
 
   post_pred <- lapply(seq_along(post_linpred),
-                      function(x, family = object$family) {
+                      function(x, family = object$family$family) {
     x2 <- post_linpred[[x]]
     if(family == "binomial"){
       for(i in 1:nrow(x2)){
@@ -246,11 +235,23 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
           x2[i,j] <- stats::rbinom(1, Ntrials[i], x2[i,j])
         }
       }
+    } else if (grepl("zi_",family) & "zi" %in% object$family$params_dataresp &
+          isTRUE(include_zi)){
+      zi2 <- post_zipred[[x]]
+      for(i in seq_len(nrow(x2))){
+        for(j in seq_len(ncol(x2))){
+          x2[i,j] <- switch(
+            object$family$family,
+            "zi_poisson" = (1-stats::rbinom(1, 1, zi2[x,j]))*stats::rpois(1, x2[i,j]),
+            "zi_neg_binomial" = (1-stats::rbinom(1, 1, zi2[x,j]))*rgampois(1, x2[i,j], mod_kappa[x,j])
+            )
+        }
+      }
     } else {
       for(i in seq_len(nrow(x2))){
         for(j in seq_len(ncol(x2))){
           x2[i,j] <- switch(
-            object$family,
+            object$family$family,
             "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[x,j]),
             "bernoulli" = stats::rbinom(1, 1, x2[i,j]),
             "poisson" = stats::rpois(1, x2[i,j]),
@@ -280,10 +281,93 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
 }
 
 
+#' Access the posterior distribution of the linear predictor for zero-inflation
+#' parameter
+#'
+#' Extract the posterior draws of the linear predictor for the zero-inflation
+#' parameter, possibly transformed by the inverse-link function.
+#'
+#'
+#' @inheritParams posterior_linpred.jsdmStanFit
+#'
+#' @return A list of linear predictors. If list_index is \code{"draws"} (the
+#'   default) the list will have length equal to the number of draws with each
+#'   element of the list being a site x species matrix. If the list_index is
+#'   \code{"species"} the list will have length equal to the number of species
+#'   with each element of the list being a draws x sites matrix. If the
+#'   list_index is \code{"sites"} the list will have length equal to the number
+#'   of sites with each element of the list being a draws x species matrix. Note
+#'   that in the zero-inflated case this is only the linear predictor of the
+#'   non-zero-inflated part of the model.
+#'
+#' @seealso [posterior_predict.jsdmStanFit()]
+#'
+#' @export
+posterior_zipred <- function(object, transform = FALSE,
+                             newdata = NULL, ndraws = NULL,
+                             draw_ids = NULL,
+                             list_index = "draws"){
+  if(!("zi" %in% object$family$params_dataresp)){
+    stop(paste("This function only works upon models with a zero-inflated family",
+               "and where the zero-inflation is responsive to covariates."))
+  }
+  foopred_checks(object = object, transform = transform, newdata = newdata,
+                 ndraws = ndraws, draw_ids = draw_ids, list_index = list_index)
+  list_index <- match.arg(list_index, c("draws", "species", "sites"))
+
+  n_sites <- length(object$sites)
+  n_species <- length(object$species)
+  n_preds <- length(object$family$preds)
+  method <- object$jsdm_type
+  orig_data_used <- is.null(newdata)
+
+  if (is.null(newdata)) {
+    newdata <- object$family$data_list$zi_X
+  }
+
+  newdata <- validate_newdata(newdata,
+                              preds = object$family$preds
+  )
+
+  model_pars <- "zi_betas"
+
+  model_est <- extract(object, pars = model_pars)
+  n_iter <- dim(model_est[[1]])[1]
+
+  draw_id <- draw_id_check(draw_ids = draw_ids, n_iter = n_iter, ndraws = ndraws)
+
+  model_est <- lapply(model_est, function(x) {
+    switch(length(dim(x)),
+           `1` = x[draw_id, drop = FALSE],
+           `2` = x[draw_id, , drop = FALSE],
+           `3` =  x[draw_id, , , drop = FALSE]
+    )
+  })
+
+  model_pred_list <- lapply(seq_along(draw_id), function(d) {
+
+    if (is.vector(newdata)) {
+      newdata <- matrix(newdata, ncol = 1)
+    }
+    zi <- newdata %*% model_est$zi_betas[d, , ]
+
+    if (isTRUE(transform)) {
+      zi <- apply(zi, c(1,2), inv_logit)
+    }
+
+    return(zi)
+  })
+
+  if (list_index != "draws") {
+    model_pred_list <- switch_indices(model_pred_list, list_index)
+  }
+
+  return(model_pred_list)
+}
 
 # internal ~~~~
 
-validate_newdata <- function(newdata, preds, newdata_type) {
+validate_newdata <- function(newdata, preds) {
   preds_nointercept <- preds[preds != "(Intercept)"]
 
   if (!all(preds_nointercept %in% colnames(newdata))) {
@@ -295,7 +379,7 @@ validate_newdata <- function(newdata, preds, newdata_type) {
 
   newdata <- newdata[, preds_nointercept]
   if ("(Intercept)" %in% preds) {
-    newdata <- cbind(`(Intercept)` = 1, newdata)
+    newdata <- cbind("(Intercept)" = 1, newdata)
     newdata <- newdata[, preds]
   }
   return(newdata)
@@ -340,4 +424,24 @@ draw_id_check <- function(draw_ids, n_iter, ndraws){
     }
   }
   return(draw_id)
+}
+
+foopred_checks <- function(object, transform, draw_ids, ndraws, list_index,
+                           newdata){
+  stopifnot(is.logical(transform))
+  if (!is.null(ndraws) & !is.null(draw_ids)) {
+    message("Both ndraws and draw_ids have been specified, ignoring ndraws")
+  }
+  if (!is.null(draw_ids)) {
+    if (any(!is.wholenumber(draw_ids))) {
+      stop("draw_ids must be a vector of positive integers")
+    }
+  }
+  if (is.null(newdata) & length(object$data_list) == 0) {
+    stop(paste(
+      "Original data must be included in model object if no new data",
+      "is provided."
+    ))
+  }
+  return(NULL)
 }

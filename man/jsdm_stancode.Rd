@@ -11,7 +11,8 @@ jsdm_stancode(
   prior = jsdm_prior(),
   log_lik = TRUE,
   site_intercept = "none",
-  beta_param = "cor"
+  beta_param = "cor",
+  zi_param = "constant"
 )
 
 \method{print}{jsdmstan_model}(x, ...)
@@ -37,6 +38,10 @@ grouping)}
 
 \item{beta_param}{The parameterisation of the environmental covariate effects, by
 default \code{"cor"}. See details for further information.}
+
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
 
 \item{x}{The jsdm_stancode object}
 

@@ -8,11 +8,6 @@ suppressWarnings(bern_fit <- stan_gllvm(
 ))
 
 test_that("posterior linpred errors appropriately", {
-  expect_error(
-    posterior_linpred(bern_fit, newdata_type = "F"),
-    "Currently only data on covariates is supported."
-  )
-
 
   expect_error(posterior_linpred(bern_fit, list_index = "bored"))
 
@@ -29,10 +24,6 @@ test_that("posterior linpred errors appropriately", {
 })
 
 test_that("posterior predictive errors appropriately", {
-  expect_error(
-    posterior_predict(bern_fit, newdata_type = "F"),
-    "Currently only data on covariates is supported."
-  )
 
   expect_error(
     posterior_predict(bern_fit, draw_ids = c(-5,-1,0)),
@@ -179,11 +170,11 @@ test_that("posterior_(lin)pred works with gllvm and zip", {
 
 set.seed(9598098)
 zinb_sim_data <- mglmm_sim_data(N = 100, S = 7, K = 2, family = "zi_neg_binomial",
-                               site_intercept = "ungrouped")
+                               site_intercept = "ungrouped", zi_param = "covariate")
 zinb_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
 colnames(zinb_pred_data) <- c("V1", "V2")
 suppressWarnings(zinb_fit <- stan_mglmm(
-  dat_list = zinb_sim_data, family = "zi_neg_binomial",
+  dat_list = zinb_sim_data, family = "zi_neg_binomial",zi_param="covariate",
   refresh = 0, chains = 2, iter = 500
 ))
 test_that("posterior_(lin)pred works with gllvm and zinb", {

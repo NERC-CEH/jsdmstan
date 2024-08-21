@@ -62,3 +62,27 @@ test_that("binomial models update", {
   ))
   expect_s3_class(gllvm_fit2, "jsdmStanFit")
 })
+
+zip_data <- gllvm_sim_data(97,9,D = 2, family = "zi_poisson",
+                           zi_param = "covariate")
+
+test_that("zi models update", {
+  suppressWarnings(gllvm_fit <- stan_gllvm(dat_list = zip_data,
+                                           family = "zi_poisson",
+                                           refresh = 0, chains = 1, iter = 200
+  ))
+  expect_s3_class(gllvm_fit, "jsdmStanFit")
+
+  expect_error(gllvm_fit2 <- update(gllvm_fit, newD = 3,
+                                        newZi_X = matrix(1:74, nrow = 74),
+                                        refresh = 0, chains = 1, iter = 200
+  ), "Number of rows of zi_X")
+
+
+  suppressWarnings(gllvm_fit2 <- update(gllvm_fit, newD = 3,
+                                        newZi_X = matrix(rnorm(97), nrow = 97),
+                                        refresh = 0, chains = 1, iter = 200
+  ))
+  expect_equal(ncol(gllvm_fit2$data_list$zi_X),2)
+  expect_s3_class(gllvm_fit2, "jsdmStanFit")
+})

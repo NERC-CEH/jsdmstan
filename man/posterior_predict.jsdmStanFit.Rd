@@ -8,7 +8,6 @@
 \method{posterior_predict}{jsdmStanFit}(
   object,
   newdata = NULL,
-  newdata_type = "X",
   ndraws = NULL,
   draw_ids = NULL,
   list_index = "draws",
@@ -21,9 +20,6 @@
 \item{object}{The model object}
 
 \item{newdata}{New data, by default \code{NULL} and uses original data}
-
-\item{newdata_type}{What form is the new data in, at the moment only
-supplying covariates is supported.}
 
 \item{ndraws}{Number of draws, by default the number of samples in the
 posterior. Will be sampled randomly from the chains if fewer than the

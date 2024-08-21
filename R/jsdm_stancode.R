@@ -27,6 +27,9 @@
 #'   grouping)
 #' @param beta_param The parameterisation of the environmental covariate effects, by
 #'   default \code{"cor"}. See details for further information.
+#' @param zi_param For the zero-inflated families, whether the zero-inflation parameter
+#'   is a species-specific constant (default, \code{"constant"}), or varies by
+#'   environmental covariates (\code{"covariate"}).
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
@@ -37,7 +40,7 @@
 #'
 jsdm_stancode <- function(method, family, prior = jsdm_prior(),
                           log_lik = TRUE, site_intercept = "none",
-                          beta_param = "cor") {
+                          beta_param = "cor", zi_param = "constant") {
   # checks
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial","zi_poisson",
@@ -45,6 +48,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   method <- match.arg(method, c("gllvm", "mglmm"))
   beta_param <- match.arg(beta_param, c("cor","unstruct"))
   site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
+  zi_param <- match.arg(zi_param, c("constant","covariate"))
   if (class(prior)[1] != "jsdmprior") {
     stop("Prior must be given as a jsdmprior object")
   }
@@ -53,7 +57,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   scode <- .modelcode(
     method = method, family = family,
     phylo = FALSE, prior = prior, log_lik = log_lik, site_intercept = site_intercept,
-    beta_param = beta_param
+    beta_param = beta_param, zi_param = zi_param
   )
   class(scode) <- c("jsdmstan_model", "character")
   return(scode)
@@ -61,7 +65,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 
 .modelcode <- function(method, family, phylo, prior, log_lik, site_intercept,
-                       beta_param) {
+                       beta_param, zi_param) {
   model_functions <- "
 "
   data <- paste(
@@ -101,7 +105,13 @@ ifelse(site_intercept == "grouped",
   int<lower=0> ss[Sum_nonzero]; //species index for Y_nz
   int<lower=0> nn[Sum_nonzero]; //site index for Y_nz
   int<lower=0> sz[Sum_zero]; //species index for Y_z
-  int<lower=0> nz[Sum_zero]; //site index for Y_z",""))
+  int<lower=0> nz[Sum_zero]; //site index for Y_z",""),
+ifelse(grepl("zi_", family) & zi_param == "covariate","
+  int<lower=1> zi_k; //number of covariates for env effects on zi
+  matrix[N, zi_k] zi_X; //environmental covariate matrix for zi","")
+)
+
+
   transformed_data <- ifelse(method == "gllvm", "
   // Ensures identifiability of the model - no rotation of factors
   int<lower=1> M;
@@ -147,11 +157,18 @@ ifelse(site_intercept == "grouped",
     "neg_binomial" = "
   real<lower=0> kappa[S]; // neg_binomial parameters",
     "poisson" = "",
-    "zi_poisson" = "
+    "zi_poisson" = switch(zi_param,
+    "constant" = "
   real<lower=0,upper=1> zi[S]; // zero-inflation parameter",
-  "zi_neg_binomial" = "
+    "covariate" = "
+  matrix[zi_k,S] zi_betas; //environmental effects for zi"),
+  "zi_neg_binomial" = switch(zi_param,
+                             "constant" = "
   real<lower=0> kappa[S]; // neg_binomial parameters
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter"
+  real<lower=0,upper=1> zi[S]; // zero-inflation parameter",
+                             "covariate" = "
+  real<lower=0> kappa[S]; // neg_binomial parameters
+  matrix[zi_k,S] zi_betas; //environmental effects for zi")
   )
 
   pars <- paste(
@@ -235,22 +252,32 @@ ifelse(site_intercept == "grouped",
   ")
   model <- paste("
   matrix[N,S] mu;
-  ", ifelse(grepl("zi_",family),"
+  ", ifelse(grepl("zi_",family),paste0("
   real mu_nz[Sum_nonzero];
   real mu_z[Sum_zero];
   int pos;
-  int neg;",""),
+  int neg;",switch(zi_param,"constant" = "",
+                   "covariate" = "
+  real zi_nz[Sum_nonzero];
+  real zi_z[Sum_zero];")),""),
   switch(method,
     "gllvm" = gllvm_model,
     "mglmm" = mglmm_model
-  ),ifelse(grepl("zi_",family),"
+  ),ifelse(grepl("zi_",family),paste0(ifelse(zi_param == "covariate", "
+  matrix[N,S] zi = zi_X * zi_betas;",""),"
   for(i in 1:Sum_nonzero){
-    mu_nz[i] = mu[nn[i],ss[i]];
+    mu_nz[i] = mu[nn[i],ss[i]];",
+    switch(zi_param, "constant" = "",
+           "covariate" = "
+    zi_nz[i] = zi[nn[i],ss[i]];"),"
   }
   for(i in 1:Sum_zero){
-    mu_z[i] = mu[nz[i],sz[i]];
+    mu_z[i] = mu[nz[i],sz[i]];",
+    switch(zi_param, "constant" = "",
+           "covariate" = "
+    zi_z[i] = zi[nz[i],sz[i]];"),"
   }
-  ",""))
+  "),""))
   model_priors <- paste(
     ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
   // Site-level intercept priors
@@ -296,17 +323,24 @@ ifelse(site_intercept == "grouped",
       "bern" = "",
       "poisson" = "",
       "binomial" = "",
-      "zi_poisson" = paste("
+      "zi_poisson" = switch(zi_param,"constant" = paste("
   //zero-inflation parameter
   zi ~ ", prior[["zi"]], ";
-"),
-"zi_neg_binomial" = paste("
+"), "covariate" = paste("
+  //zero-inflation parameter
+  to_vector(zi_betas) ~ ", prior[["zi_betas"]], ";
+")),
+"zi_neg_binomial" = switch(zi_param, "constant" = paste("
   //zero-inflation parameter
   zi ~ ", prior[["zi"]], ";
   kappa ~ ", prior[["kappa"]], ";
+"), "covariate" = paste("
+  //zero-inflation parameter
+  to_vector(zi_betas) ~ ", prior[["zi_betas"]], ";
+  kappa ~ ", prior[["kappa"]], ";
 ")
     )
-  )
+  ))
   model_pt2 <- if(!grepl("zi_", family)){ paste(
     "
   for(i in 1:N) Y[i,] ~ ",
@@ -323,13 +357,19 @@ ifelse(site_intercept == "grouped",
   for(s in 1:S){
     target
       += N_zero[s]
-           * log_sum_exp(log(zi[s]),
+           * log_sum_exp(",
+           switch(zi_param,"constant" = "log(zi[s]),
                          log1m(zi[s])
                            +",
+                  "covariate" = "bernoulli_logit_lpmf(1 | segment(zi_z, neg, N_zero[s])),
+                         bernoulli_logit_lpmf(0 | segment(zi_z, neg, N_zero[s]))
+                           +"),
   switch(family,
          "zi_poisson" = "poisson_log_lpmf(0 | segment(mu_z, neg, N_zero[s])));",
          "zi_neg_binomial" = "neg_binomial_2_log_lpmf(0 | segment(mu_z, neg, N_zero[s]), kappa[s]));"),"
-    target += N_nonzero[s] * log1m(zi[s]);
+    target += N_nonzero[s] * ",switch(zi_param,
+    "constant" = "log1m(zi[s]);",
+    "covariate" = "bernoulli_logit_lpmf(0 | segment(zi_nz, pos, N_nonzero[s]));"),"
     target +=",
     switch(family,
            "zi_poisson" = "poisson_log_lpmf(segment(Y_nz,pos,N_nonzero[s]) |
@@ -362,7 +402,9 @@ ifelse(site_intercept == "grouped",
   }", ""), ifelse(isTRUE(log_lik), paste(
       "
   {
-    matrix[N, S] linpred;", switch(site_intercept, "ungrouped" = paste("
+    matrix[N, S] linpred;",ifelse(grepl("zi", family) & zi_param == "covariate","
+    matrix[N,S] zi = zi_X * zi_betas;",""),
+    switch(site_intercept, "ungrouped" = paste("
     linpred = rep_matrix(a_bar + a * sigma_a, S) + (X * betas) +",
     switch(method,
            "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
@@ -393,7 +435,7 @@ ifelse(site_intercept == "grouped",
         "neg_binomial" = "log_lik[i, j] = neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa[j]);",
         "poisson" = "log_lik[i, j] = poisson_log_lpmf(Y[i, j] | linpred[i, j]);",
         "binomial" = "log_lik[i, j] = binomial_logit_lpmf(Y[i, j] | Ntrials[i], linpred[i, j]);",
-        "zi_poisson" = "if (Y[i,j] == 0){
+        "zi_poisson" = switch(zi_param,"constant" = "if (Y[i,j] == 0){
           log_lik[i, j] = log_sum_exp(bernoulli_lpmf(1 | zi[j]),
                           bernoulli_lpmf(0 |zi[j])
                           + poisson_log_lpmf(Y[i,j] | linpred[i,j]));
@@ -401,14 +443,30 @@ ifelse(site_intercept == "grouped",
               log_lik[i, j] = bernoulli_lpmf(0 | zi[j])
               + poisson_log_lpmf(Y[i,j] | linpred[i,j]);
             }",
-        "zi_neg_binomial" = "if (Y[i,j] == 0){
+                              "covariate" = "if (Y[i,j] == 0){
+          log_lik[i, j] = log_sum_exp(bernoulli_logit_lpmf(1 | zi[i,j]),
+                          bernoulli_logit_lpmf(0 |zi[i,j])
+                          + poisson_log_lpmf(Y[i,j] | linpred[i,j]));
+            } else {
+              log_lik[i, j] = bernoulli_logit_lpmf(0 | zi[i,j])
+              + poisson_log_lpmf(Y[i,j] | linpred[i,j]);
+            }"),
+        "zi_neg_binomial" = switch(zi_param,"constant" = "if (Y[i,j] == 0){
           log_lik[i, j] = log_sum_exp(bernoulli_lpmf(1 | zi[j]),
                           bernoulli_lpmf(0 |zi[j])
                           + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j], kappa[j]));
             } else {
               log_lik[i, j] = bernoulli_lpmf(0 | zi[j])
               + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j], kappa[j]);
-            }"
+            }",
+                                   "covariate" = "if (Y[i,j] == 0){
+          log_lik[i, j] = log_sum_exp(bernoulli_logit_lpmf(1 | zi[i,j]),
+                          bernoulli_logit_lpmf(0 |zi[i,j])
+                          + poisson_log_lpmf(Y[i,j] | linpred[i,j]));
+            } else {
+              log_lik[i, j] = bernoulli_logit_lpmf(0 | zi[i,j])
+              + poisson_log_lpmf(Y[i,j] | linpred[i,j]);
+            }")
       ),"
       }
     }

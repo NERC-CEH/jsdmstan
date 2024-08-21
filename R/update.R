@@ -12,6 +12,10 @@
 #' @param newD New number of latent variables, by default \code{NULL}
 #' @param newNtrials New number of trials (binomial model only), by default
 #' \code{NULL}
+#' @param newZi_X New predictor data for the zi parameter in zero-inflated models,
+#' by default \code{NULL}. In cases where the model was originally fit with the
+#' same X and zi_X data and only newX is supplied to update.jsdmStanFit the zi_X
+#' data will also be set to newX.
 #' @param save_data Whether to save the data in the jsdmStanFit object, by default
 #'  \code{TRUE}
 #' @param ... Arguments passed to [rstan::sampling()]
@@ -51,7 +55,7 @@
 #' gllvm_fit2
 #' }
 update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
-                               newNtrials = NULL,
+                               newNtrials = NULL, newZi_X = NULL,
                                save_data = TRUE, ...) {
   if (length(object$data_list) == 0) {
     stop("Update requires the original data to be saved in the model object")
@@ -72,7 +76,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
   } else {
     Y <- newY
   }
-  family <- object$family
+  family <- object$family$family
   method <- object$jsdm_type
   if(!is.null(newD)){
     D <- newD
@@ -85,6 +89,19 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     } else{
       Ntrials <- object$data_list$Ntrials
     }
+  }
+  if ("zi" %in% object$family$params_dataresp){
+    if(is.null(newZi_X)) {
+      if(isTRUE(all.equal(object$data_list$X, object$family$data_list$zi_X)) & !is.null(newX)){
+        zi_X <- newX
+      } else{
+        zi_X <- object$family$data_list$zi_X
+      }
+    } else {
+      zi_X <- newZi_X
+    }
+  } else{
+    zi_X <- NULL
   }
 
   species_intercept <- "(Intercept)" %in% colnames(object$data_list$X)
@@ -100,7 +117,8 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     Y = Y, X = X, species_intercept = species_intercept,
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = NULL,
-    family = family, method = method, Ntrials = Ntrials
+    family = family, method = method, Ntrials = Ntrials,
+    zi_X = zi_X
   )
 
   # get original stan model

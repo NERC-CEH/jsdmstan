@@ -17,7 +17,7 @@ This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 A length one character vector describing type of jSDM
 }
 \item{\code{family}}{
-A character vector describing response family
+A jsdmStanFamily object describing characteristics of family
 }
 \item{\code{species}}{
 A character vector of the species names
