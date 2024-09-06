@@ -276,30 +276,35 @@ mcmc_plot <- function(x, ...) {
 
 #' Plotting an ordination plot for a GLLVM model
 #'
-#' This function takes a GLLVM model fit and plots an ordination plot with a random
-#' (or specified) selection of draws
+#' This function takes a GLLVM model fit and plots an ordination plot with a
+#' random (or specified) selection of draws
 #'
 #' @param object The \code{jsdmStanFit} model object
 #' @param choices Which latent variables to plot as dimensions, by default
 #'   \code{c(1,2)}
 #' @param type Whether to plot sites or species, default \code{"species"}.
-#' @param summary_stat The summary statistic used to plot overall averages of the
-#'   posterior sample. By default this is \code{"mean"}, and \code{NULL} will result
-#'   in no summary being included
-#' @param ndraws How many individual draws to include in plot, by default \code{20}. Setting
-#'   this to \code{0} will result in no individual draws being included
+#' @param summary_stat The summary statistic used to plot overall averages of
+#'   the posterior sample. By default this is \code{"mean"}, and \code{NULL}
+#'   will result in no summary being included
+#' @param ndraws How many individual draws to include in plot, by default
+#'   \code{20}. Setting this to \code{0} will result in no individual draws
+#'   being included
 #' @param draw_ids Which draws to include in plot (overrides \code{ndraws})
-#' @param size The size of the points in the graph, specified as a two-element vector
-#'   with the first being used for the summary points and the second the individual
-#'   draws, default \code{c(2,1)}
-#' @param alpha The transparency/alpha of the points in the graph, specified as a
-#'   two-element vector with the first being used for the summary points and the
-#'   second the individual draws, default \code{c(1,0.5)}
+#' @param size The size of the points in the graph, specified as a two-element
+#'   vector with the first being used for the summary points and the second the
+#'   individual draws, default \code{c(2,1)}
+#' @param alpha The transparency/alpha of the points in the graph, specified as
+#'   a two-element vector with the first being used for the summary points and
+#'   the second the individual draws, default \code{c(1,0.5)}
 #' @param shape The shape of the points in the graph, specified as a two-element
 #'   vector with the first being used for the summary points and the second the
 #'   individual draws, default \code{c(18,16)}
 #' @param geom Which geom from \pkg{ggplot2} is used for the summary statistic
 #'   by default \code{"point"}, or alternatively can be \code{"text"}
+#' @param errorbar_range If specified, the central range of the data that is
+#'   covered by the errorbar. Needs to be given as either \code{NULL} (i.e. no
+#'   errorbar), or a number between 0 and 1.
+#' @param errorbar_linewidth The linewidth of the error bar, by default 1.
 #'
 #' @return A [ggplot][ggplot2::ggplot] object that can be customised using the
 #'   \pkg{ggplot2} package
@@ -324,7 +329,8 @@ mcmc_plot <- function(x, ...) {
 ordiplot <- function(object, choices = c(1, 2), type = "species",
                      summary_stat = "mean", ndraws = 20, draw_ids = NULL,
                      size = c(2, 1), alpha = c(1, 0.5), shape = c(18, 16),
-                     geom = "point") {
+                     geom = "point", errorbar_range = NULL,
+                     errorbar_linewidth = 1) {
   # try to remove CMD check note
   LV <- NULL
   if (!inherits(object, "jsdmStanFit")) {
@@ -338,6 +344,13 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     stop("Only two latent variables can be plotted at once")
   }
   geom <- match.arg(geom, c("point","text"))
+  if(!is.null(errorbar_range)){
+    if(!is.numeric(errorbar_range)){
+      stop("errorbar_range must be a number between 0 and 1")
+    } else if(errorbar_range < 0 | errorbar_range > 1){
+      stop("errorbar_range must be a number between 0 and 1")
+    }
+  }
 
   # Extract corrected latent variable scores for species OR sites
   ext_pars <- switch(type,
@@ -353,7 +366,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
   )
 
 
-  if (!is.null(summary_stat)) {
+  if (!is.null(summary_stat) | !is.null(errorbar_range)) {
     model_est_copy <- model_est
   }
 
@@ -398,11 +411,13 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     ord_scores$S <- as.factor(ord_scores$S)
   }
 
-  if (!is.null(summary_stat)) {
+  if (!is.null(summary_stat) | !is.null(errorbar_range)) {
     if (is.character(summary_stat)) {
       stat_fun <- get(summary_stat)
     } else if (inherits(summary_stat, "function")) {
       stat_fun <- summary_stat
+    } else if(is.null(summary_stat) & !is.null(errorbar_range)){
+      stat_fun <- median
     }
 
     ord_scores_summary <- reshape2::melt(model_est_copy[[1]],
@@ -415,9 +430,52 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     ord_scores_summary <- reshape2::dcast(ord_scores_summary, S ~ LV)
   }
 
+  if (!is.null(errorbar_range)) {
+    errorbar_min = 0.5 - 0.5*errorbar_range
+    errorbar_max = 0.5 + 0.5*errorbar_range
+    ord_scores_summary_forerrorbar <- reshape2::melt(model_est_copy[[1]],
+                                         varnames = varnames
+    )
+    ord_scores_summary_forerrorbar <- subset(ord_scores_summary_forerrorbar, LV %in% choices)
+    ord_scores_summary_forerrorbar[, "LV"] <- paste0("LV", ord_scores_summary_forerrorbar[, "LV"])
+    ord_scores_summary_forerrorbar$S <- as.factor(ord_scores_summary_forerrorbar$S)
+    ord_scores_summary_forerrorbar <- stats::aggregate(value ~ S + LV, ord_scores_summary_forerrorbar,
+                                                       function(x) quantile(x, prob = c(errorbar_min, errorbar_max)))
+    ord_scores_summary_forerrorbar$min <- ord_scores_summary_forerrorbar$value[,1]
+    ord_scores_summary_forerrorbar$max <- ord_scores_summary_forerrorbar$value[,2]
+    ord_scores_summary_forerrorbar <- ord_scores_summary_forerrorbar[,c("S","LV","min","max")]
+    ord_scores_summary_forerrorbar <- reshape2::melt(ord_scores_summary_forerrorbar,
+                                                     c("S","LV"))
+    ord_scores_summary_forerrorbar$ID <- paste0(ord_scores_summary_forerrorbar$LV, "_",
+                                                ord_scores_summary_forerrorbar$variable)
+    ord_scores_summary_forerrorbar <- reshape2::dcast(ord_scores_summary_forerrorbar, S ~ ID)
+    ord_scores_summary_forerrorbar <- cbind(ord_scores_summary_forerrorbar,
+                                            ord_scores_summary[,-1])
+  }
+
   graph <- ggplot2::ggplot() +
     bayesplot::bayesplot_theme_get() +
     ggplot2::coord_equal()
+
+  if(!is.null(errorbar_range)){
+    graph <- graph +
+      ggplot2::geom_linerange(
+        data = ord_scores_summary_forerrorbar,
+        ggplot2::aes(x = .data[[paste0("LV", choices[1])]],
+                     ymin = .data[[paste0("LV", choices[2], "_min")]],
+                     ymax = .data[[paste0("LV", choices[2], "_max")]],
+                     colour = .data[["S"]]),
+        alpha = alpha[1], linewidth = errorbar_linewidth
+      ) +
+      ggplot2::geom_linerange(
+        data = ord_scores_summary_forerrorbar,
+        ggplot2::aes(y = .data[[paste0("LV", choices[2])]],
+                     xmin = .data[[paste0("LV", choices[1], "_min")]],
+                     xmax = .data[[paste0("LV", choices[1], "_max")]],
+                     colour = .data[["S"]]),
+        alpha = alpha[1], linewidth = errorbar_linewidth
+      )
+  }
 
   if (!is.null(summary_stat)) {
     if(geom == "point"){
@@ -466,7 +524,8 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
 #' @param plotfun Which plot function from mcmc_plot should be used, by default
 #'   \code{"intervals"}
 #' @param nrow The number of rows within the plot
-#' @param y_labels Which plots should have annotated y axes
+#' @param y_labels Which plots should have annotated y axes. Needs to be given
+#'   as an integer vector
 #' @param widths The widths of the plots
 #'
 #' @return An object of class \code{"bayesplot_grid"}, for more information see
