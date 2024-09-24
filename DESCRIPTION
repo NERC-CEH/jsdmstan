@@ -1,6 +1,6 @@
 Package: jsdmstan
 Title: Fitting jSDMs in Stan
-Version: 0.4.0
+Version: 0.4.1
 Authors@R: 
     person("Fiona", "Seaton", , "fseaton@ceh.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2022-7451"))
