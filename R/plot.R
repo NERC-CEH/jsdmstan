@@ -37,7 +37,7 @@
 #' @return An invisible list of the plots#
 #'
 #' @examples
-#' \donttest{
+#' \dontrun{
 #' # First simulate data and get model fit:
 #' mglmm_data <- mglmm_sim_data(
 #'   N = 100, S = 10, K = 3,

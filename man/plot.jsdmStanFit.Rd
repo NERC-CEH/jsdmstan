@@ -71,7 +71,7 @@ by \code{sample_n}). To see the name of the parameters within the model use
 hundreds in any reasonably sized model) set \code{pars = get_parnames(x)}.
 }
 \examples{
-\donttest{
+\dontrun{
 # First simulate data and get model fit:
 mglmm_data <- mglmm_sim_data(
   N = 100, S = 10, K = 3,

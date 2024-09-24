@@ -32,6 +32,8 @@
 #'  }
 #'  }
 #'
+NULL
+
 jsdmStanFamily_empty <- function(){
   res <- list(family = character(),
               params = character(),
