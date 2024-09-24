@@ -8,13 +8,15 @@ ordiplot(
   object,
   choices = c(1, 2),
   type = "species",
-  summary_stat = "mean",
-  ndraws = 20,
+  summary_stat = "median",
+  ndraws = 0,
   draw_ids = NULL,
   size = c(2, 1),
   alpha = c(1, 0.5),
   shape = c(18, 16),
-  geom = "point"
+  geom = "point",
+  errorbar_range = 0.75,
+  errorbar_linewidth = 1
 )
 }
 \arguments{
@@ -25,22 +27,23 @@ ordiplot(
 
 \item{type}{Whether to plot sites or species, default \code{"species"}.}
 
-\item{summary_stat}{The summary statistic used to plot overall averages of the
-posterior sample. By default this is \code{"mean"}, and \code{NULL} will result
-in no summary being included}
+\item{summary_stat}{The summary statistic used to plot overall averages of
+the posterior sample. By default this is \code{"median"}, and \code{NULL}
+will result in no summary being included}
 
-\item{ndraws}{How many individual draws to include in plot, by default \code{20}. Setting
-this to \code{0} will result in no individual draws being included}
+\item{ndraws}{How many individual draws to include in plot, by default
+\code{0}. Setting this to \code{0} will result in no individual draws
+being included}
 
 \item{draw_ids}{Which draws to include in plot (overrides \code{ndraws})}
 
-\item{size}{The size of the points in the graph, specified as a two-element vector
-with the first being used for the summary points and the second the individual
-draws, default \code{c(2,1)}}
+\item{size}{The size of the points in the graph, specified as a two-element
+vector with the first being used for the summary points and the second the
+individual draws, default \code{c(2,1)}}
 
-\item{alpha}{The transparency/alpha of the points in the graph, specified as a
-two-element vector with the first being used for the summary points and the
-second the individual draws, default \code{c(1,0.5)}}
+\item{alpha}{The transparency/alpha of the points in the graph, specified as
+a two-element vector with the first being used for the summary points and
+the second the individual draws, default \code{c(1,0.5)}}
 
 \item{shape}{The shape of the points in the graph, specified as a two-element
 vector with the first being used for the summary points and the second the
@@ -48,14 +51,20 @@ individual draws, default \code{c(18,16)}}
 
 \item{geom}{Which geom from \pkg{ggplot2} is used for the summary statistic
 by default \code{"point"}, or alternatively can be \code{"text"}}
+
+\item{errorbar_range}{If specified, the central range of the data that is
+covered by the errorbar. Needs to be given as either \code{NULL} (i.e. no
+errorbar), or a number between 0 and 1, default \code{0.75}.}
+
+\item{errorbar_linewidth}{The linewidth of the error bar, by default 1.}
 }
 \value{
 A \link[ggplot2:ggplot]{ggplot} object that can be customised using the
 \pkg{ggplot2} package
 }
 \description{
-This function takes a GLLVM model fit and plots an ordination plot with a random
-(or specified) selection of draws
+This function takes a GLLVM model fit and plots an ordination plot with a
+random (or specified) selection of draws
 }
 \examples{
 \dontrun{

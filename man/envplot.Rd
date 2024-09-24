@@ -20,7 +20,8 @@ envplot(
 
 \item{nrow}{The number of rows within the plot}
 
-\item{y_labels}{Which plots should have annotated y axes}
+\item{y_labels}{Which plots should have annotated y axes. Needs to be given
+as an integer vector}
 
 \item{plotfun}{Which plot function from mcmc_plot should be used, by default
 \code{"intervals"}}
