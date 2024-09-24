@@ -2,11 +2,7 @@
 % Please edit documentation in R/jsdmstan-families.R
 \name{jsdmStanFamily}
 \alias{jsdmStanFamily}
-\alias{jsdmStanFamily_empty}
 \title{jsdmStanFamily class}
-\usage{
-jsdmStanFamily_empty()
-}
 \description{
 This is the jsdmStanFamily class, which occupies a slot within any
 jsdmStanFit object.

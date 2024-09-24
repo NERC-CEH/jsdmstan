@@ -2,11 +2,7 @@
 % Please edit documentation in R/jsdmstanfit-class.R
 \name{jsdmStanFit}
 \alias{jsdmStanFit}
-\alias{jsdmStanFit_empty}
 \title{jsdmStanFit class}
-\usage{
-jsdmStanFit_empty()
-}
 \description{
 This is the jsdmStanFit class, which stan_gllvm and stan_mglmm both create.
 }

@@ -32,6 +32,8 @@
 #'  }
 #'
 #'
+NULL
+
 jsdmStanFit_empty <- function() {
   res <- list(
     jsdm_type = "None",
