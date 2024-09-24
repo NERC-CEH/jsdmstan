@@ -8,14 +8,14 @@ ordiplot(
   object,
   choices = c(1, 2),
   type = "species",
-  summary_stat = "mean",
-  ndraws = 20,
+  summary_stat = "median",
+  ndraws = 0,
   draw_ids = NULL,
   size = c(2, 1),
   alpha = c(1, 0.5),
   shape = c(18, 16),
   geom = "point",
-  errorbar_range = NULL,
+  errorbar_range = 0.75,
   errorbar_linewidth = 1
 )
 }
@@ -28,11 +28,11 @@ ordiplot(
 \item{type}{Whether to plot sites or species, default \code{"species"}.}
 
 \item{summary_stat}{The summary statistic used to plot overall averages of
-the posterior sample. By default this is \code{"mean"}, and \code{NULL}
+the posterior sample. By default this is \code{"median"}, and \code{NULL}
 will result in no summary being included}
 
 \item{ndraws}{How many individual draws to include in plot, by default
-\code{20}. Setting this to \code{0} will result in no individual draws
+\code{0}. Setting this to \code{0} will result in no individual draws
 being included}
 
 \item{draw_ids}{Which draws to include in plot (overrides \code{ndraws})}
@@ -54,7 +54,7 @@ by default \code{"point"}, or alternatively can be \code{"text"}}
 
 \item{errorbar_range}{If specified, the central range of the data that is
 covered by the errorbar. Needs to be given as either \code{NULL} (i.e. no
-errorbar), or a number between 0 and 1.}
+errorbar), or a number between 0 and 1, default \code{0.75}.}
 
 \item{errorbar_linewidth}{The linewidth of the error bar, by default 1.}
 }
