@@ -22,7 +22,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">jsdmstan</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -209,19 +209,10 @@ which is what we’ll use here:</p>
 <code class="sourceCode R"><span><span class="va">mglmm_fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/stan_jsdm.html">stan_jsdm</a></span><span class="op">(</span><span class="op">~</span> <span class="va">V1</span> <span class="op">+</span> <span class="va">V2</span>, data <span class="op">=</span> <span class="va">dat</span>, Y <span class="op">=</span> <span class="va">mglmm_test_data</span><span class="op">$</span><span class="va">Y</span>, </span>
 <span>                       family <span class="op">=</span> <span class="st">"pois"</span>, method <span class="op">=</span> <span class="st">"mglmm"</span>, refresh <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>                       log_lik <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Trying to compile a simple C file</span></span>
-<span><span class="co">#&gt; Running /opt/R/4.4.1/lib/R/bin/R CMD SHLIB foo.c</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0’</span></span>
-<span><span class="co">#&gt; gcc -I"/opt/R/4.4.1/lib/R/include" -DNDEBUG   -I"/home/runner/work/_temp/Library/Rcpp/include/"  -I"/home/runner/work/_temp/Library/RcppEigen/include/"  -I"/home/runner/work/_temp/Library/RcppEigen/include/unsupported"  -I"/home/runner/work/_temp/Library/BH/include" -I"/home/runner/work/_temp/Library/StanHeaders/include/src/"  -I"/home/runner/work/_temp/Library/StanHeaders/include/"  -I"/home/runner/work/_temp/Library/RcppParallel/include/"  -I"/home/runner/work/_temp/Library/rstan/include" -DEIGEN_NO_DEBUG  -DBOOST_DISABLE_ASSERTS  -DBOOST_PENDING_INTEGER_LOG2_HPP  -DSTAN_THREADS  -DUSE_STANC3 -DSTRICT_R_HEADERS  -DBOOST_PHOENIX_NO_VARIADIC_EXPRESSION  -D_HAS_AUTO_PTR_ETC=0  -include '/home/runner/work/_temp/Library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp'  -D_REENTRANT -DRCPP_PARALLEL_USE_TBB=1   -I/usr/local/include    -fpic  -g -O2  -c foo.c -o foo.o</span></span>
-<span><span class="co">#&gt; In file included from /home/runner/work/_temp/Library/RcppEigen/include/Eigen/Core:19,</span></span>
-<span><span class="co">#&gt;                  from /home/runner/work/_temp/Library/RcppEigen/include/Eigen/Dense:1,</span></span>
-<span><span class="co">#&gt;                  from /home/runner/work/_temp/Library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp:22,</span></span>
-<span><span class="co">#&gt;                  from &lt;command-line&gt;:</span></span>
-<span><span class="co">#&gt; /home/runner/work/_temp/Library/RcppEigen/include/Eigen/src/Core/util/Macros.h:679:10: fatal error: cmath: No such file or directory</span></span>
-<span><span class="co">#&gt;   679 | #include &lt;cmath&gt;</span></span>
-<span><span class="co">#&gt;       |          ^~~~~~~</span></span>
-<span><span class="co">#&gt; compilation terminated.</span></span>
-<span><span class="co">#&gt; make: *** [/opt/R/4.4.1/lib/R/etc/Makeconf:195: foo.o] Error 1</span></span></code></pre></div>
+<span><span class="co">#&gt; Warning: There were 16 divergent transitions after warmup. See</span></span>
+<span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></span>
+<span><span class="co">#&gt; to find out why this is a problem and how to eliminate them.</span></span>
+<span><span class="co">#&gt; Warning: Examine the pairs() plot to diagnose sampling problems</span></span></code></pre></div>
 <p>If we print the model object we will get a brief overview of the type
 of jSDM and the data, plus if there are any parameters with Rhat &gt;
 1.01 or effective sample size ratio (Neff/N) &lt; 0.05 then they will be
@@ -243,69 +234,69 @@ just include a few here:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">mglmm_fit</span>, pars <span class="op">=</span> <span class="st">"cor_species"</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                    mean    sd    15%    85%  Rhat Bulk.ESS Tail.ESS</span></span>
-<span><span class="co">#&gt; cor_species[2,1]  0.028 0.281 -0.262  0.316 1.002     1221     2374</span></span>
-<span><span class="co">#&gt; cor_species[3,1]  0.009 0.176 -0.174  0.191 1.001     2564     4131</span></span>
-<span><span class="co">#&gt; cor_species[4,1]  0.242 0.177  0.059  0.425 1.000     2450     3337</span></span>
-<span><span class="co">#&gt; cor_species[5,1]  0.086 0.117 -0.036  0.206 1.002     3793     5314</span></span>
-<span><span class="co">#&gt; cor_species[6,1] -0.132 0.181 -0.316  0.055 1.001     2838     3688</span></span>
-<span><span class="co">#&gt; cor_species[7,1] -0.181 0.136 -0.322 -0.039 1.001     2940     4948</span></span>
-<span><span class="co">#&gt; cor_species[8,1] -0.271 0.247 -0.527 -0.008 1.005     1311     1838</span></span>
-<span><span class="co">#&gt; cor_species[1,2]  0.028 0.281 -0.262  0.316 1.002     1221     2374</span></span>
-<span><span class="co">#&gt; cor_species[2,2]  1.000 0.000  1.000  1.000 1.001     8037       NA</span></span>
-<span><span class="co">#&gt; cor_species[3,2]  0.036 0.269 -0.240  0.313 1.004     1567     2215</span></span>
-<span><span class="co">#&gt; cor_species[4,2] -0.259 0.293 -0.555  0.058 1.003     1618     2235</span></span>
-<span><span class="co">#&gt; cor_species[5,2]  0.089 0.262 -0.178  0.362 1.004     1125     1892</span></span>
-<span><span class="co">#&gt; cor_species[6,2]  0.008 0.278 -0.281  0.299 1.004     1882     2755</span></span>
-<span><span class="co">#&gt; cor_species[7,2]  0.108 0.270 -0.166  0.388 1.006     1075     1563</span></span>
-<span><span class="co">#&gt; cor_species[8,2]  0.023 0.296 -0.292  0.342 1.001     2945     4908</span></span>
-<span><span class="co">#&gt; cor_species[1,3]  0.009 0.176 -0.174  0.191 1.001     2564     4131</span></span>
-<span><span class="co">#&gt; cor_species[2,3]  0.036 0.269 -0.240  0.313 1.004     1567     2215</span></span>
-<span><span class="co">#&gt; cor_species[3,3]  1.000 0.000  1.000  1.000 1.000     7792       NA</span></span>
-<span><span class="co">#&gt; cor_species[4,3]  0.036 0.178 -0.152  0.221 1.000     3636     5383</span></span>
-<span><span class="co">#&gt; cor_species[5,3]  0.455 0.143  0.304  0.605 1.001     3358     5112</span></span>
-<span><span class="co">#&gt; cor_species[6,3]  0.482 0.180  0.293  0.674 1.000     4327     5676</span></span>
-<span><span class="co">#&gt; cor_species[7,3] -0.274 0.148 -0.430 -0.120 1.001     3222     5105</span></span>
-<span><span class="co">#&gt; cor_species[8,3]  0.285 0.230  0.055  0.525 1.000     2342     2024</span></span>
-<span><span class="co">#&gt; cor_species[1,4]  0.242 0.177  0.059  0.425 1.000     2450     3337</span></span>
-<span><span class="co">#&gt; cor_species[2,4] -0.259 0.293 -0.555  0.058 1.003     1618     2235</span></span>
-<span><span class="co">#&gt; cor_species[3,4]  0.036 0.178 -0.152  0.221 1.000     3636     5383</span></span>
-<span><span class="co">#&gt; cor_species[4,4]  1.000 0.000  1.000  1.000 1.000     8026     6853</span></span>
-<span><span class="co">#&gt; cor_species[5,4] -0.198 0.171 -0.375 -0.021 1.001     2381     4381</span></span>
-<span><span class="co">#&gt; cor_species[6,4] -0.122 0.195 -0.326  0.083 1.000     4415     5681</span></span>
-<span><span class="co">#&gt; cor_species[7,4] -0.191 0.165 -0.361 -0.019 1.001     3249     5112</span></span>
-<span><span class="co">#&gt; cor_species[8,4] -0.164 0.243 -0.415  0.085 1.000     3072     2679</span></span>
-<span><span class="co">#&gt; cor_species[1,5]  0.086 0.117 -0.036  0.206 1.002     3793     5314</span></span>
-<span><span class="co">#&gt; cor_species[2,5]  0.089 0.262 -0.178  0.362 1.004     1125     1892</span></span>
-<span><span class="co">#&gt; cor_species[3,5]  0.455 0.143  0.304  0.605 1.001     3358     5112</span></span>
-<span><span class="co">#&gt; cor_species[4,5] -0.198 0.171 -0.375 -0.021 1.001     2381     4381</span></span>
-<span><span class="co">#&gt; cor_species[5,5]  1.000 0.000  1.000  1.000 1.000     6756     7552</span></span>
-<span><span class="co">#&gt; cor_species[6,5]  0.215 0.175  0.037  0.398 1.000     3173     4339</span></span>
-<span><span class="co">#&gt; cor_species[7,5]  0.178 0.118  0.058  0.300 1.000     3952     5534</span></span>
-<span><span class="co">#&gt; cor_species[8,5]  0.217 0.233 -0.014  0.459 1.002     1523     1537</span></span>
-<span><span class="co">#&gt; cor_species[1,6] -0.132 0.181 -0.316  0.055 1.001     2838     3688</span></span>
-<span><span class="co">#&gt; cor_species[2,6]  0.008 0.278 -0.281  0.299 1.004     1882     2755</span></span>
-<span><span class="co">#&gt; cor_species[3,6]  0.482 0.180  0.293  0.674 1.000     4327     5676</span></span>
-<span><span class="co">#&gt; cor_species[4,6] -0.122 0.195 -0.326  0.083 1.000     4415     5681</span></span>
-<span><span class="co">#&gt; cor_species[5,6]  0.215 0.175  0.037  0.398 1.000     3173     4339</span></span>
-<span><span class="co">#&gt; cor_species[6,6]  1.000 0.000  1.000  1.000 1.000     8082     8023</span></span>
-<span><span class="co">#&gt; cor_species[7,6] -0.384 0.174 -0.567 -0.206 1.001     2772     4414</span></span>
-<span><span class="co">#&gt; cor_species[8,6]  0.360 0.229  0.130  0.590 1.000     2998     2283</span></span>
-<span><span class="co">#&gt; cor_species[1,7] -0.181 0.136 -0.322 -0.039 1.001     2940     4948</span></span>
-<span><span class="co">#&gt; cor_species[2,7]  0.108 0.270 -0.166  0.388 1.006     1075     1563</span></span>
-<span><span class="co">#&gt; cor_species[3,7] -0.274 0.148 -0.430 -0.120 1.001     3222     5105</span></span>
-<span><span class="co">#&gt; cor_species[4,7] -0.191 0.165 -0.361 -0.019 1.001     3249     5112</span></span>
-<span><span class="co">#&gt; cor_species[5,7]  0.178 0.118  0.058  0.300 1.000     3952     5534</span></span>
-<span><span class="co">#&gt; cor_species[6,7] -0.384 0.174 -0.567 -0.206 1.001     2772     4414</span></span>
-<span><span class="co">#&gt; cor_species[7,7]  1.000 0.000  1.000  1.000 1.000     7955     7854</span></span>
-<span><span class="co">#&gt; cor_species[8,7]  0.005 0.236 -0.238  0.244 1.003     1676     2538</span></span>
-<span><span class="co">#&gt; cor_species[1,8] -0.271 0.247 -0.527 -0.008 1.005     1311     1838</span></span>
-<span><span class="co">#&gt; cor_species[2,8]  0.023 0.296 -0.292  0.342 1.001     2945     4908</span></span>
-<span><span class="co">#&gt; cor_species[3,8]  0.285 0.230  0.055  0.525 1.000     2342     2024</span></span>
-<span><span class="co">#&gt; cor_species[4,8] -0.164 0.243 -0.415  0.085 1.000     3072     2679</span></span>
-<span><span class="co">#&gt; cor_species[5,8]  0.217 0.233 -0.014  0.459 1.002     1523     1537</span></span>
-<span><span class="co">#&gt; cor_species[6,8]  0.360 0.229  0.130  0.590 1.000     2998     2283</span></span>
-<span><span class="co">#&gt; cor_species[7,8]  0.005 0.236 -0.238  0.244 1.003     1676     2538</span></span>
-<span><span class="co">#&gt; cor_species[8,8]  1.000 0.000  1.000  1.000 1.000     7976     7302</span></span></code></pre></div>
+<span><span class="co">#&gt; cor_species[2,1]  0.034 0.278 -0.259  0.322 1.002     1495     2747</span></span>
+<span><span class="co">#&gt; cor_species[3,1]  0.010 0.174 -0.173  0.191 1.001     3276     4913</span></span>
+<span><span class="co">#&gt; cor_species[4,1]  0.234 0.176  0.054  0.414 1.001     3019     3788</span></span>
+<span><span class="co">#&gt; cor_species[5,1]  0.085 0.118 -0.037  0.207 1.000     4691     5654</span></span>
+<span><span class="co">#&gt; cor_species[6,1] -0.129 0.181 -0.318  0.059 1.001     3064     4557</span></span>
+<span><span class="co">#&gt; cor_species[7,1] -0.185 0.136 -0.328 -0.041 1.000     3437     5220</span></span>
+<span><span class="co">#&gt; cor_species[8,1] -0.284 0.240 -0.534 -0.039 1.000     1879     2738</span></span>
+<span><span class="co">#&gt; cor_species[1,2]  0.034 0.278 -0.259  0.322 1.002     1495     2747</span></span>
+<span><span class="co">#&gt; cor_species[2,2]  1.000 0.000  1.000  1.000 1.000     7975       NA</span></span>
+<span><span class="co">#&gt; cor_species[3,2]  0.023 0.268 -0.257  0.301 1.001     2060     3217</span></span>
+<span><span class="co">#&gt; cor_species[4,2] -0.259 0.290 -0.557  0.047 1.001     2158     2849</span></span>
+<span><span class="co">#&gt; cor_species[5,2]  0.084 0.265 -0.189  0.355 1.003     1162     2139</span></span>
+<span><span class="co">#&gt; cor_species[6,2] -0.011 0.279 -0.303  0.278 1.001     2477     3903</span></span>
+<span><span class="co">#&gt; cor_species[7,2]  0.126 0.274 -0.150  0.408 1.004     1287     1578</span></span>
+<span><span class="co">#&gt; cor_species[8,2]  0.014 0.292 -0.294  0.326 1.001     3450     4863</span></span>
+<span><span class="co">#&gt; cor_species[1,3]  0.010 0.174 -0.173  0.191 1.001     3276     4913</span></span>
+<span><span class="co">#&gt; cor_species[2,3]  0.023 0.268 -0.257  0.301 1.001     2060     3217</span></span>
+<span><span class="co">#&gt; cor_species[3,3]  1.000 0.000  1.000  1.000 1.001     7935       NA</span></span>
+<span><span class="co">#&gt; cor_species[4,3]  0.037 0.176 -0.149  0.226 1.000     4627     6310</span></span>
+<span><span class="co">#&gt; cor_species[5,3]  0.456 0.146  0.304  0.607 1.000     3544     5675</span></span>
+<span><span class="co">#&gt; cor_species[6,3]  0.479 0.180  0.292  0.668 1.001     4833     4769</span></span>
+<span><span class="co">#&gt; cor_species[7,3] -0.270 0.148 -0.424 -0.114 1.000     3859     5961</span></span>
+<span><span class="co">#&gt; cor_species[8,3]  0.295 0.218  0.070  0.521 1.000     3637     4568</span></span>
+<span><span class="co">#&gt; cor_species[1,4]  0.234 0.176  0.054  0.414 1.001     3019     3788</span></span>
+<span><span class="co">#&gt; cor_species[2,4] -0.259 0.290 -0.557  0.047 1.001     2158     2849</span></span>
+<span><span class="co">#&gt; cor_species[3,4]  0.037 0.176 -0.149  0.226 1.000     4627     6310</span></span>
+<span><span class="co">#&gt; cor_species[4,4]  1.000 0.000  1.000  1.000 1.000     7756     7888</span></span>
+<span><span class="co">#&gt; cor_species[5,4] -0.194 0.173 -0.372 -0.015 1.002     2764     5006</span></span>
+<span><span class="co">#&gt; cor_species[6,4] -0.125 0.194 -0.325  0.076 1.000     5454     6385</span></span>
+<span><span class="co">#&gt; cor_species[7,4] -0.192 0.162 -0.358 -0.021 1.001     3498     6225</span></span>
+<span><span class="co">#&gt; cor_species[8,4] -0.181 0.232 -0.419  0.061 1.001     4442     4348</span></span>
+<span><span class="co">#&gt; cor_species[1,5]  0.085 0.118 -0.037  0.207 1.000     4691     5654</span></span>
+<span><span class="co">#&gt; cor_species[2,5]  0.084 0.265 -0.189  0.355 1.003     1162     2139</span></span>
+<span><span class="co">#&gt; cor_species[3,5]  0.456 0.146  0.304  0.607 1.000     3544     5675</span></span>
+<span><span class="co">#&gt; cor_species[4,5] -0.194 0.173 -0.372 -0.015 1.002     2764     5006</span></span>
+<span><span class="co">#&gt; cor_species[5,5]  1.000 0.000  1.000  1.000 1.000     7799     7312</span></span>
+<span><span class="co">#&gt; cor_species[6,5]  0.210 0.177  0.030  0.394 1.001     3504     4861</span></span>
+<span><span class="co">#&gt; cor_species[7,5]  0.179 0.119  0.056  0.300 1.001     4646     5950</span></span>
+<span><span class="co">#&gt; cor_species[8,5]  0.225 0.218  0.000  0.452 1.001     2221     3270</span></span>
+<span><span class="co">#&gt; cor_species[1,6] -0.129 0.181 -0.318  0.059 1.001     3064     4557</span></span>
+<span><span class="co">#&gt; cor_species[2,6] -0.011 0.279 -0.303  0.278 1.001     2477     3903</span></span>
+<span><span class="co">#&gt; cor_species[3,6]  0.479 0.180  0.292  0.668 1.001     4833     4769</span></span>
+<span><span class="co">#&gt; cor_species[4,6] -0.125 0.194 -0.325  0.076 1.000     5454     6385</span></span>
+<span><span class="co">#&gt; cor_species[5,6]  0.210 0.177  0.030  0.394 1.001     3504     4861</span></span>
+<span><span class="co">#&gt; cor_species[6,6]  1.000 0.000  1.000  1.000 1.000     8022     7840</span></span>
+<span><span class="co">#&gt; cor_species[7,6] -0.388 0.175 -0.566 -0.212 1.002     3488     2981</span></span>
+<span><span class="co">#&gt; cor_species[8,6]  0.374 0.220  0.151  0.599 1.000     4011     3758</span></span>
+<span><span class="co">#&gt; cor_species[1,7] -0.185 0.136 -0.328 -0.041 1.000     3437     5220</span></span>
+<span><span class="co">#&gt; cor_species[2,7]  0.126 0.274 -0.150  0.408 1.004     1287     1578</span></span>
+<span><span class="co">#&gt; cor_species[3,7] -0.270 0.148 -0.424 -0.114 1.000     3859     5961</span></span>
+<span><span class="co">#&gt; cor_species[4,7] -0.192 0.162 -0.358 -0.021 1.001     3498     6225</span></span>
+<span><span class="co">#&gt; cor_species[5,7]  0.179 0.119  0.056  0.300 1.001     4646     5950</span></span>
+<span><span class="co">#&gt; cor_species[6,7] -0.388 0.175 -0.566 -0.212 1.002     3488     2981</span></span>
+<span><span class="co">#&gt; cor_species[7,7]  1.000 0.000  1.000  1.000 1.001     8148     8086</span></span>
+<span><span class="co">#&gt; cor_species[8,7]  0.006 0.230 -0.232  0.241 1.001     2518     3398</span></span>
+<span><span class="co">#&gt; cor_species[1,8] -0.284 0.240 -0.534 -0.039 1.000     1879     2738</span></span>
+<span><span class="co">#&gt; cor_species[2,8]  0.014 0.292 -0.294  0.326 1.001     3450     4863</span></span>
+<span><span class="co">#&gt; cor_species[3,8]  0.295 0.218  0.070  0.521 1.000     3637     4568</span></span>
+<span><span class="co">#&gt; cor_species[4,8] -0.181 0.232 -0.419  0.061 1.001     4442     4348</span></span>
+<span><span class="co">#&gt; cor_species[5,8]  0.225 0.218  0.000  0.452 1.001     2221     3270</span></span>
+<span><span class="co">#&gt; cor_species[6,8]  0.374 0.220  0.151  0.599 1.000     4011     3758</span></span>
+<span><span class="co">#&gt; cor_species[7,8]  0.006 0.230 -0.232  0.241 1.001     2518     3398</span></span>
+<span><span class="co">#&gt; cor_species[8,8]  1.000 0.000  1.000  1.000 1.000     7823     7886</span></span></code></pre></div>
 <p>To get a better overview of the R-hat and effective sample size we
 can use the <code>mcmc_plot</code> function to plot histograms of R-hat
 and ESS.</p>
@@ -426,30 +417,14 @@ function.</p>
 <span>                       prior <span class="op">=</span> <span class="fu"><a href="../reference/jsdm_prior.html">jsdm_prior</a></span><span class="op">(</span>sigma <span class="op">=</span> <span class="st">"student_t(3,0,1)"</span>,</span>
 <span>                                          sigmas_preds <span class="op">=</span> <span class="st">"student_t(3,0,1)"</span><span class="op">)</span>,</span>
 <span>                       refresh <span class="op">=</span> <span class="fl">0</span>, log_lik <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="co">#&gt; Trying to compile a simple C file</span></span>
-<span><span class="co">#&gt; Running /opt/R/4.4.1/lib/R/bin/R CMD SHLIB foo.c</span></span>
-<span><span class="co">#&gt; using C compiler: ‘gcc (Ubuntu 11.4.0-1ubuntu1~22.04) 11.4.0’</span></span>
-<span><span class="co">#&gt; gcc -I"/opt/R/4.4.1/lib/R/include" -DNDEBUG   -I"/home/runner/work/_temp/Library/Rcpp/include/"  -I"/home/runner/work/_temp/Library/RcppEigen/include/"  -I"/home/runner/work/_temp/Library/RcppEigen/include/unsupported"  -I"/home/runner/work/_temp/Library/BH/include" -I"/home/runner/work/_temp/Library/StanHeaders/include/src/"  -I"/home/runner/work/_temp/Library/StanHeaders/include/"  -I"/home/runner/work/_temp/Library/RcppParallel/include/"  -I"/home/runner/work/_temp/Library/rstan/include" -DEIGEN_NO_DEBUG  -DBOOST_DISABLE_ASSERTS  -DBOOST_PENDING_INTEGER_LOG2_HPP  -DSTAN_THREADS  -DUSE_STANC3 -DSTRICT_R_HEADERS  -DBOOST_PHOENIX_NO_VARIADIC_EXPRESSION  -D_HAS_AUTO_PTR_ETC=0  -include '/home/runner/work/_temp/Library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp'  -D_REENTRANT -DRCPP_PARALLEL_USE_TBB=1   -I/usr/local/include    -fpic  -g -O2  -c foo.c -o foo.o</span></span>
-<span><span class="co">#&gt; In file included from /home/runner/work/_temp/Library/RcppEigen/include/Eigen/Core:19,</span></span>
-<span><span class="co">#&gt;                  from /home/runner/work/_temp/Library/RcppEigen/include/Eigen/Dense:1,</span></span>
-<span><span class="co">#&gt;                  from /home/runner/work/_temp/Library/StanHeaders/include/stan/math/prim/fun/Eigen.hpp:22,</span></span>
-<span><span class="co">#&gt;                  from &lt;command-line&gt;:</span></span>
-<span><span class="co">#&gt; /home/runner/work/_temp/Library/RcppEigen/include/Eigen/src/Core/util/Macros.h:679:10: fatal error: cmath: No such file or directory</span></span>
-<span><span class="co">#&gt;   679 | #include &lt;cmath&gt;</span></span>
-<span><span class="co">#&gt;       |          ^~~~~~~</span></span>
-<span><span class="co">#&gt; compilation terminated.</span></span>
-<span><span class="co">#&gt; make: *** [/opt/R/4.4.1/lib/R/etc/Makeconf:195: foo.o] Error 1</span></span>
-<span><span class="co">#&gt; Warning: There were 726 divergent transitions after warmup. See</span></span>
+<span><span class="co">#&gt; Warning: There were 526 divergent transitions after warmup. See</span></span>
 <span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span></span>
 <span><span class="co">#&gt; to find out why this is a problem and how to eliminate them.</span></span>
-<span><span class="co">#&gt; Warning: There were 1963 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span></span>
+<span><span class="co">#&gt; Warning: There were 1596 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span></span>
 <span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded</span></span>
 <span><span class="co">#&gt; Warning: There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span></span>
 <span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#bfmi-low</span></span>
 <span><span class="co">#&gt; Warning: Examine the pairs() plot to diagnose sampling problems</span></span>
-<span><span class="co">#&gt; Warning: The largest R-hat is NA, indicating chains have not mixed.</span></span>
-<span><span class="co">#&gt; Running the chains for more iterations may help. See</span></span>
-<span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#r-hat</span></span>
 <span><span class="co">#&gt; Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span></span>
 <span><span class="co">#&gt; Running the chains for more iterations may help. See</span></span>
 <span><span class="co">#&gt; https://mc-stan.org/misc/warnings.html#bulk-ess</span></span>
@@ -467,34 +442,11 @@ function.</p>
 <span><span class="co">#&gt; Model run on 4 chains with 4000 iterations per chain (2000 warmup).</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Parameters with Rhat &gt; 1.01, or Neff/N &lt; 0.05:</span></span>
-<span><span class="co">#&gt;                 mean     sd      15%     85%  Rhat Bulk.ESS Tail.ESS</span></span>
-<span><span class="co">#&gt; z_preds[1,2]   0.260  0.558   -0.256   0.806 1.011      932     2200</span></span>
-<span><span class="co">#&gt; sigma[2]       0.129  0.074    0.054   0.209 1.045       70       45</span></span>
-<span><span class="co">#&gt; sigma[3]       0.627  0.246    0.354   0.861 1.044       71       70</span></span>
-<span><span class="co">#&gt; sigma[6]       0.583  0.322    0.200   0.942 1.077       43       31</span></span>
-<span><span class="co">#&gt; sigma[7]       2.567  0.373    2.207   2.940 1.045       66       21</span></span>
-<span><span class="co">#&gt; betas[1,2]     0.244  0.384   -0.137   0.642 1.012      677     1951</span></span>
-<span><span class="co">#&gt; LV[1,1]       -1.974  0.294   -2.259  -1.682 1.040       86       15</span></span>
-<span><span class="co">#&gt; LV[1,3]       -0.029  0.136   -0.169   0.115 1.012      526     1888</span></span>
-<span><span class="co">#&gt; LV[1,4]       -0.835  0.182   -1.022  -0.649 1.035      110       25</span></span>
-<span><span class="co">#&gt; LV[1,9]       -1.448  0.234   -1.672  -1.217 1.038       92       15</span></span>
-<span><span class="co">#&gt; LV[1,11]      -0.720  0.266   -1.006  -0.447 1.024      183     1124</span></span>
-<span><span class="co">#&gt; LV[1,12]      -0.466  0.145   -0.613  -0.323 1.028      131       46</span></span>
-<span><span class="co">#&gt; LV[1,14]      -0.960  0.252   -1.234  -0.704 1.020      234     1448</span></span>
-<span><span class="co">#&gt; LV[1,15]      -1.161  0.240   -1.405  -0.919 1.036      101       18</span></span>
-<span><span class="co">#&gt; LV[1,17]      -0.564  0.350   -0.947  -0.201 1.015      341     1272</span></span>
-<span><span class="co">#&gt; LV[1,18]       0.102  0.161   -0.054   0.271 1.011      564     1666</span></span>
-<span><span class="co">#&gt; LV[1,19]      -0.382  0.397   -0.772   0.026 1.010      414     1282</span></span>
-<span><span class="co">#&gt; LV[1,20]      -0.549  0.220   -0.792  -0.329 1.016      294     1320</span></span>
-<span><span class="co">#&gt; LV[1,23]      -1.638  0.257   -1.883  -1.385 1.042       82       15</span></span>
-<span><span class="co">#&gt; LV[1,26]      -2.733  0.376   -3.094  -2.358 1.039       94       15</span></span>
-<span><span class="co">#&gt; LV[1,28]      -0.100  0.131   -0.235   0.028 1.020      303     1828</span></span>
-<span><span class="co">#&gt; LV[1,29]      -1.071  0.321   -1.400  -0.746 1.012      494     1107</span></span>
-<span><span class="co">#&gt; LV[1,31]      -0.688  0.239   -0.953  -0.450 1.017      279     1670</span></span>
-<span><span class="co">#&gt; LV[1,32]       0.111  0.200   -0.082   0.321 1.012      476     1361</span></span>
-<span><span class="co">#&gt; LV[2,9]       -0.001  0.477   -0.487   0.529 1.013      327      508</span></span>
-<span><span class="co">#&gt; Lambda[1,1]    0.654  0.174    0.478   0.832 1.032       94       18</span></span>
-<span><span class="co">#&gt; lp__         -72.850 31.558 -102.769 -42.479 1.059       56       35</span></span></code></pre></div>
+<span><span class="co">#&gt;             mean     sd      15%     85%  Rhat Bulk.ESS Tail.ESS</span></span>
+<span><span class="co">#&gt; sigma[2]   0.133  0.077    0.058   0.215 1.047      129       43</span></span>
+<span><span class="co">#&gt; sigma[6]   0.567  0.316    0.200   0.927 1.015      195      131</span></span>
+<span><span class="co">#&gt; lp__     -74.967 29.697 -102.928 -45.776 1.047       84       61</span></span>
+<span><span class="co">#&gt; sigma[3]   0.656  0.234    0.400   0.875 1.006      460      271</span></span></code></pre></div>
 <p>Again, the diagnostic statistics seem reasonable:</p>
 <div class="sourceCode" id="cb19"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">gllvm_fit</span>, plotfun <span class="op">=</span> <span class="st">"rhat_hist"</span><span class="op">)</span></span>

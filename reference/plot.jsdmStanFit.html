@@ -9,7 +9,7 @@ the bayesplot::mcmc_combo()function from the bayesplot package."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">jsdmstan</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -144,7 +144,7 @@ hundreds in any reasonably sized model) set <code>pars = get_parnames(x)</code>.
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># \donttest{</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="cn">FALSE</span><span class="op">)</span> <span class="op">{</span> <span class="co"># \dontrun{</span></span></span>
 <span class="r-in"><span><span class="co"># First simulate data and get model fit:</span></span></span>
 <span class="r-in"><span><span class="va">mglmm_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="jsdm_sim_data.html">mglmm_sim_data</a></span><span class="op">(</span></span></span>
 <span class="r-in"><span>  N <span class="op">=</span> <span class="fl">100</span>, S <span class="op">=</span> <span class="fl">10</span>, K <span class="op">=</span> <span class="fl">3</span>,</span></span>
@@ -154,176 +154,16 @@ hundreds in any reasonably sized model) set <code>pars = get_parnames(x)</code>.
 <span class="r-in"><span>  Y <span class="op">=</span> <span class="va">mglmm_data</span><span class="op">$</span><span class="va">Y</span>, X <span class="op">=</span> <span class="va">mglmm_data</span><span class="op">$</span><span class="va">X</span>,</span></span>
 <span class="r-in"><span>  family <span class="op">=</span> <span class="st">"gaussian"</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Gradient evaluation took 0.000344 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 3.44 seconds.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Adjust your expectations accordingly!</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:    1 / 4000 [  0%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:  400 / 4000 [ 10%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration:  800 / 4000 [ 20%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1200 / 4000 [ 30%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 1600 / 4000 [ 40%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 2000 / 4000 [ 50%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 2001 / 4000 [ 50%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 2400 / 4000 [ 60%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 2800 / 4000 [ 70%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 3200 / 4000 [ 80%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 3600 / 4000 [ 90%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: Iteration: 4000 / 4000 [100%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:  Elapsed Time: 188.641 seconds (Warm-up)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                93.315 seconds (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1:                281.956 seconds (Total)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 1: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Gradient evaluation took 0.000242 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.42 seconds.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Adjust your expectations accordingly!</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:    1 / 4000 [  0%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:  400 / 4000 [ 10%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration:  800 / 4000 [ 20%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1200 / 4000 [ 30%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 1600 / 4000 [ 40%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 2000 / 4000 [ 50%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 2001 / 4000 [ 50%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 2400 / 4000 [ 60%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 2800 / 4000 [ 70%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 3200 / 4000 [ 80%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 3600 / 4000 [ 90%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: Iteration: 4000 / 4000 [100%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2:  Elapsed Time: 179.97 seconds (Warm-up)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2:                377.218 seconds (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2:                557.188 seconds (Total)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 2: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Gradient evaluation took 0.000221 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.21 seconds.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Adjust your expectations accordingly!</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:    1 / 4000 [  0%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:  400 / 4000 [ 10%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration:  800 / 4000 [ 20%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1200 / 4000 [ 30%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 1600 / 4000 [ 40%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 2000 / 4000 [ 50%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 2001 / 4000 [ 50%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 2400 / 4000 [ 60%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 2800 / 4000 [ 70%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 3200 / 4000 [ 80%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 3600 / 4000 [ 90%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: Iteration: 4000 / 4000 [100%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3:  Elapsed Time: 136.549 seconds (Warm-up)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3:                374.708 seconds (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3:                511.257 seconds (Total)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 3: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Gradient evaluation took 0.000235 seconds</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.35 seconds.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Adjust your expectations accordingly!</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:    1 / 4000 [  0%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:  400 / 4000 [ 10%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration:  800 / 4000 [ 20%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1200 / 4000 [ 30%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 1600 / 4000 [ 40%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 2000 / 4000 [ 50%]  (Warmup)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 2001 / 4000 [ 50%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 2400 / 4000 [ 60%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 2800 / 4000 [ 70%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 3200 / 4000 [ 80%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 3600 / 4000 [ 90%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: Iteration: 4000 / 4000 [100%]  (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4:  Elapsed Time: 105.892 seconds (Warm-up)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4:                90.765 seconds (Sampling)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4:                196.657 seconds (Total)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chain 4: </span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 149 divergent transitions after warmup. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#divergent-transitions-after-warmup</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> to find out why this is a problem and how to eliminate them.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 3993 transitions after warmup that exceeded the maximum treedepth. Increase max_treedepth above 10. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#maximum-treedepth-exceeded</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>There were 4 chains where the estimated Bayesian Fraction of Missing Information was low. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bfmi-low</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Examine the pairs() plot to diagnose sampling problems</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>The largest R-hat is NA, indicating chains have not mixed.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#r-hat</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#bulk-ess</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Tail Effective Samples Size (ESS) is too low, indicating posterior variances and tail quantiles may be unreliable.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> Running the chains for more iterations may help. See</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> https://mc-stan.org/misc/warnings.html#tail-ess</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># The default plot:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mglmm_fit</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-1.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-2.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-3.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-4.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-5.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-6.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Plotting specifically the cor_species parameters:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mglmm_fit</span>, pars <span class="op">=</span> <span class="st">"cor_species"</span>, regexp <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-7.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-8.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-9.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-10.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-11.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-12.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-13.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-14.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-15.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-16.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-17.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-18.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-19.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-20.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-21.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-22.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-23.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-24.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-25.png" alt="" width="700" height="433"></span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>collapsing to unique 'x' values</span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-26.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># Increasing the number of randomly sampled parameters to plot:</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">mglmm_fit</span>, sample_n <span class="op">=</span> <span class="fl">20</span><span class="op">)</span></span></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-27.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-28.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-29.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-30.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-31.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-32.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-33.png" alt="" width="700" height="433"></span>
-<span class="r-plt img"><img src="plot.jsdmStanFit-34.png" alt="" width="700" height="433"></span>
-<span class="r-in"><span><span class="co"># }</span></span></span>
+<span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
