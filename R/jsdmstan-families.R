@@ -56,13 +56,13 @@ print.jsdmStanFamily <- function(x, ...){
   cat(paste("Family:", x$family, "\n",
             ifelse(length(x$params)>0,
                    paste("With parameters:",
-                         paste0(x$params, sep = ", "),"\n"),
+                         paste0(x$params, collapse = ", "),"\n"),
                    "")))
   if(length(x$params_dataresp)>0){
     cat(paste("Family-specific parameter",
-              paste0(x$params_dataresp,sep=", "),
+              paste0(x$params_dataresp,collapse=", "),
               "is modelled in response to", length(x$preds),
               "predictors. These are named:",
-              paste0(x$preds, sep = ", ")))
+              paste0(x$preds, collapse = ", "),"\n"))
   }
 }
