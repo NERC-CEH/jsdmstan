@@ -2,8 +2,8 @@ pandoc: 3.1.11
 pkgdown: 2.1.1
 pkgdown_sha: ~
 articles:
-  jsdmstan-overview: jsdmstan-overview.html
-last_built: 2024-09-24T17:28Z
+  jsdmstan: jsdmstan.html
+last_built: 2024-09-25T16:35Z
 urls:
   reference: https://nerc-ceh.github.io/jsdmstan/reference
   article: https://nerc-ceh.github.io/jsdmstan/articles
