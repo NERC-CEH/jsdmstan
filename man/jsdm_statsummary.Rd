@@ -2,7 +2,8 @@
 % Please edit documentation in R/pp_check.R
 \name{jsdm_statsummary}
 \alias{jsdm_statsummary}
-\title{Extract summary statistics for a \code{jsdmStanFit} model}
+\title{Extract site- or species-level summary statistics for predictions from a
+\code{jsdmStanFit} model}
 \usage{
 jsdm_statsummary(
   object,

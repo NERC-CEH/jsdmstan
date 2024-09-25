@@ -160,7 +160,8 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
 }
 
 
-#' Extract summary statistics for a \code{jsdmStanFit} model
+#' Extract site- or species-level summary statistics for predictions from a
+#' \code{jsdmStanFit} model
 #'
 #' This function extracts the predicted Y values for within the models and then
 #' calculates summary statistics for each simulated community. The default is to sum

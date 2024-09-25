@@ -1,8 +1,8 @@
 ---
-title: "Overview"
+title: "Introduction to jsdmstan"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{Overview}
+  %\VignetteIndexEntry{Introduction to jsdmstan}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -63,18 +63,16 @@ Treating the species covariance as pulling from a set of latent variables greatl
 
 ## Relationship to environmental covariates
 
-The default approach in jsdmstan is to assume that the response of species to environmental covariates is constrained by a covariance matrix between the environmental covariates. This assumes that if one species is strongly positively related to multiple covariates then it is more likely that other species will either also be positively related to all these covariates, or negatively related. Mathematically this maybe corresponds to:
+Within jsdmstan the response of species to environmental covariates can either be unstructured (the default) or constrained by a covariance matrix between the environmental covariates. This second option (specified by setting `beta_param = "cor"`) assumes that if one species is strongly positively related to multiple covariates then it is more likely that other species will either also be positively related to all these covariates, or negatively related. Mathematically this corresponds to:
 
 $$\beta_j \sim \mathrm{N}(\mathbf{0},\mathbf{\Sigma})$$
 
-This default behaviour can be overridden through specifying the `beta_param` argument to `"unstruct"` if you want the betas to just draw from some distribution set through `jsdm_prior()`.
-
 # Fitting a MGLMM
 
-First we can use the in-built functions for simulating data according to the MGLMM model - we'll choose to simulate 15 species over 200 sites with 2 environmental covariates. The species are assumed to follow a Poisson distribution (with a log-link), and we use the defaults of including a species-specific intercept but no site-specific intercept. At the moment only default priors (standard normal distribution) are supported. We can do this using either the `jsdm_sim_data` function with `method = "mglmm"` or with the `mglmm_sim_data` function which just calls `jsdm_sim_data` in the background.
+First we can use the in-built functions for simulating data according to the MGLMM model - we'll choose to simulate 15 species over 200 sites with 2 environmental covariates. The species are assumed to follow a Poisson distribution (with a log-link), and we use the defaults of including a species-specific intercept but no site-specific intercept. At the moment only default priors (standard normal distribution) are supported. We can do this using either the `jsdm_sim_data()` function with `method = "mglmm"` or with the `mglmm_sim_data()` function which just calls `jsdm_sim_data()` in the background.
 
 ```{r}
-nsites <- 60
+nsites <- 75
 nspecies <- 8
 ncovar <- 2
 mglmm_test_data <- mglmm_sim_data(N = nsites, S = nspecies, 
@@ -88,7 +86,7 @@ names(mglmm_test_data)
 dat <- as.data.frame(mglmm_test_data$X)
 ```
 
-Now, to fit the model we can use the `stan_jsdm` function, which interfaces to Stan through the [rstan package](https://mc-stan.org/rstan/). There are two ways to supply data to the `stan_jsdm` function, one is to supply the data as a list with the appropriate named components (the `jsdm_sim_data` functions supply data in the correct format already) and the other is to specify the Y and X matrices directly, which is what we'll use here:
+Now, to fit the model we can use the `stan_jsdm()` function, which interfaces to Stan through the [rstan package](https://mc-stan.org/rstan/). There are multiple ways to supply data to the `stan_jsdm()` function, one is to supply the data as a list with the appropriate named components (the `jsdm_sim_data()` functions supply data in the correct format already), the second way is to specify the Y and X matrices directly, and the third way is to use a formula for the environmental covariates and supply the environmental data to the `data` argument, which is what we'll use here:
 
 ```{r}
 mglmm_fit <- stan_jsdm(~ V1 + V2, data = dat, Y = mglmm_test_data$Y, 
@@ -102,12 +100,12 @@ If we print the model object we will get a brief overview of the type of jSDM an
 mglmm_fit
 ```
 
-To get a summary of all the model parameters we can use `summary`, there are many parameters in these models so we just include a few here:
+To get a summary of all the model parameters we can use `summary()`, there are many parameters in these models so we just include a few here:
 ```{r}
 summary(mglmm_fit, pars = "cor_species")
 ```
 
-To get a better overview of the R-hat and effective sample size we can use the `mcmc_plot` function to plot histograms of R-hat and ESS.
+To get a better overview of the R-hat and effective sample size we can use the `mcmc_plot()` function to plot histograms of R-hat and ESS.
 
 ```{r}
 mcmc_plot(mglmm_fit, plotfun = "rhat_hist")
@@ -117,24 +115,24 @@ mcmc_plot(mglmm_fit, plotfun = "rhat_hist")
 mcmc_plot(mglmm_fit, plotfun = "neff_hist")
 ```
 
-We can also examine the output for each parameter visually using a traceplot combined with a density plot, which is given by the default `plot` command:
+We can also examine the output for each parameter visually using a traceplot combined with a density plot, which is given by the default `plot()` command:
 
 ```{r}
 plot(mglmm_fit, ask = FALSE)
 ```
 
-By default the `plot` command plots all of the parameters with sigma or kappa in their name plus a random selection of 20 other parameters, but this can be overridden by either specifying the parameters by name (with or without regular expression matching) or changing the number of parameters to be randomly sampled. Use the `get_parnames` function to get the names of parameters within a model - and the `jsdm_stancode` function can also be used to see the underlying structure of the model.
+By default the `plot()` command plots all of the parameters with sigma or kappa in their name plus a random selection of 20 other parameters, but this can be overridden by either specifying the parameters by name (with or without regular expression matching) or changing the number of parameters to be randomly sampled. Use the `get_parnames()` function to get the names of parameters within a model - and the `jsdm_stancode()` function can also be used to see the underlying structure of the model.
 
-All the mcmc plot types within bayesplot are supported by the `mcmc_plot` function, and to see a full list either use `bayesplot::available_mcmc` or run `mcmc_plot` with an incorrect type and the options will be printed.
+All the mcmc plot types within bayesplot are supported by the `mcmc_plot()` function, and to see a full list either use `bayesplot::available_mcmc()` or run `mcmc_plot()` with an incorrect type and the options will be printed.
 
-We can also view the environmental effect parameters for each species using the `envplot` function.
+We can also view the environmental effect parameters for each species using the `envplot()` function.
 
 ```{r}
 envplot(mglmm_fit)
 ```
 
 
-Posterior predictions can be extracted from the models using either `posterior_linpred` or `posterior_predict`, where the linpred function extracts the linear predictor for the community composition within each draw and the predict function combines this linear predictor extraction with a random generation based on the predicted probability for the family. Both functions by default return a list of length equal to the number of draws extracted, where each element of the list is a sites by species matrix. 
+Posterior predictions can be extracted from the models using either `posterior_linpred()` or `posterior_predict()`, where the linpred function extracts the linear predictor for the community composition within each draw and the predict function combines this linear predictor extraction with a random generation based on the predicted probability for the family. Both functions by default return a list of length equal to the number of draws extracted, where each element of the list is a sites by species matrix. 
 
 ```{r}
 mglmm_pp <- posterior_predict(mglmm_fit)
@@ -142,7 +140,7 @@ length(mglmm_pp)
 dim(mglmm_pp[[1]])
 ```
 
-As well as the MCMC plotting functions within bayesplot the ppc_ family of functions is also supported through the `pp_check` function. This family of functions provides a graphical way to check your posterior against the data used within the model to evaluate model fit - called a posterior retrodictive check (or posterior predictive historically and when the prior only has been sampled from). To use these you need to have set `save_data = TRUE` within the `stan_jsdm` call. Unlike in other packages by default `pp_check` for `jsdmStanFit` objects extracts the posterior predictions then calculates summary statistics over the rows and plots those summary statistics against the same for the original data. The default behaviour is to calculate the sum of all the species per site - i.e. total abundance. 
+As well as the MCMC plotting functions within bayesplot the ppc_ family of functions is also supported through the `pp_check()` function. This family of functions provides a graphical way to check your posterior against the data used within the model to evaluate model fit - called a posterior retrodictive check (or posterior predictive historically and when the prior only has been sampled from). To use these you need to have set `save_data = TRUE` within the `stan_jsdm()` call. Unlike in other packages by default `pp_check()` for `jsdmStanFit` objects extracts the posterior predictions then calculates summary statistics over the rows and plots those summary statistics against the same for the original data. The default behaviour is to calculate the sum of all the species per site - i.e. total abundance. 
 
 ```{r}
 pp_check(mglmm_fit)
@@ -155,7 +153,7 @@ pp_check(mglmm_fit, summary_stat = "mean", calc_over = "species",
          plotfun = "ecdf_overlay")
 ```
 
-We can examine the species-specific posterior predictive check through using `multi_pp_check`, or examine how well the relationships between specific species are recovered using `pp_check` with `plotfun = "pairs"`.
+We can examine the species-specific posterior predictive check through using `multi_pp_check()`, or examine how well the relationships between specific species are recovered using `pp_check()` with `plotfun = "pairs"`.
 
 As we have run the above model on simulated data and the original data list contains the parameters used to simulate the data we can use the `mcmc_recover_` functions from `bayesplot` to see how the model did:
 
@@ -176,25 +174,24 @@ mcmc_plot(mglmm_fit, plotfun = "recover_intervals",
 
 # Fitting a GLLVM
 
-The model fitting workflow for latent variable models is very similar to that above, with the addition of specifying the number of latent variables (D) in the data simulation and model fit. We will also specify a different prior from the default using the `jsdm_prior` function.
+The model fitting workflow for latent variable models is very similar to that above, with the addition of specifying the number of latent variables (D) in the data simulation and model fit. Here we change the family to a Bernoulli family (i.e. the special case of the binomial where the number of trials is 1 for all observations), make the covariate effects on each species draw from a correlation matrix such that information can be shared across species, and change the prior to be a Student's T prior on the predictor-specific sigma parameter. 
 
 ```{r}
 set.seed(3562251)
-gllvm_test_data <- gllvm_sim_data(N = 32, S = 7, D = 2, family = "gaussian",
-                                  prior = jsdm_prior(sigma = "student_t(3,0,1)",
-                                                     sigmas_preds = "student_t(3,0,1)"),
-                                  beta_param = "cor")
+gllvm_data <- gllvm_sim_data(N = 50, S = 12, D = 2, K = 1,
+                             family = "bernoulli",
+                             beta_param = "cor",
+                             prior = jsdm_prior(sigmas_preds = "student_t(3,0,1)"))
 ```
 
 
 ```{r}
-gllvm_fit <- stan_jsdm(Y = gllvm_test_data$Y, X = gllvm_test_data$X,
-                       D = gllvm_test_data$D,  
-                       family = "gaussian",
+gllvm_fit <- stan_jsdm(Y = gllvm_data$Y, X = gllvm_data$X,
+                       D = gllvm_data$D,  
+                       family = "bernoulli",
                        method = "gllvm", 
                        beta_param = "cor",
-                       prior = jsdm_prior(sigma = "student_t(3,0,1)",
-                                          sigmas_preds = "student_t(3,0,1)"),
+                       prior = jsdm_prior(sigmas_preds = "student_t(3,0,1)"),
                        refresh = 0, log_lik = FALSE)
 gllvm_fit
 ```
@@ -209,21 +206,21 @@ mcmc_plot(gllvm_fit, plotfun = "rhat_hist")
 mcmc_plot(gllvm_fit, plotfun = "neff_hist")
 ```
 
-For brevity's sake we will not go into the detail of the different functions again here, however there is one plotting function specifically for GLLVM models - `ordiplot`. This plots the species or sites scores against the latent variables from a random selection of draws:
+For brevity's sake we will not go into the detail of the different functions again here, however there is one plotting function specifically for GLLVM models - `ordiplot()`. This plots the species or sites scores against the latent variables from a random selection of draws:
 
 ```{r}
-ordiplot(gllvm_fit)
+ordiplot(gllvm_fit, errorbar_range = 0.5)
 ```
 
 ```{r}
-ordiplot(gllvm_fit, type = "sites", geom = "text", ndraws = 0) +
+ordiplot(gllvm_fit, type = "sites", geom = "text", errorbar_range = 0) +
   theme(legend.position = "none")
 ```
 
 You can change the latent variables selected by specifying the `choices` argument, and alter the number of draws or whether you want to plot species or sites with the other arguments.
 
 
-# Further Reading
+# References
 
 Warton et al (2015) So many variables: joint modeling in community ecology. Trends in Ecology & Evolution, 30:766-779. DOI: [10.1016/j.tree.2015.09.007](http:://doi.org/10.1016/j.tree.2015.09.007).
 

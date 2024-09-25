@@ -12,4 +12,61 @@ template:
     base_font: {google: "Montserrat"}
     heading_font: {google: "Montserrat"}
     code_font: {google: "Roboto Mono"}
-
+reference:
+- title: Simulate data
+  desc: Simulate data according to the jsdm model structures
+- contents:
+  - jsdm_sim_data
+  - sim_helpers
+- title: Model
+  desc: Run jsdmstan models
+- contents:
+  - stan_jsdm
+  - stan_gllvm
+  - stan_mglmm
+  - update.jsdmStanFit
+- title: Set-up functions
+  desc: >
+    Functions used to set up the prior structure (used in both data simulation
+    and model fitting) and the Stan code used within model fitting
+- contents:
+  - jsdm_stancode
+  - jsdm_prior
+- title: Summaries
+  desc: >
+    Extract useful quantities from the model objects. This includes overall
+    summaries of model parameters and model diagnostics.
+- contents:
+  - extract
+  - loo.jsdmStanFit
+  - jsdmstan-extractors
+  - loo
+  - print.jsdmStanFit
+  - summary.jsdmStanFit
+  - print.jsdmStanFamily
+- title: Graphical summaries
+  desc: >
+    Plots of various model parameters, including jSDM specific summary plots as
+    well as more general model summaries
+- contents:
+  - corrplot
+  - envplot
+  - ordiplot
+  - mcmc_plot.jsdmStanFit
+  - plot.jsdmStanFit
+- title: Posterior prediction
+  desc: >
+    Extract posterior distributions and predict from them, including graphical
+    posterior checks
+- contents:
+  - starts_with("posterior_")
+  - pp_check.jsdmStanFit
+  - multi_pp_check
+  - jsdm_statsummary
+- title: Other
+  desc: Objects and classes used within jsdmstan
+- contents:
+  - jsdmStanFit
+  - jsdmStanFamily
+  - jsdmstan-package
+  - has_keyword("datasets")
