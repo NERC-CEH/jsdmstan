@@ -465,7 +465,7 @@ jsdm_sim_data <- function(N, S, D = NULL, K = 0L, family, method = c("gllvm", "m
   }
   if (isTRUE(species_intercept)) {
     if (K > 0) {
-      x <- x[, 2:ncol(x)]
+      x <- x[, 2:ncol(x), drop = FALSE]
     } else {
       x <- NULL
     }
