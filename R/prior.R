@@ -61,6 +61,9 @@
 #' @param zi_betas For zero-inflated poisson or negative binomial with
 #'  environmental effects upon the zero-inflation, the covariate effects on the
 #'  zero-inflation on the logit scale
+#' @param shp_betas For gaussian or negative binomial with environmental effects
+#'  upon the family parameter (i.e. sigma or kappa), the covariate effects on the
+#'  family parameter on the log scale
 #'
 #' @return An object of class \code{"jsdmprior"} taking the form of a named list
 #' @export
@@ -85,7 +88,8 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        sigma = "normal(0,1)",
                        kappa = "normal(0,1)",
                        zi = "beta(1,1)",
-                       zi_betas = "normal(0,1)") {
+                       zi_betas = "normal(0,1)",
+                       shp_betas = "normal(0,1)") {
   res <- list(
     sigmas_preds = sigmas_preds, z_preds = z_preds, cor_preds = cor_preds,
     betas = betas,
@@ -94,7 +98,7 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
     cor_species = cor_species,
     LV = LV, L = L, sigma_L = sigma_L,
     sigma = sigma, kappa = kappa, zi = zi,
-    zi_betas = zi_betas
+    zi_betas = zi_betas, shp_betas = shp_betas
   )
   if (!(all(sapply(res, is.character)))) {
     stop("All arguments must be supplied as character vectors")
@@ -117,11 +121,11 @@ print.jsdmprior <- function(x, ...) {
       rep("site_intercept", 3),
       rep("mglmm", 3),
       rep("gllvm", 3),
-      "gaussian", "neg_binomial",rep("zero_inflation",2)
+      "gaussian", "neg_binomial",rep("zero_inflation",2), "family"
     ),
     Constraint = c(
       "lower=0", rep("none", 5), rep("lower=0", 2),
-      rep("none", 4), rep("lower=0", 3),"lower=0,upper=1","none"
+      rep("none", 4), rep("lower=0", 3),"lower=0,upper=1","none","none"
     ),
     Prior = unlist(unname(x))
   )

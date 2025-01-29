@@ -71,14 +71,35 @@
 #' @param beta_param The parameterisation of the environmental covariate effects, by
 #'   default \code{"unstruct"}. See details for further information.
 #'
+#' @param zi_formula For the zero-inflated families, the formula of any covariate
+#'   effect upon the zi parameter. Covariates are sourced from the \code{data}
+#'   argument. Only works if main effect is specified using formula argument.
+#'
 #' @param zi_param For the zero-inflated families, whether the zero-inflation parameter
 #'   is a species-specific constant (default, \code{"constant"}), or varies by
-#'   environmental covariates (\code{"covariate"}).
+#'   covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{zi_formula}
+#'   is specified.
 #'
-#' @param zi_X If \code{zi = "covariate"}, the matrix of environmental predictors
+#' @param zi_X If \code{zi_param = "covariate"}, the matrix of predictors
 #'   that the zero-inflation is modelled in response to. If there is not already
 #'   an intercept column (identified by all values being equal to one), one will
-#'   be added to the front of the matrix.
+#'   be added to the front of the matrix. Overridden by \code{zi_formula}
+#'   when formula approach is used.
+#'
+#' @param shp_formula For the families with shape parameters, the formula of any covariate
+#'   effect upon the shape parameter. Covariates are sourced from the \code{data}
+#'   argument. Only works if main effect is specified using formula argument.
+#'
+#' @param shp_param For the families with shape parameters, whether the shape parameter
+#'   is a species-specific constant (default, \code{"constant"}), or varies by
+#'   covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{shp_formula}
+#'   is specified.
+#'
+#' @param shp_X If \code{shp_param = "covariate"}, the matrix of predictors
+#'   that the shape parameter is modelled in response to. If there is not already
+#'   an intercept column (identified by all values being equal to one), one will
+#'   be added to the front of the matrix. Overridden by \code{shp_formula}
+#'   when formula approach is used.
 #'
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
@@ -121,12 +142,14 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               D = NULL, prior = jsdm_prior(), site_groups = NULL,
                               beta_param = "unstruct", Ntrials = NULL,
                               zi_param = "constant", zi_X = NULL,
+                              shp_param = "constant", shp_X = NULL,
                               save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial", "zi_poisson",
                                 "zi_neg_binomial"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
+  shp_param <- match.arg(shp_param, c("constant","covariate"))
   if(grepl("zi", family) & zi_param == "covariate"){
     if(is.null(zi_X) & is.null(dat_list)){
       message("If zi_param = 'covariate' and no zi_X matrix is supplied then the X matrix is used")
@@ -135,7 +158,19 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   } else{
     zi_X <- NULL
   }
-
+  if(shp_param == "covariate"){
+    if(is.null(shp_X) & is.null(dat_list)){
+      message("If shp_param = 'covariate' and no shp_X matrix is supplied then the X matrix is used")
+      shp_X <- X
+    }
+  } else if(!is.null(shp_X) | "shp_X" %in% names(dat_list)){
+    shp_param <- "covariate"
+  }
+  if(shp_param == "covariate" &
+     family %in% c("poisson","bernoulli","binomial","zi_poisson")){
+    stop(paste("Modelling the family parameter in response to data only works",
+               "for Gaussian and negative binomial families"))
+  }
 
   stopifnot(
     is.logical(species_intercept),
@@ -150,7 +185,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = dat_list,
     family = family, method = method, Ntrials = Ntrials,
-    zi_X = zi_X
+    shp_X = shp_X, zi_X = zi_X
   )
 
   # Create stancode
@@ -158,7 +193,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     family = family,
     method = method, prior = prior,
     log_lik = log_lik, site_intercept = site_intercept,
-    beta_param = beta_param, zi_param = zi_param
+    beta_param = beta_param, zi_param = zi_param, shp_param = shp_param
   )
 
   # Compile model
@@ -189,14 +224,39 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 
 #' @describeIn stan_jsdm Formula interface
 #' @export
-stan_jsdm.formula <- function(formula, data = list(), ...) {
+stan_jsdm.formula <- function(formula, data = list(),
+                              zi_formula = NULL, shp_formula = NULL, ...) {
   mf <- stats::model.frame(formula = formula, data = data)
   X <- stats::model.matrix(attr(mf, "terms"), data = mf)
   if (!is.null(stats::model.response(mf))) {
     warning("Response variable in formula is ignored")
   }
 
-  est <- stan_jsdm.default(X, species_intercept = FALSE, ...)
+  if(!is.null(shp_formula)){
+    fmf <- stats::model.frame(formula = shp_formula, data = data)
+    fX <- stats::model.matrix(attr(fmf, "terms"), data = fmf)
+    if (!is.null(stats::model.response(fmf))) {
+      warning("Response variable in formula for family parameter is ignored")
+    }
+    shp_param <- "covariate"
+  } else {
+    fX <- NULL
+    shp_param <- "constant"
+  }
+  if(!is.null(zi_formula)){
+    zmf <- stats::model.frame(formula = zi_formula, data = data)
+    zX <- stats::model.matrix(attr(zmf, "terms"), data = zmf)
+    if (!is.null(stats::model.response(zmf))) {
+      warning("Response variable in formula for zero-inflation parameter is ignored")
+    }
+    zi_param <- "covariate"
+  } else {
+    zX <- NULL
+    zi_param <- "constant"
+  }
+
+  est <- stan_jsdm.default(X, species_intercept = FALSE,
+                           shp_X = fX, zi_X = zX, ...)
   est$call <- match.call()
   est$formula <- formula
   est
@@ -257,7 +317,7 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept,
                           method, site_groups, Ntrials,
-                          zi_X) {
+                          zi_X, shp_X) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -305,6 +365,16 @@ validate_data <- function(Y, D, X, species_intercept,
       }
       zi_k <- ncol(zi_X)
     }
+    if(!is.null(shp_X)){
+      if(is.null(colnames(shp_X))){
+        message("No column names specified for shp_X, assigning names")
+        colnames(shp_X) <- paste0("V",seq_len(ncol(shp_X)))
+      }
+      if(!any(apply(shp_X, 2, function(x) all(x == 1)))){
+        shp_X <- cbind("(Intercept)" = 1, shp_X)
+      }
+      shp_k <- ncol(shp_X)
+    }
 
     if(site_intercept == "grouped"){
       if(length(site_groups) != N)
@@ -339,6 +409,14 @@ validate_data <- function(Y, D, X, species_intercept,
         stop("Number of rows of zi_X must be equal to number of rows of X")
       }
     }
+    if(!is.null(shp_X)){
+      data_list$shp_k <- shp_k
+      data_list$shp_X <- shp_X
+
+      if(nrow(shp_X) != N){
+        stop("Number of rows of shp_X must be equal to number of rows of X")
+      }
+    }
   } else {
     if (!all(c("Y", "K", "S", "N", "X") %in% names(dat_list))) {
       stop("If supplying data as a list must have entries Y, K, S, N, X")
@@ -367,8 +445,10 @@ validate_data <- function(Y, D, X, species_intercept,
     }
 
     if (isTRUE(species_intercept)) {
-      dat_list$X <- cbind(matrix(1, nrow = dat_list$N, ncol = 1), dat_list$X)
-      colnames(dat_list$X)[1] <- "(Intercept)"
+      if(!("(Intercept)" %in% colnames(dat_list$X))){
+        dat_list$X <- cbind(matrix(1, nrow = dat_list$N, ncol = 1), dat_list$X)
+        colnames(dat_list$X)[1] <- "(Intercept)"
+      }
     }
 
     data_list <- dat_list
@@ -468,14 +548,38 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
                               "zi_poisson" = "zi",
                               "zi_neg_binomial" = c("kappa","zi")),
               params_dataresp= character(),
-              preds = character(),
+              preds = list(),
               data_list = list())
   class(fam) <- "jsdmStanFamily"
-  if(isTRUE(save_data) & ("zi_X" %in% names(data_list))){
+  if(("zi_X" %in% names(data_list)) & ("shp_X" %in% names(data_list))){
+    fam$params_dataresp <- c("zi","kappa")
+    fam$preds <- list(zi = colnames(data_list$zi_X),
+                      kappa = colnames(data_list$shp_X))
+    if(isTRUE(save_data)){
+      fam$data_list <- list(zi_X = data_list$zi_X,
+                            shp_X = data_list$shp_X)
+    }
+  } else if("zi_X" %in% names(data_list)){
     fam$params_dataresp <- "zi"
-    fam$preds <- colnames(data_list$zi_X)
-    fam$data_list <- list(zi_X = data_list$zi_X)
+    fam$preds <- list(zi = colnames(data_list$zi_X))
+    if(isTRUE(save_data)){
+      fam$data_list <- list(zi_X = data_list$zi_X)
+    }
+  } else if("shp_X" %in% names(data_list)){
+    fam$params_dataresp <- switch(family,
+                                  "gaussian" = "sigma",
+                                  "neg_binomial" = "kappa",
+                                  "zi_neg_binomial" = "kappa")
+    fam$preds <- list(colnames(data_list$shp_X))
+    names(fam$preds) <- switch(family,
+                               "gaussian" = "sigma",
+                               "neg_binomial" = "kappa",
+                               "zi_neg_binomial" = "kappa")
+    if(isTRUE(save_data)){
+      fam$data_list <- list(shp_X = data_list$shp_X)
+    }
   }
+
 
   model_output <- list(
     fit = model_fit,

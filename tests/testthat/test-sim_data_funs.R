@@ -10,7 +10,7 @@ test_that("gllvm_sim_data errors with bad inputs", {
 
   expect_error(
     gllvm_sim_data(N = "a", S = 10, D = 2, family = "pois"),
-    "N and S must be positive integers"
+    "N must be a positive integer"
   )
 
   expect_error(
@@ -56,7 +56,7 @@ test_that("mglmm_sim_data errors with bad inputs", {
 
   expect_error(
     mglmm_sim_data(N = "a", S = 10, family = "neg_bin"),
-    "N and S must be positive integers"
+    "N must be a positive integer"
   )
   expect_error(
     mglmm_sim_data(N = 200, S = 5, family = "gaussian",
@@ -88,13 +88,15 @@ test_that("mglmm_sim_data returns a list of correct length", {
   expect_named(mglmm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X"
   ))
-  gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "binomial", method = "gllvm",
+  gllvm_sim <- jsdm_sim_data(N = 100, S = 12,D = 2,
+                             family = "binomial", method = "gllvm",
                              Ntrials = 19)
   expect_named(gllvm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X", "Ntrials"
   ))
   expect_length(gllvm_sim$Ntrials, 100)
-  gllvm_sim <- jsdm_sim_data(100,12,D=2,family = "zi_neg_binomial", method = "gllvm",
+  gllvm_sim <- jsdm_sim_data(N = 100,S = 12,D=2,
+                             family = "zi_neg_binomial", method = "gllvm",
                              zi_param = "covariate")
   expect_named(gllvm_sim, c(
     "Y", "pars", "N", "S", "D", "K", "X", "zi_k", "zi_X"

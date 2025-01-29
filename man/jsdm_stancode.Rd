@@ -12,7 +12,8 @@ jsdm_stancode(
   log_lik = TRUE,
   site_intercept = "none",
   beta_param = "cor",
-  zi_param = "constant"
+  zi_param = "constant",
+  shp_param = "constant"
 )
 
 \method{print}{jsdmstan_model}(x, ...)
@@ -40,6 +41,10 @@ grouping)}
 default \code{"cor"}. See details for further information.}
 
 \item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
+
+\item{shp_param}{For the families with shape parameters, whether the shape parameter
 is a species-specific constant (default, \code{"constant"}), or varies by
 environmental covariates (\code{"covariate"}).}
 

@@ -13,6 +13,7 @@
   list_index = "draws",
   Ntrials = NULL,
   include_zi = TRUE,
+  include_shp = TRUE,
   ...
 )
 }
@@ -34,8 +35,12 @@ draws (default), species, or site.}
 a single integer which is assumed to be constant across sites or as a site-length
 vector of integers.}
 
-\item{include_zi}{For the zero-inflated poisson distribution, whether to include
+\item{include_zi}{For the zero-inflated distributions, whether to include
 the zero-inflation in the prediction. Defaults to \code{TRUE}.}
+
+\item{include_shp}{For the distributions where the shape parameter is responsive
+to environmental predictors, whether to include this effect in the prediction.
+Defaults to \code{TRUE}.}
 
 \item{...}{Currently unused}
 }

@@ -417,7 +417,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     } else if (inherits(summary_stat, "function")) {
       stat_fun <- summary_stat
     } else if(is.null(summary_stat) & !is.null(errorbar_range)){
-      stat_fun <- median
+      stat_fun <- stats::median
     }
 
     ord_scores_summary <- reshape2::melt(model_est_copy[[1]],
@@ -440,7 +440,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     ord_scores_summary_forerrorbar[, "LV"] <- paste0("LV", ord_scores_summary_forerrorbar[, "LV"])
     ord_scores_summary_forerrorbar$S <- as.factor(ord_scores_summary_forerrorbar$S)
     ord_scores_summary_forerrorbar <- stats::aggregate(value ~ S + LV, ord_scores_summary_forerrorbar,
-                                                       function(x) quantile(x, prob = c(errorbar_min, errorbar_max)))
+                                                       function(x) stats::quantile(x, prob = c(errorbar_min, errorbar_max)))
     ord_scores_summary_forerrorbar$min <- ord_scores_summary_forerrorbar$value[,1]
     ord_scores_summary_forerrorbar$max <- ord_scores_summary_forerrorbar$value[,2]
     ord_scores_summary_forerrorbar <- ord_scores_summary_forerrorbar[,c("S","LV","min","max")]

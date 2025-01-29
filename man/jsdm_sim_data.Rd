@@ -7,8 +7,8 @@
 \title{Generate simulated data within a variety of jSDM methodologies}
 \usage{
 jsdm_sim_data(
-  N,
   S,
+  N = NULL,
   D = NULL,
   K = 0L,
   family,
@@ -19,7 +19,12 @@ jsdm_sim_data(
   beta_param = "unstruct",
   zi_param = "constant",
   zi_k = NULL,
-  prior = jsdm_prior()
+  shp_param = "constant",
+  shp_k = NULL,
+  prior = jsdm_prior(),
+  X = NULL,
+  zi_X = NULL,
+  shp_X = NULL
 )
 
 gllvm_sim_data(...)
@@ -27,9 +32,9 @@ gllvm_sim_data(...)
 mglmm_sim_data(...)
 }
 \arguments{
-\item{N}{is number of sites}
-
 \item{S}{is number of species}
+
+\item{N}{is number of sites}
 
 \item{D}{is number of latent variables, used within gllvm method}
 
@@ -37,9 +42,8 @@ mglmm_sim_data(...)
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-\code{"bernoulli"}, \code{"zi_poisson"}, or
-\code{"zi_neg_binomial"}. Regular expression
-matching is supported.}
+\code{"bernoulli"}, \code{"zi_poisson"}, or \code{"zi_neg_binomial"}.
+Regular expression matching is supported.}
 
 \item{method}{is the jSDM method to use, currently either \code{"gllvm"} or
 \code{"mglmm"} - see details for more information.}
@@ -59,18 +63,42 @@ supported currently.}
 \item{beta_param}{The parameterisation of the environmental covariate
 effects, by default \code{"unstruct"}. See details for further information.}
 
-\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
-is a species-specific constant (default, \code{"constant"}), or varies by
-environmental covariates (\code{"covariate"}).}
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation
+parameter is a species-specific constant (default, \code{"constant"}), or
+varies by environmental covariates (\code{"covariate"}).}
 
-\item{zi_k}{If \code{zi="covariate"}, the number of environmental covariates
-that the zero-inflation parameter responds to. The default (\code{NULL}) is
-that the zero-inflation parameter responds to exactly the same covariate matrix
+\item{zi_k}{If \code{zi_param="covariate"}, the number of environmental
+covariates that the zero-inflation parameter responds to. The default
+(\code{NULL}) is that the zero-inflation parameter responds to exactly the
+same covariate matrix as the mean parameter. Otherwise, a different set of
+random environmental covariates are generated, plus an intercept (not
+included in zi_k) and used to predict zero-inflation. Will be ignored if
+zi_X is supplied.}
+
+\item{shp_param}{For families with shape parameters, whether the shape
+parameter is a species-specific constant (default, \code{"constant"}), or
+varies by environmental covariates (\code{"covariate"}).}
+
+\item{shp_k}{If \code{shp_param="covariate"}, the number of environmental
+covariates that the shape parameter responds to. The default (\code{NULL})
+is that the shape parameter responds to exactly the same covariate matrix
 as the mean parameter. Otherwise, a different set of random environmental
-covariates are generated, plus an intercept (not included in zi_k) and used
-to predict zero-inflation}
+covariates are generated and used to predict the shape parameter. Will be
+ignored if shp_X is supplied.}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
+
+\item{X}{The X matrix to be used to simulate data, by default \code{NULL} -
+i.e. the X matrix is simulated using a random draw from a standard normal
+distribution.}
+
+\item{zi_X}{The zi_X matrix to be used to simulate data, by default \code{NULL} -
+i.e. the zi_X matrix is simulated using a random draw from a standard normal
+distribution.}
+
+\item{shp_X}{The shp_X matrix to be used to simulate data, by default \code{NULL} -
+i.e. the shp_X matrix is simulated using a random draw from a standard normal
+distribution.}
 
 \item{...}{Arguments passed to jsdm_sim_data}
 }

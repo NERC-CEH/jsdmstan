@@ -59,10 +59,15 @@ print.jsdmStanFamily <- function(x, ...){
                          paste0(x$params, collapse = ", "),"\n"),
                    "")))
   if(length(x$params_dataresp)>0){
-    cat(paste("Family-specific parameter",
-              paste0(x$params_dataresp,collapse=", "),
-              "is modelled in response to", length(x$preds),
+    pd_list <- lapply(seq_along(x$params_dataresp), function(i){
+      paste("Family-specific parameter",
+              paste0(x$params_dataresp[i],collapse=", "),
+              "is modelled in response to", length(x$preds[[i]]),
               "predictors. These are named:",
-              paste0(x$preds, collapse = ", "),"\n"))
+              paste0(x$preds[[i]], collapse = ", "),"\n")
+    }
+    )
+    cat(unlist(pd_list))
+
   }
 }

@@ -22,7 +22,8 @@ jsdm_prior(
   sigma = "normal(0,1)",
   kappa = "normal(0,1)",
   zi = "beta(1,1)",
-  zi_betas = "normal(0,1)"
+  zi_betas = "normal(0,1)",
+  shp_betas = "normal(0,1)"
 )
 
 \method{print}{jsdmprior}(x, ...)
@@ -79,6 +80,10 @@ set to 1).}
 \item{zi_betas}{For zero-inflated poisson or negative binomial with
 environmental effects upon the zero-inflation, the covariate effects on the
 zero-inflation on the logit scale}
+
+\item{shp_betas}{For gaussian or negative binomial with environmental effects
+upon the family parameter (i.e. sigma or kappa), the covariate effects on the
+family parameter on the log scale}
 
 \item{x}{Object of class \code{jsdmprior}}
 

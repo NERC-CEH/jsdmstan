@@ -23,13 +23,15 @@ stan_jsdm(X, ...)
   Ntrials = NULL,
   zi_param = "constant",
   zi_X = NULL,
+  shp_param = "constant",
+  shp_X = NULL,
   save_data = TRUE,
   iter = 4000,
   log_lik = TRUE,
   ...
 )
 
-\method{stan_jsdm}{formula}(formula, data = list(), ...)
+\method{stan_jsdm}{formula}(formula, data = list(), zi_formula = NULL, shp_formula = NULL, ...)
 }
 \arguments{
 \item{X}{The covariates matrix, with rows being site and columns being covariates.
@@ -75,12 +77,25 @@ a site-length vector of integers.}
 
 \item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
 is a species-specific constant (default, \code{"constant"}), or varies by
-environmental covariates (\code{"covariate"}).}
+covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{zi_formula}
+is specified.}
 
-\item{zi_X}{If \code{zi = "covariate"}, the matrix of environmental predictors
+\item{zi_X}{If \code{zi_param = "covariate"}, the matrix of predictors
 that the zero-inflation is modelled in response to. If there is not already
 an intercept column (identified by all values being equal to one), one will
-be added to the front of the matrix.}
+be added to the front of the matrix. Overridden by \code{zi_formula}
+when formula approach is used.}
+
+\item{shp_param}{For the families with shape parameters, whether the shape parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{shp_formula}
+is specified.}
+
+\item{shp_X}{If \code{shp_param = "covariate"}, the matrix of predictors
+that the shape parameter is modelled in response to. If there is not already
+an intercept column (identified by all values being equal to one), one will
+be added to the front of the matrix. Overridden by \code{shp_formula}
+when formula approach is used.}
 
 \item{save_data}{If the data used to fit the model should be saved in the model
 object, by default TRUE.}
@@ -94,6 +109,14 @@ quantities (by default TRUE), required for loo}
 \item{formula}{The formula of covariates that the species means are modelled from}
 
 \item{data}{Dataframe or list of covariates.}
+
+\item{zi_formula}{For the zero-inflated families, the formula of any covariate
+effect upon the zi parameter. Covariates are sourced from the \code{data}
+argument. Only works if main effect is specified using formula argument.}
+
+\item{shp_formula}{For the families with shape parameters, the formula of any covariate
+effect upon the shape parameter. Covariates are sourced from the \code{data}
+argument. Only works if main effect is specified using formula argument.}
 }
 \value{
 A \code{jsdmStanFit} object, comprising a list including the StanFit
