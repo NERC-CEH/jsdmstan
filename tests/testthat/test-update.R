@@ -87,3 +87,29 @@ test_that("zi models update", {
   expect_equal(ncol(gllvm_fit2$data_list$zi_X),3)
   expect_s3_class(gllvm_fit2, "jsdmStanFit")
 })
+
+
+zinb_data <- gllvm_sim_data(N = 97, S = 9,D = 2, family = "zi_neg_binomial",
+                           shp_param = "covariate", shp_k = 1)
+
+test_that("shp models update", {
+  suppressWarnings(gllvm_fit <- stan_gllvm(dat_list = zinb_data,
+                                           family = "zi_neg_binomial",
+                                           refresh = 0, chains = 1, iter = 200
+  ))
+  expect_s3_class(gllvm_fit, "jsdmStanFit")
+
+  expect_error(gllvm_fit2 <- update(gllvm_fit, newD = 3,
+                                    newShp_X = matrix(1:74, nrow = 74),
+                                    refresh = 0, chains = 1, iter = 200
+  ), "Number of rows of shp_X")
+
+
+  expect_message(suppressWarnings(
+    gllvm_fit2 <- update(gllvm_fit, newD = 3,
+                         newShp_X = matrix(rnorm(194), nrow = 97),
+                         refresh = 0, chains = 1, iter = 200
+    )), "No column names")
+  expect_equal(ncol(gllvm_fit2$data_list$shp_X),3)
+  expect_s3_class(gllvm_fit2, "jsdmStanFit")
+})

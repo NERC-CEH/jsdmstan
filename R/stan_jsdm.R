@@ -256,7 +256,8 @@ stan_jsdm.formula <- function(formula, data = list(),
   }
 
   est <- stan_jsdm.default(X, species_intercept = FALSE,
-                           shp_X = fX, zi_X = zX, ...)
+                           shp_X = fX, zi_X = zX,
+                           shp_param = shp_param, zi_param = zi_param, ...)
   est$call <- match.call()
   est$formula <- formula
   est

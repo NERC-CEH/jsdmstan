@@ -198,3 +198,42 @@ test_that("posterior_(lin)pred works with gllvm and zinb", {
   expect_false(any(sapply(zinb_pred2, anyNA)))
   expect_false(any(sapply(zinb_pred2, function(x) x < 0)))
 })
+
+
+
+test_that("zi_neg_bin print works okay", {
+  expect_output(print(zinb_fit$family),
+                "is modelled in response to")
+})
+
+test_that("posterior_(lin)pred works with gllvm and gaussian shp", {
+  set.seed(8801454)
+  expect_message(
+    gauss_sim_data <- gllvm_sim_data(N = 100, S = 7, K = 2,D=1, family = "gaussian",
+                                     shp_param = "covariate",
+                                     shp_X = matrix(sample(0:2,100,replace = TRUE),ncol=1)),
+    "no column names")
+  gauss_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
+  colnames(gauss_pred_data) <- c("V1", "V2")
+  gauss_pred_shp_data <- matrix(sample(0:1,100,replace = TRUE), nrow = 100)
+  colnames(gauss_pred_shp_data) <- c("V1")
+
+  suppressWarnings(gauss_fit <- stan_gllvm(
+    dat_list = gauss_sim_data, family = "gaussian",shp_param="covariate",
+    refresh = 0, chains = 2, iter = 500
+  ))
+
+  gauss_pred <- posterior_predict(gauss_fit, ndraws = 100)
+
+  expect_length(gauss_pred, 100)
+  expect_false(any(sapply(gauss_pred, anyNA)))
+
+  gauss_pred2 <- posterior_predict(gauss_fit,
+                                   newdata = gauss_pred_data,
+                                   shp_newdata = gauss_pred_shp_data,
+                                   ndraws = 50, list_index = "species"
+  )
+
+  expect_length(gauss_pred2, 7)
+  expect_false(any(sapply(gauss_pred2, anyNA)))
+})

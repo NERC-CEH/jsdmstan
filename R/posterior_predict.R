@@ -164,6 +164,14 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'  to environmental predictors, whether to include this effect in the prediction.
 #'  Defaults to \code{TRUE}.
 #'
+#'@param zi_newdata For the zero-inflated distributions, the data used to fit any
+#'  parameter effect upon the zi parameter. Defaults to \code{NULL} and uses
+#'  original data.
+#'
+#'@param shp_newdata For the distributions where the shape parameter is responsive
+#'  to environmental predictors, any updated data for this effect in the prediction.
+#'  Defaults to \code{NULL} and uses original data.
+#'
 #'@return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'  the list will have length equal to the number of draws with each element of the
 #'  list being a site x species matrix. If the list_index is \code{"species"} the
@@ -183,7 +191,9 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           list_index = "draws",
                                           Ntrials = NULL,
                                           include_zi = TRUE,
-                                          include_shp = TRUE,...) {
+                                          include_shp = TRUE,
+                                          zi_newdata = NULL,
+                                          shp_newdata = NULL, ...) {
   transform <- ifelse(object$family$family == "gaussian", FALSE, TRUE)
   if (!is.null(ndraws) & !is.null(draw_ids)) {
     message("Both ndraws and draw_ids have been specified, ignoring ndraws")
@@ -208,8 +218,11 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                         isTRUE(include_shp),
                       TRUE, FALSE)
   if(isTRUE(shp_param)){
+    if(isTRUE(all.equal(object$data_list$X,object$data_list$shp_X)) & is.null(shp_newdata)){
+      shp_newdata <- newdata
+    }
     post_shppred <- posterior_shppred(object,
-                                      newdata = newdata,
+                                      newdata = shp_newdata,
                                       draw_ids = draw_id,
                                       transform = transform, list_index = "draws"
     )
@@ -232,8 +245,11 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
   }
 
   if("zi" %in% object$family$params_dataresp & isTRUE(include_zi)){
+    if(isTRUE(all.equal(object$data_list$X,object$data_list$zi_X)) & is.null(zi_newdata)){
+      zi_newdata <- newdata
+    }
     post_zipred <- posterior_zipred(object,
-                                     newdata = newdata,
+                                     newdata = zi_newdata,
                                      draw_ids = draw_id,
                                      transform = transform, list_index = "draws"
     )
@@ -482,8 +498,7 @@ validate_newdata <- function(newdata, preds) {
       "Model has column names:", paste0(preds_nointercept), "\n"
     ))
   }
-
-  newdata <- newdata[, preds_nointercept]
+  newdata <- newdata[, preds_nointercept, drop = FALSE]
   if ("(Intercept)" %in% preds) {
     newdata <- cbind("(Intercept)" = 1, newdata)
     newdata <- newdata[, preds]

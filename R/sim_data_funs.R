@@ -178,6 +178,9 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
     if(!is.matrix(zi_X)){
       stop("zi_X must be a matrix")
     }
+    if(nrow(zi_X) != N){
+      stop("zi_X must have N rows")
+    }
     zi_k <- ncol(zi_X)
     ZI_K <- zi_k
     if(is.null(colnames(zi_X))){
@@ -202,6 +205,9 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   } else{
     if(!is.matrix(shp_X)){
       stop("shp_X must be a matrix")
+    }
+    if(nrow(shp_X) != N){
+      stop("shp_X must have N rows")
     }
     shp_k <- ncol(shp_X)
     SHP_K <- shp_k

@@ -14,6 +14,8 @@
   Ntrials = NULL,
   include_zi = TRUE,
   include_shp = TRUE,
+  zi_newdata = NULL,
+  shp_newdata = NULL,
   ...
 )
 }
@@ -41,6 +43,14 @@ the zero-inflation in the prediction. Defaults to \code{TRUE}.}
 \item{include_shp}{For the distributions where the shape parameter is responsive
 to environmental predictors, whether to include this effect in the prediction.
 Defaults to \code{TRUE}.}
+
+\item{zi_newdata}{For the zero-inflated distributions, the data used to fit any
+parameter effect upon the zi parameter. Defaults to \code{NULL} and uses
+original data.}
+
+\item{shp_newdata}{For the distributions where the shape parameter is responsive
+to environmental predictors, any updated data for this effect in the prediction.
+Defaults to \code{NULL} and uses original data.}
 
 \item{...}{Currently unused}
 }
