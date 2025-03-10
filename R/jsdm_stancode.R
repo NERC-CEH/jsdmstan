@@ -155,7 +155,7 @@ ifelse(shp_param == "covariate","
   // species covariances
   vector<lower=0>[S] sigmas_species;
   matrix[S, N] z_species;
-  corr_matrix[S] cor_species;"
+  cholesky_factor_corr[S] cor_species_chol;"
   gllvm_pars <- "
   // Factor parameters
   vector[M] L; // Non-zero factor loadings
@@ -223,7 +223,9 @@ ifelse(shp_param == "covariate","
   }
   ",
     "mglmm" = "
+  matrix[S, S] cor_species;
   matrix[N, S] u;
+  cor_species = multiply_lower_tri_self_transpose(cor_species_chol);
   u = (diag_pre_multiply(sigmas_species, cor_species) * z_species)';
   "
   ), if(beta_param == "cor") {"
@@ -341,7 +343,7 @@ ifelse(shp_param == "covariate","
   // Species parameter priors
   sigmas_species ~ ", prior[["sigmas_species"]], ";
   to_vector(z_species) ~ ", prior[["z_species"]], ";
-  cor_species ~ ", prior[["cor_species"]], ";
+  cor_species_chol ~ ", prior[["cor_species_chol"]], ";
 ")
     ),
     switch(family,

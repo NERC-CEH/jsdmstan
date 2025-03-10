@@ -16,6 +16,7 @@ jsdm_prior(
   sigmas_species = "normal(0,1)",
   z_species = "normal(0,1)",
   cor_species = "lkj_corr(1)",
+  cor_species_chol = "lkj_corr_cholesky(1)",
   LV = "normal(0,1)",
   L = "normal(0,1)",
   sigma_L = "normal(0,1)",
@@ -29,61 +30,67 @@ jsdm_prior(
 \method{print}{jsdmprior}(x, ...)
 }
 \arguments{
-\item{sigmas_preds}{The standard deviation of the covariate effects, constrained
-to be positive (default standard normal)}
+\item{sigmas_preds}{The standard deviation of the covariate effects,
+constrained to be positive (default standard normal)}
 
 \item{z_preds}{The covariate effects (default standard normal)}
 
-\item{cor_preds}{The correlation matrix on the covariate effects (npred by npred
-correlation matrix) (default
-\code{"lkj_corr(1)"})}
+\item{cor_preds}{The correlation matrix on the covariate effects (npred by
+npred correlation matrix) (default \code{"lkj_corr(1)"})}
 
-\item{betas}{If covariate effects are unstructured, the prior on the covariate
-effects}
+\item{betas}{If covariate effects are unstructured, the prior on the
+covariate effects}
 
 \item{a}{The site level intercepts (default standard normal)}
 
 \item{a_bar}{The mean site level intercept}
 
-\item{sigma_a}{The standard deviation of the site level intercepts, constrained to
-be positive and default prior is half standard normal}
+\item{sigma_a}{The standard deviation of the site level intercepts,
+constrained to be positive and default prior is half standard normal}
 
-\item{sigmas_species}{For MGLMM method, the standard deviations of the species
-covariances, constrained to be positive (default half standard normal)}
+\item{sigmas_species}{For MGLMM method, the standard deviations of the
+species covariances, constrained to be positive (default half standard
+normal)}
 
-\item{z_species}{For MGLMM method, the S by N matrix of species covariance by site
-(default standard normal)}
+\item{z_species}{For MGLMM method, the S by N matrix of species covariance by
+site (default standard normal)}
 
-\item{cor_species}{For MGLMM method, the correlation between species represented
-as a nspecies by nspecies correlation matrix (default \code{"lkj_corr(1)"})}
+\item{cor_species}{For MGLMM method (data simulation only), the correlation
+between species as the nspecies by nspecies correlation matrix (default
+\code{"lkj_corr(1)"})}
+
+\item{cor_species_chol}{For MGLMM method (model fit only), the correlation
+between species represented as a Cholesky decomposition of the nspecies by
+nspecies correlation matrix (default \code{"lkj_corr_cholesky(1)"}). Note
+that lkj_corr_cholesky(eta) is the cholesky decomposition of lkj_corr(eta)}
 
 \item{LV}{For GLLVM method, the per site latent variable loadings (default
 standard normal)}
 
-\item{L}{For GLLVM method, the non-zero species latent variable loadings (default
-standard normal)}
+\item{L}{For GLLVM method, the non-zero species latent variable loadings
+(default standard normal)}
 
-\item{sigma_L}{For GLLVM method, the variance of the species loadings, constrained
-to be positive (default standard normal)}
+\item{sigma_L}{For GLLVM method, the variance of the species loadings,
+constrained to be positive (default standard normal)}
 
-\item{sigma}{For Gaussian response, the standard deviation parameter. Constrained
-to be positive (default standard normal)}
+\item{sigma}{For Gaussian response, the standard deviation parameter.
+Constrained to be positive (default standard normal)}
 
 \item{kappa}{For negative binomial response, the negative binomial variance
 parameter. Constrained to be positive (default standard normal)}
 
-\item{zi}{For zero-inflated poisson or negative binomial with no environmental
-covariate effects upon the zero-inflation, the proportion of
-inflated zeros (default beta distribution with both alpha and beta parameters
-set to 1).}
+\item{zi}{For zero-inflated poisson or negative binomial with no
+environmental covariate effects upon the zero-inflation, the proportion of
+inflated zeros (default beta distribution with both alpha and beta
+parameters set to 1).}
 
 \item{zi_betas}{For zero-inflated poisson or negative binomial with
 environmental effects upon the zero-inflation, the covariate effects on the
 zero-inflation on the logit scale}
 
 \item{shp_betas}{For gaussian or negative binomial with environmental effects
-upon the family parameter (i.e. sigma or kappa), the covariate effects on the
-family parameter on the log scale}
+upon the family parameter (i.e. sigma or kappa), the covariate effects on
+the family parameter on the log scale}
 
 \item{x}{Object of class \code{jsdmprior}}
 
@@ -93,26 +100,27 @@ family parameter on the log scale}
 An object of class \code{"jsdmprior"} taking the form of a named list
 }
 \description{
-This function creates all of the potential priors used within a \code{jsdmstan}
-model and can be used as the input to all \code{\link[=stan_jsdm]{stan_jsdm()}} family of functions and
-the \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} functions.
+This function creates all of the potential priors used within a
+\code{jsdmstan} model and can be used as the input to all \code{\link[=stan_jsdm]{stan_jsdm()}}
+family of functions and the \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} functions.
 }
 \details{
 Each prior has to be specified as a character string corresponding to the
-appropriate stan command. The most common versions of these are supported by the
-simulated data functions, however there are functions that can be fed to the stan
-fitting procedure that will not be able to be used as input for \code{\link[=jsdm_sim_data]{jsdm_sim_data()}}.
-Parameters \code{sigmas_preds}, \code{sigma_a}, \code{sigmas_species},
-\code{sigma_L}, \code{sigma}, and \code{kappa} are fixed to be positive only in
-the stan code and this cannot be changed. Parameters \code{cor_preds} and
-\code{cor_species} are assumed to be the Cholesky factor of a correlation matrix.
-All other parameters are real numbers. For all parameters that represent vectors
-or matrices the prior has to be the same across the entire vector or matrix (note
-that for the species latent variable loadings in a GLLVM model the prior is set on
-the non-zero matrix components \code{L} and not on the entire matrix).
+appropriate stan command. The most common versions of these are supported by
+the simulated data functions, however there are functions that can be fed to
+the stan fitting procedure that will not be able to be used as input for
+\code{\link[=jsdm_sim_data]{jsdm_sim_data()}}. Parameters \code{sigmas_preds}, \code{sigma_a},
+\code{sigmas_species}, \code{sigma_L}, \code{sigma}, and \code{kappa} are
+fixed to be positive only in the stan code and this cannot be changed.
+Parameters \code{cor_preds} and \code{cor_species} are assumed to be the
+Cholesky factor of a correlation matrix. All other parameters are real
+numbers. For all parameters that represent vectors or matrices the prior has
+to be the same across the entire vector or matrix (note that for the species
+latent variable loadings in a GLLVM model the prior is set on the non-zero
+matrix components \code{L} and not on the entire matrix).
 
-Prior distributions supported by \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} are \code{"normal(mean, sd)"},
-\code{"student_t(df, mu, sigma)"}, \code{"cauchy(location, scale)"},
+Prior distributions supported by \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} are \code{"normal(mean,
+sd)"}, \code{"student_t(df, mu, sigma)"}, \code{"cauchy(location, scale)"},
 \code{"gamma(shape, scale)"}, \code{"inv_gamma(shape, scale)"} and
 \code{"lkj_corr_cholesky(eta)"}.
 }
@@ -127,6 +135,6 @@ pr
 
 }
 \seealso{
-\link{sim_helpers} for a description of the parameterisations used within the
-data simulation functions
+\link{sim_helpers} for a description of the parameterisations used within
+the data simulation functions
 }

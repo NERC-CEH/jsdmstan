@@ -11,7 +11,7 @@
   species = NULL,
   sites = NULL,
   summary_stat = "sum",
-  calc_over = "site",
+  calc_over = "sites",
   ndraws = NULL,
   ...
 )
@@ -35,7 +35,7 @@ one draw of the posterior prediction.}
 \item{summary_stat}{The summary statistic to be used, by default \code{sum} but
 any function can be used.}
 
-\item{calc_over}{Whether to calculate the summary statistic by site or species, by
+\item{calc_over}{Whether to calculate the summary statistic by sites or species, by
 default \code{species}}
 
 \item{ndraws}{Number of draws, by default the number of samples in the

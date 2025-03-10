@@ -61,8 +61,8 @@
 #' @export
 pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NULL,
                                  sites = NULL, summary_stat = "sum",
-                                 calc_over = "site", ndraws = NULL, ...) {
-  calc_over <- match.arg(calc_over, c("site", "species"))
+                                 calc_over = "sites", ndraws = NULL, ...) {
+  calc_over <- match.arg(calc_over, c("sites", "species"))
   if(plotfun == "pairs"){
     plot_args <- list(...)
     plot_args$object <- object
@@ -130,7 +130,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
     y <- apply(
       object$data_list$Y[st, sp, drop = FALSE],
       switch(calc_over,
-             "site" = 1,
+             "sites" = 1,
              "species" = 2
       ),
       stat_fun
@@ -175,7 +175,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
 #' @param post_type The type of posterior prediction to be used, either
 #'   \code{"linpred"} for [posterior_linpred.jsdmStanFit()] or \code{"predict"} for
 #'   [posterior_predict.jsdmStanFit()]
-#' @param calc_over Whether to calculate the summary statistic by site or species, by
+#' @param calc_over Whether to calculate the summary statistic by sites or species, by
 #'   default \code{species}
 #' @param simplify Whether to simplify the output into a matrix, by default
 #'   \code{TRUE}
@@ -186,7 +186,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
 #' @param ... Arguments passed to the posterior prediction function
 #'
 #' @return If \code{simplify = TRUE} then a matrix where each row is a draw and each
-#'   column is either a site (if \code{calc_over = "site"}) or a species (if
+#'   column is either a site (if \code{calc_over = "sites"}) or a species (if
 #'   \code{calc_over = "species"}).
 #'
 #' @seealso pp_check.jsdmStanFit
@@ -214,7 +214,7 @@ pp_check.jsdmStanFit <- function(object, plotfun = "dens_overlay", species = NUL
 #' @export
 jsdm_statsummary <- function(object, species = NULL, sites = NULL,
                              summary_stat = "sum", post_type = "linpred",
-                             calc_over = "site", simplify = TRUE,
+                             calc_over = "sites", simplify = TRUE,
                              draw_ids = NULL, ndraws = NULL,
                              ...) {
   if (!inherits(object, "jsdmStanFit")) {
@@ -227,7 +227,7 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
   st <- get_stsp$sites
   sp <- get_stsp$species
 
-  calc_over <- match.arg(calc_over, c("site", "species"))
+  calc_over <- match.arg(calc_over, c("sites", "species"))
   post_type <- match.arg(post_type, c("linpred", "predict"))
 
   post_fun <- get(paste0("posterior_", post_type), asNamespace("jsdmstan"))
@@ -257,7 +257,7 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
   # calculate summary statistic over sites:
   res <- lapply(post_res, function(x) {
     apply(x, switch(calc_over,
-                    "site" = 1,
+                    "sites" = 1,
                     "species" = 2
     ), stat_fun)
   })
