@@ -59,6 +59,30 @@ test_that("envplot errors when expected", {
     envplot(test_fit),
     "This beta parameterisation currently unsupported"
   )
+  expect_error(
+    envplot(test_fit, species = list()),
+    "character or integer vector"
+  )
+  expect_error(
+    envplot(test_fit, preds = matrix()),
+    "character or integer vector"
+  )
+  expect_error(
+    envplot(test_fit, species = c(1,5,8)),
+    "corresponds to the species indices"
+  )
+  expect_error(
+    envplot(test_fit, preds = c(1.2,0,8)),
+    "corresponds to the predictor indices"
+  )
+  expect_error(
+    envplot(test_fit, species = c("eight","bottles")),
+    "must only include"
+  )
+  expect_error(
+    envplot(test_fit, preds = c("eight","bottles")),
+    "must only include"
+  )
 })
 
 test_that("corrplot errors when expected", {
