@@ -19,8 +19,6 @@
 #'    \code{"zi_neg_binomial"}. Regular expression
 #'   matching is supported.
 #' @param prior The prior, given as the result of a call to [jsdm_prior()]
-#' @param log_lik Whether the log likelihood should be calculated in the generated
-#'   quantities (by default \code{TRUE}), required for loo
 #' @param site_intercept Whether a site intercept should be included, potential
 #'   values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
 #'   with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
@@ -42,7 +40,7 @@
 #' jsdm_stancode(family = "poisson", method = "mglmm")
 #'
 jsdm_stancode <- function(method, family, prior = jsdm_prior(),
-                          log_lik = TRUE, site_intercept = "none",
+                          site_intercept = "none",
                           beta_param = "cor", zi_param = "constant",
                           shp_param = "constant") {
   # checks
@@ -65,7 +63,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   # data processing steps
   scode <- .modelcode(
     method = method, family = family,
-    phylo = FALSE, prior = prior, log_lik = log_lik, site_intercept = site_intercept,
+    phylo = FALSE, prior = prior, site_intercept = site_intercept,
     beta_param = beta_param, zi_param = zi_param, shp_param = shp_param
   )
   class(scode) <- c("jsdmstan_model", "character")
@@ -73,7 +71,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 }
 
 
-.modelcode <- function(method, family, phylo, prior, log_lik, site_intercept,
+.modelcode <- function(method, family, phylo, prior, site_intercept,
                        beta_param, zi_param, shp_param) {
   model_functions <- "
 "
@@ -436,10 +434,6 @@ ifelse(shp_param == "covariate","
   }
  # generated quantities ####
   generated_quantities <- paste(
-    ifelse(isTRUE(log_lik), "
-  // Calculate linear predictor, y_rep, log likelihoods for LOO
-  matrix[N, S] log_lik;
-  ", ""),
     ifelse(method == "gllvm", "
   // Sign correct factor loadings and factors
   matrix[D, N] LV;
@@ -452,90 +446,7 @@ ifelse(shp_param == "covariate","
       Lambda[,d] = Lambda_uncor[,d];
       LV[d,] = LV_uncor[d,];
     }
-  }", ""), ifelse(isTRUE(log_lik), paste(
-      "
-  {
-    matrix[N, S] linpred;",ifelse(grepl("zi", family) & zi_param == "covariate","
-    matrix[N,S] zi = zi_X * zi_betas;",""),
-      ifelse(shp_param == "covariate",paste("
-    matrix[N,S]", switch(family, "gaussian" = "sigma",
-    "neg_binomial" = "kappa",
-    "zi_neg_binomial" = "kappa"),  "= exp(shp_X * shp_betas);"),""),
-    switch(site_intercept, "ungrouped" = paste("
-    linpred = rep_matrix(a_bar + a * sigma_a, S) + (X * betas) +",
-    switch(method,
-           "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
-           "mglmm" = "u"
-    ), ";
-    "), "none" = paste("
-    linpred = (X * betas) +",
-    switch(method,
-           "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
-           "mglmm" = "u"
-      ), ";
-    "), "grouped" = paste("
-  matrix[N, S] alpha;
-  for (n in 1:N){
-    alpha[n,] = rep_row_vector(a[grps[n]],S);
-  }
-  linpred = alpha + (X * betas) +",
-  switch(method,
-         "gllvm" = "((Lambda_uncor * sigma_L) * LV_uncor)'",
-         "mglmm" = "u"
-  ), ";
-    ")),"
-      for(i in 1:N) {
-      for(j in 1:S) {",
-      switch(family,
-        "gaussian" = "log_lik[i, j] = normal_lpdf(Y[i, j] | linpred[i, j], sigma[j]);",
-        "bernoulli" = "log_lik[i, j] = bernoulli_logit_lpmf(Y[i, j] | linpred[i, j]);",
-        "neg_binomial" = "log_lik[i, j] = neg_binomial_2_log_lpmf(Y[i, j] | linpred[i, j], kappa[j]);",
-        "poisson" = "log_lik[i, j] = poisson_log_lpmf(Y[i, j] | linpred[i, j]);",
-        "binomial" = "log_lik[i, j] = binomial_logit_lpmf(Y[i, j] | Ntrials[i], linpred[i, j]);",
-        "zi_poisson" = switch(zi_param,"constant" = "if (Y[i,j] == 0){
-          log_lik[i, j] = log_sum_exp(bernoulli_lpmf(1 | zi[j]),
-                          bernoulli_lpmf(0 |zi[j])
-                          + poisson_log_lpmf(Y[i,j] | linpred[i,j]));
-            } else {
-              log_lik[i, j] = bernoulli_lpmf(0 | zi[j])
-              + poisson_log_lpmf(Y[i,j] | linpred[i,j]);
-            }",
-                              "covariate" = "if (Y[i,j] == 0){
-          log_lik[i, j] = log_sum_exp(bernoulli_logit_lpmf(1 | zi[i,j]),
-                          bernoulli_logit_lpmf(0 |zi[i,j])
-                          + poisson_log_lpmf(Y[i,j] | linpred[i,j]));
-            } else {
-              log_lik[i, j] = bernoulli_logit_lpmf(0 | zi[i,j])
-              + poisson_log_lpmf(Y[i,j] | linpred[i,j]);
-            }"),
-        "zi_neg_binomial" = switch(zi_param,"constant" = paste0("if (Y[i,j] == 0){
-          log_lik[i, j] = log_sum_exp(bernoulli_lpmf(1 | zi[j]),
-                          bernoulli_lpmf(0 |zi[j])
-                          + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j],",
-                          switch(shp_param, "constant" = "kappa[j]));",
-                                 "covariate" = "kappa[,j]));"),"
-            } else {
-              log_lik[i, j] = bernoulli_lpmf(0 | zi[j])
-              + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j], kappa[j]);
-            }"),
-                                   "covariate" = paste0("if (Y[i,j] == 0){
-          log_lik[i, j] = log_sum_exp(bernoulli_logit_lpmf(1 | zi[i,j]),
-                          bernoulli_logit_lpmf(0 |zi[i,j])
-                          + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j],",
-                          switch(shp_param, "constant" = "kappa[j]));",
-                                 "covariate" = "kappa[,j]));"),"
-            } else {
-              log_lik[i, j] = bernoulli_logit_lpmf(0 | zi[i,j])
-              + neg_binomial_2_log_lpmf(Y[i,j] | linpred[i,j],",
-                          switch(shp_param, "constant" = "kappa[j]);",
-                                 "covariate" = "kappa[,j]);"),"
-            }"))
-      ),"
-      }
-    }
-  }
-  "
-    ), "")
+  }", "")
   )
 
   res <- paste(

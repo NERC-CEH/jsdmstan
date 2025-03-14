@@ -9,7 +9,6 @@ jsdm_stancode(
   method,
   family,
   prior = jsdm_prior(),
-  log_lik = TRUE,
   site_intercept = "none",
   beta_param = "cor",
   zi_param = "constant",
@@ -28,9 +27,6 @@ jsdm_stancode(
 matching is supported.}
 
 \item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
-
-\item{log_lik}{Whether the log likelihood should be calculated in the generated
-quantities (by default \code{TRUE}), required for loo}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
 values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept

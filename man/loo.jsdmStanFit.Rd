@@ -5,10 +5,17 @@
 \alias{loo}
 \title{Efficient approximate leave-one-out cross-validation using the \pkg{loo} package}
 \usage{
-\method{loo}{jsdmStanFit}(x, ...)
+\method{loo}{jsdmStanFit}(x, calc_reff = TRUE, cores = getOption("mc.cores", 1), ...)
 }
 \arguments{
 \item{x}{The jsdmStanFit model object}
+
+\item{calc_reff}{Whether to calculate the relative efficiencies for loo, by
+default \code{TRUE}. If set to \code{FALSE} then relative efficiency is
+assumed to be 1.}
+
+\item{cores}{The number of cores the loo functions use, by default uses the
+mc.cores option (or 1, if unspecified).}
 
 \item{...}{Other arguments passed to the \code{\link[loo]{loo}} function}
 }

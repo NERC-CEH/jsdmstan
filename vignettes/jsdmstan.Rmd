@@ -90,8 +90,7 @@ Now, to fit the model we can use the `stan_jsdm()` function, which interfaces to
 
 ```{r}
 mglmm_fit <- stan_jsdm(~ V1 + V2, data = dat, Y = mglmm_test_data$Y, 
-                       family = "pois", method = "mglmm", refresh = 0,
-                       log_lik = FALSE)
+                       family = "pois", method = "mglmm", refresh = 0)
 ```
 
 If we print the model object we will get a brief overview of the type of jSDM and the data, plus if there are any parameters with Rhat > 1.01 or effective sample size ratio (Neff/N) < 0.05 then they will be printed:
@@ -192,7 +191,7 @@ gllvm_fit <- stan_jsdm(Y = gllvm_data$Y, X = gllvm_data$X,
                        method = "gllvm", 
                        beta_param = "cor",
                        prior = jsdm_prior(sigmas_preds = "student_t(3,0,1)"),
-                       refresh = 0, log_lik = FALSE)
+                       refresh = 0)
 gllvm_fit
 ```
 

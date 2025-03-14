@@ -27,11 +27,18 @@ stan_jsdm(X, ...)
   shp_X = NULL,
   save_data = TRUE,
   iter = 4000,
-  log_lik = TRUE,
   ...
 )
 
-\method{stan_jsdm}{formula}(formula, data = list(), zi_formula = NULL, shp_formula = NULL, ...)
+\method{stan_jsdm}{formula}(
+  formula,
+  data = list(),
+  zi_formula = NULL,
+  shp_formula = NULL,
+  zi_param = "constant",
+  shp_param = "constant",
+  ...
+)
 }
 \arguments{
 \item{X}{The covariates matrix, with rows being site and columns being covariates.
@@ -102,9 +109,6 @@ object, by default TRUE.}
 
 \item{iter}{A positive integer specifying the number of iterations for each chain,
 default 4000.}
-
-\item{log_lik}{Whether the log likelihood should be calculated in the generated
-quantities (by default TRUE), required for loo}
 
 \item{formula}{The formula of covariates that the species means are modelled from}
 

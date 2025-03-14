@@ -65,9 +65,6 @@
 #' @param iter A positive integer specifying the number of iterations for each chain,
 #'   default 4000.
 #'
-#' @param log_lik Whether the log likelihood should be calculated in the generated
-#'   quantities (by default TRUE), required for loo
-#'
 #' @param beta_param The parameterisation of the environmental covariate effects, by
 #'   default \code{"unstruct"}. See details for further information.
 #'
@@ -143,7 +140,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               beta_param = "unstruct", Ntrials = NULL,
                               zi_param = "constant", zi_X = NULL,
                               shp_param = "constant", shp_X = NULL,
-                              save_data = TRUE, iter = 4000, log_lik = TRUE, ...) {
+                              save_data = TRUE, iter = 4000, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial", "zi_poisson",
                                 "zi_neg_binomial"))
@@ -192,7 +189,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   model_code <- jsdm_stancode(
     family = family,
     method = method, prior = prior,
-    log_lik = log_lik, site_intercept = site_intercept,
+    site_intercept = site_intercept,
     beta_param = beta_param, zi_param = zi_param, shp_param = shp_param
   )
 
@@ -206,7 +203,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   model_args$object <- model_comp
   model_args$data <- data_list
   model_args$iter <- iter
-  model_args$pars <- if (method == "gllvm") c("L", "LV_uncor", "Lambda_uncor") else NA
+  model_args$pars <- if (method == "gllvm") c("L","LV_uncor", "Lambda_uncor") else NA
   model_args$include <- ifelse(method == "gllvm", FALSE, TRUE)
 
   # Fit model
@@ -225,7 +222,9 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 #' @describeIn stan_jsdm Formula interface
 #' @export
 stan_jsdm.formula <- function(formula, data = list(),
-                              zi_formula = NULL, shp_formula = NULL, ...) {
+                              zi_formula = NULL, shp_formula = NULL,
+                              zi_param = "constant",
+                              shp_param = "constant", ...) {
   mf <- stats::model.frame(formula = formula, data = data)
   X <- stats::model.matrix(attr(mf, "terms"), data = mf)
   if (!is.null(stats::model.response(mf))) {
@@ -240,8 +239,16 @@ stan_jsdm.formula <- function(formula, data = list(),
     }
     shp_param <- "covariate"
   } else {
-    fX <- NULL
-    shp_param <- "constant"
+      if(shp_param == "covariate"){
+        fmf <- stats::model.frame(formula = formula, data = data)
+        fX <- stats::model.matrix(attr(fmf, "terms"), data = fmf)
+        if (!is.null(stats::model.response(fmf))) {
+          warning("Response variable in formula for family parameter is ignored")
+        }
+      } else{
+        fX <- NULL
+        shp_param <- "constant"
+      }
   }
   if(!is.null(zi_formula)){
     zmf <- stats::model.frame(formula = zi_formula, data = data)
@@ -251,8 +258,16 @@ stan_jsdm.formula <- function(formula, data = list(),
     }
     zi_param <- "covariate"
   } else {
-    zX <- NULL
-    zi_param <- "constant"
+    if(zi_param == "covariate"){
+      zmf <- stats::model.frame(formula = formula, data = data)
+      zX <- stats::model.matrix(attr(zmf, "terms"), data = zmf)
+      if (!is.null(stats::model.response(zmf))) {
+        warning("Response variable in formula for zero-inflation parameter is ignored")
+      }
+    } else{
+      zX <- NULL
+      zi_param <- "constant"
+    }
   }
 
   est <- stan_jsdm.default(X, species_intercept = FALSE,
