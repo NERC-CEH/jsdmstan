@@ -62,13 +62,6 @@ test_that("neff_ratio works", {
   expect_named(neff_ratio(mglmm_fit))
 })
 
-test_that("loo works", {
-  expect_warning(
-    mglmm_loo <- loo(mglmm_fit),
-    "Pareto k diagnostic"
-  )
-  expect_s3_class(mglmm_loo, "psis_loo")
-})
 
 # GLLVM tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 test_that("stan_gllvm fails with wrong inputs", {

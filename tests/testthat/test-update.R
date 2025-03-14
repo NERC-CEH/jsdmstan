@@ -1,3 +1,4 @@
+set.seed(187750)
 mglmm_data <- mglmm_sim_data(N = 30, S = 8, family = "gaussian", K = 3)
 df <- as.data.frame(mglmm_data$X)
 

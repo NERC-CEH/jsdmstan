@@ -111,6 +111,12 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
+  if(!is.null(zi_X)){
+    zi_param <- "covariate"
+  }
+  if(!is.null(shp_X)){
+    shp_param <- "covariate"
+  }
 
   if(missing(method)){
     stop("method argument needs to be specified")

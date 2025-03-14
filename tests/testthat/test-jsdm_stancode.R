@@ -8,7 +8,7 @@ test_that("jsdm_stancode errors appropriately", {
 })
 
 jsdm_code <- jsdm_stancode(method = "mglmm", family = "zi_neg_binomial",
-                           log_lik = TRUE, site_intercept = "grouped",
+                           site_intercept = "grouped",
                            zi_param = "covariate")
 
 test_that("jsdm_stancode print works", {

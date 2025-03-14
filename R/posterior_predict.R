@@ -195,6 +195,7 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           zi_newdata = NULL,
                                           shp_newdata = NULL, ...) {
   transform <- ifelse(object$family$family == "gaussian", FALSE, TRUE)
+  list_index <- match.arg(list_index, c("draws", "species", "sites"))
   if (!is.null(ndraws) & !is.null(draw_ids)) {
     message("Both ndraws and draw_ids have been specified, ignoring ndraws")
   }
