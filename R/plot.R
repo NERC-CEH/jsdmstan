@@ -579,13 +579,13 @@ envplot <- function(object, include_intercept = FALSE,
   pn <- get_parnames(object)
   # sort out species order
   beta_sind <- match(species, object$species)
-  species <- species[order(species, beta_sind)]
+  species <- species[order(beta_sind, species)]
   if(any(grepl("betas", pn))){
     pl_list <- lapply(preds, function(x){
       beta_pind <- match(x, object$preds)
       suppressMessages(
         pl <- mcmc_plot(object, plotfun = plotfun,
-                pars = paste0("betas\\[",beta_pind,",",beta_sind), regexp = TRUE, ...) +
+                pars = paste0("betas[",beta_pind,",",beta_sind,"]"), ...) +
           ggplot2::scale_y_discrete(labels = species) +
           ggplot2::labs(x = x)
       )
