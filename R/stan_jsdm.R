@@ -98,6 +98,9 @@
 #'   be added to the front of the matrix. Overridden by \code{shp_formula}
 #'   when formula approach is used.
 #'
+#' @param init Initialisation values for the sampling, see [rstan::sampling()].
+#'   If unspecified and \code{method = "mglmm"} then set to \code{"0"}.
+#'
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
 #' @return A \code{jsdmStanFit} object, comprising a list including the StanFit
@@ -140,21 +143,24 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               beta_param = "unstruct", Ntrials = NULL,
                               zi_param = "constant", zi_X = NULL,
                               shp_param = "constant", shp_X = NULL,
-                              save_data = TRUE, iter = 4000, ...) {
+                              save_data = TRUE, iter = 4000, init = NULL, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial", "zi_poisson",
                                 "zi_neg_binomial"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
-  if(grepl("zi", family) & zi_param == "covariate"){
-    if(is.null(zi_X) & is.null(dat_list)){
-      message("If zi_param = 'covariate' and no zi_X matrix is supplied then the X matrix is used")
-      zi_X <- X
-    }
-  } else{
-    zi_X <- NULL
-  }
+  if(grepl("zi", family)){
+    if(zi_param == "covariate"){
+      if(is.null(zi_X) & is.null(dat_list)){
+        message("If zi_param = 'covariate' and no zi_X matrix is supplied then the X matrix is used")
+        zi_X <- X
+      }
+    } else if(!is.null(zi_X) | "zi_X" %in% names(dat_list)){
+      zi_param <- "covariate"
+    } else{
+      zi_X <- NULL
+  }}
   if(shp_param == "covariate"){
     if(is.null(shp_X) & is.null(dat_list)){
       message("If shp_param = 'covariate' and no shp_X matrix is supplied then the X matrix is used")
@@ -205,6 +211,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   model_args$iter <- iter
   model_args$pars <- if (method == "gllvm") c("L","LV_uncor", "Lambda_uncor") else NA
   model_args$include <- ifelse(method == "gllvm", FALSE, TRUE)
+  if(is.null(init) & method == "mglmm")
+    model_args$init <- "0"
 
   # Fit model
   model_fit <- do.call(rstan::sampling, model_args)

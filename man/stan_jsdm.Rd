@@ -27,6 +27,7 @@ stan_jsdm(X, ...)
   shp_X = NULL,
   save_data = TRUE,
   iter = 4000,
+  init = NULL,
   ...
 )
 
@@ -109,6 +110,9 @@ object, by default TRUE.}
 
 \item{iter}{A positive integer specifying the number of iterations for each chain,
 default 4000.}
+
+\item{init}{Initialisation values for the sampling, see \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}.
+If unspecified and \code{method = "mglmm"} then set to \code{"0"}.}
 
 \item{formula}{The formula of covariates that the species means are modelled from}
 
