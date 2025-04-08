@@ -9,10 +9,10 @@ jsdm_stancode(
   method,
   family,
   prior = jsdm_prior(),
-  log_lik = TRUE,
   site_intercept = "none",
   beta_param = "cor",
-  zi_param = "constant"
+  zi_param = "constant",
+  shp_param = "constant"
 )
 
 \method{print}{jsdmstan_model}(x, ...)
@@ -28,9 +28,6 @@ matching is supported.}
 
 \item{prior}{The prior, given as the result of a call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
-\item{log_lik}{Whether the log likelihood should be calculated in the generated
-quantities (by default \code{TRUE}), required for loo}
-
 \item{site_intercept}{Whether a site intercept should be included, potential
 values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
 with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
@@ -40,6 +37,10 @@ grouping)}
 default \code{"cor"}. See details for further information.}
 
 \item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
+is a species-specific constant (default, \code{"constant"}), or varies by
+environmental covariates (\code{"covariate"}).}
+
+\item{shp_param}{For the families with shape parameters, whether the shape parameter
 is a species-specific constant (default, \code{"constant"}), or varies by
 environmental covariates (\code{"covariate"}).}
 

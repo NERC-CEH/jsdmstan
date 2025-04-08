@@ -417,7 +417,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     } else if (inherits(summary_stat, "function")) {
       stat_fun <- summary_stat
     } else if(is.null(summary_stat) & !is.null(errorbar_range)){
-      stat_fun <- median
+      stat_fun <- stats::median
     }
 
     ord_scores_summary <- reshape2::melt(model_est_copy[[1]],
@@ -440,7 +440,7 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
     ord_scores_summary_forerrorbar[, "LV"] <- paste0("LV", ord_scores_summary_forerrorbar[, "LV"])
     ord_scores_summary_forerrorbar$S <- as.factor(ord_scores_summary_forerrorbar$S)
     ord_scores_summary_forerrorbar <- stats::aggregate(value ~ S + LV, ord_scores_summary_forerrorbar,
-                                                       function(x) quantile(x, prob = c(errorbar_min, errorbar_max)))
+                                                       function(x) stats::quantile(x, prob = c(errorbar_min, errorbar_max)))
     ord_scores_summary_forerrorbar$min <- ord_scores_summary_forerrorbar$value[,1]
     ord_scores_summary_forerrorbar$max <- ord_scores_summary_forerrorbar$value[,2]
     ord_scores_summary_forerrorbar <- ord_scores_summary_forerrorbar[,c("S","LV","min","max")]
@@ -527,6 +527,14 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
 #' @param y_labels Which plots should have annotated y axes. Needs to be given
 #'   as an integer vector
 #' @param widths The widths of the plots
+#' @param species The species to be included in the plot, by default \code{NULL}
+#'   and all species are included. Should be specified as a vector of species
+#'   names or numeric indices.
+#' @param preds The predictors to be included in the plot, by default \code{NULL}
+#'   and all predictors are included. Should be specified as a vector of predictor
+#'   names or numeric indices.
+#' @param ... Other arguments that are passed to the MCMC plotting function (see
+#'  [mcmc_plot.jsdmStanFit()])
 #'
 #' @return An object of class \code{"bayesplot_grid"}, for more information see
 #'   [bayesplot::bayesplot_grid()]
@@ -534,10 +542,34 @@ ordiplot <- function(object, choices = c(1, 2), type = "species",
 #'
 envplot <- function(object, include_intercept = FALSE,
                     nrow = NULL, y_labels = NULL,
-                    plotfun = "intervals", widths = NULL){
+                    plotfun = "intervals", widths = NULL,
+                    species = NULL, preds = NULL, ...){
   if (!inherits(object, "jsdmStanFit"))
     stop("Only objects of class jsdmStanFit are supported")
-  preds <- object$preds
+  if(is.null(preds)){
+    preds <- object$preds
+  } else if(is.numeric(preds)){
+    if(min(preds)<1 | max(preds)>length(object$preds) |!all(is.wholenumber(preds)))
+      stop("preds must be an integer vector that corresponds to the predictor indices")
+    preds <- object$preds[preds]
+  } else if(is.character(preds)){
+    if(!all(preds %in% object$preds))
+      stop("preds must only include predictors included in model fit")
+  } else {
+    stop("preds must be either a character or integer vector")
+  }
+  if(is.null(species)){
+    species <- object$species
+  } else if(is.numeric(species)){
+    if(min(species)<1 | max(species)>length(object$species) |!all(is.wholenumber(species)))
+      stop("species must be an integer vector that corresponds to the species indices")
+    species <- object$species[species]
+  } else if(is.character(species)){
+    if(!all(species %in% object$species))
+      stop("species must only include species included in model fit")
+  } else{
+    stop("species must be either a character or integer vector")
+  }
   if(isFALSE(include_intercept)){
     if(all("preds" == "(Intercept)")){
       stop("include_intercept is FALSE but there are no other predictors")
@@ -545,13 +577,16 @@ envplot <- function(object, include_intercept = FALSE,
     preds <- preds[preds != "(Intercept)"]
   }
   pn <- get_parnames(object)
+  # sort out species order
+  beta_sind <- match(species, object$species)
+  species <- species[order(beta_sind, species)]
   if(any(grepl("betas", pn))){
     pl_list <- lapply(preds, function(x){
-      beta_ind <- match(x, object$preds)
+      beta_pind <- match(x, object$preds)
       suppressMessages(
         pl <- mcmc_plot(object, plotfun = plotfun,
-                pars = paste0("betas\\[",beta_ind,","), regexp = TRUE) +
-          ggplot2::scale_y_discrete(labels = object$species) +
+                pars = paste0("betas[",beta_pind,",",beta_sind,"]"), ...) +
+          ggplot2::scale_y_discrete(labels = species) +
           ggplot2::labs(x = x)
       )
       return(pl)

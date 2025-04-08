@@ -10,7 +10,10 @@ envplot(
   nrow = NULL,
   y_labels = NULL,
   plotfun = "intervals",
-  widths = NULL
+  widths = NULL,
+  species = NULL,
+  preds = NULL,
+  ...
 )
 }
 \arguments{
@@ -27,6 +30,17 @@ as an integer vector}
 \code{"intervals"}}
 
 \item{widths}{The widths of the plots}
+
+\item{species}{The species to be included in the plot, by default \code{NULL}
+and all species are included. Should be specified as a vector of species
+names or numeric indices.}
+
+\item{preds}{The predictors to be included in the plot, by default \code{NULL}
+and all predictors are included. Should be specified as a vector of predictor
+names or numeric indices.}
+
+\item{...}{Other arguments that are passed to the MCMC plotting function (see
+\code{\link[=mcmc_plot.jsdmStanFit]{mcmc_plot.jsdmStanFit()}})}
 }
 \value{
 An object of class \code{"bayesplot_grid"}, for more information see

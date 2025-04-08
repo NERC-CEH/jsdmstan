@@ -11,7 +11,7 @@ jsdm_statsummary(
   sites = NULL,
   summary_stat = "sum",
   post_type = "linpred",
-  calc_over = "site",
+  calc_over = "sites",
   simplify = TRUE,
   draw_ids = NULL,
   ndraws = NULL,
@@ -32,7 +32,7 @@ any function can be used.}
 \code{"linpred"} for \code{\link[=posterior_linpred.jsdmStanFit]{posterior_linpred.jsdmStanFit()}} or \code{"predict"} for
 \code{\link[=posterior_predict.jsdmStanFit]{posterior_predict.jsdmStanFit()}}}
 
-\item{calc_over}{Whether to calculate the summary statistic by site or species, by
+\item{calc_over}{Whether to calculate the summary statistic by sites or species, by
 default \code{species}}
 
 \item{simplify}{Whether to simplify the output into a matrix, by default
@@ -48,7 +48,7 @@ number of samples.}
 }
 \value{
 If \code{simplify = TRUE} then a matrix where each row is a draw and each
-column is either a site (if \code{calc_over = "site"}) or a species (if
+column is either a site (if \code{calc_over = "sites"}) or a species (if
 \code{calc_over = "species"}).
 }
 \description{

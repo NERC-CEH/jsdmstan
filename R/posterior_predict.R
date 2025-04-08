@@ -157,8 +157,20 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 #'  a single integer which is assumed to be constant across sites or as a site-length
 #'  vector of integers.
 #'
-#'@param include_zi For the zero-inflated poisson distribution, whether to include
+#'@param include_zi For the zero-inflated distributions, whether to include
 #'  the zero-inflation in the prediction. Defaults to \code{TRUE}.
+#'
+#'@param include_shp For the distributions where the shape parameter is responsive
+#'  to environmental predictors, whether to include this effect in the prediction.
+#'  Defaults to \code{TRUE}.
+#'
+#'@param zi_newdata For the zero-inflated distributions, the data used to fit any
+#'  parameter effect upon the zi parameter. Defaults to \code{NULL} and uses
+#'  original data.
+#'
+#'@param shp_newdata For the distributions where the shape parameter is responsive
+#'  to environmental predictors, any updated data for this effect in the prediction.
+#'  Defaults to \code{NULL} and uses original data.
 #'
 #'@return A list of linear predictors. If list_index is \code{"draws"} (the default)
 #'  the list will have length equal to the number of draws with each element of the
@@ -178,8 +190,12 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
                                           draw_ids = NULL,
                                           list_index = "draws",
                                           Ntrials = NULL,
-                                          include_zi = TRUE, ...) {
+                                          include_zi = TRUE,
+                                          include_shp = TRUE,
+                                          zi_newdata = NULL,
+                                          shp_newdata = NULL, ...) {
   transform <- ifelse(object$family$family == "gaussian", FALSE, TRUE)
+  list_index <- match.arg(list_index, c("draws", "species", "sites"))
   if (!is.null(ndraws) & !is.null(draw_ids)) {
     message("Both ndraws and draw_ids have been specified, ignoring ndraws")
   }
@@ -199,8 +215,22 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     transform = transform, list_index = "draws"
   )
 
-  if (object$family$family == "gaussian") {
-    mod_sigma <- extract(object, pars = "sigma")[[1]][draw_id,]
+  shp_param <- ifelse(any(c("sigma","kappa") %in% object$family$params_dataresp) &
+                        isTRUE(include_shp),
+                      TRUE, FALSE)
+  if(isTRUE(shp_param)){
+    if(isTRUE(all.equal(object$data_list$X,object$data_list$shp_X)) & is.null(shp_newdata)){
+      shp_newdata <- newdata
+    }
+    post_shppred <- posterior_shppred(object,
+                                      newdata = shp_newdata,
+                                      draw_ids = draw_id,
+                                      transform = transform, list_index = "draws"
+    )
+  }
+
+  if (object$family$family == "gaussian" & isFALSE(shp_param)) {
+      mod_sigma <- extract(object, pars = "sigma")[[1]][draw_id,]
   } else  if(object$family$family == "binomial"){
     if(is.null(newdata)) {
       Ntrials <- object$data_list$Ntrials
@@ -211,17 +241,22 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
   if(grepl("zi",object$family$family) & !("zi" %in% object$family$params_dataresp) & isTRUE(include_zi)){
     mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
   }
-  if(grepl("neg_binomial",object$family$family)) {
+  if(grepl("neg_binomial",object$family$family) & isFALSE(shp_param)) {
     mod_kappa <- extract(object, pars = "kappa")[[1]][draw_id,]
   }
 
   if("zi" %in% object$family$params_dataresp & isTRUE(include_zi)){
+    if(isTRUE(all.equal(object$data_list$X,object$data_list$zi_X)) & is.null(zi_newdata)){
+      zi_newdata <- newdata
+    }
     post_zipred <- posterior_zipred(object,
-                                     newdata = newdata,
+                                     newdata = zi_newdata,
                                      draw_ids = draw_id,
                                      transform = transform, list_index = "draws"
     )
   }
+
+
 
   n_sites <- length(object$sites)
   n_species <- length(object$species)
@@ -246,6 +281,12 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
             "zi_neg_binomial" = (1-stats::rbinom(1, 1, zi2[x,j]))*rgampois(1, x2[i,j], mod_kappa[x,j])
             )
         }
+      }
+    } else if (isTRUE(shp_param)) {
+      if(family == "gaussian"){
+        mod_sigma <- post_shppred[[x]]
+      } else if(family %in% c("neg_binomial", "zi_neg_binomial")){
+        mod_kappa <- post_shppred[[x]]
       }
     } else {
       for(i in seq_len(nrow(x2))){
@@ -296,9 +337,7 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
 #'   \code{"species"} the list will have length equal to the number of species
 #'   with each element of the list being a draws x sites matrix. If the
 #'   list_index is \code{"sites"} the list will have length equal to the number
-#'   of sites with each element of the list being a draws x species matrix. Note
-#'   that in the zero-inflated case this is only the linear predictor of the
-#'   non-zero-inflated part of the model.
+#'   of sites with each element of the list being a draws x species matrix.
 #'
 #' @seealso [posterior_predict.jsdmStanFit()]
 #'
@@ -317,7 +356,7 @@ posterior_zipred <- function(object, transform = FALSE,
 
   n_sites <- length(object$sites)
   n_species <- length(object$species)
-  n_preds <- length(object$family$preds)
+  n_preds <- length(object$family$preds$zi)
   method <- object$jsdm_type
   orig_data_used <- is.null(newdata)
 
@@ -326,7 +365,7 @@ posterior_zipred <- function(object, transform = FALSE,
   }
 
   newdata <- validate_newdata(newdata,
-                              preds = object$family$preds
+                              preds = object$family$preds$zi
   )
 
   model_pars <- "zi_betas"
@@ -365,6 +404,90 @@ posterior_zipred <- function(object, transform = FALSE,
   return(model_pred_list)
 }
 
+#' Access the posterior distribution of the linear predictor for the shape
+#' parameter
+#'
+#' Extract the posterior draws of the linear predictor for the shape
+#' parameter, possibly transformed by the inverse-link function.
+#'
+#'
+#' @inheritParams posterior_linpred.jsdmStanFit
+#'
+#' @return A list of linear predictors. If list_index is \code{"draws"} (the
+#'   default) the list will have length equal to the number of draws with each
+#'   element of the list being a site x species matrix. If the list_index is
+#'   \code{"species"} the list will have length equal to the number of species
+#'   with each element of the list being a draws x sites matrix. If the
+#'   list_index is \code{"sites"} the list will have length equal to the number
+#'   of sites with each element of the list being a draws x species matrix.
+#'
+#' @seealso [posterior_predict.jsdmStanFit()]
+#'
+#' @export
+posterior_shppred <- function(object, transform = FALSE,
+                              newdata = NULL, ndraws = NULL,
+                              draw_ids = NULL,
+                              list_index = "draws"){
+  if(!(any(c("sigma","kappa") %in% object$family$params_dataresp))){
+    stop(paste("This function only works upon models with a gaussian or",
+               "negative binomial family",
+               "and where the shape parameter is responsive to covariates."))
+  }
+  shp_name <- object$family$params_dataresp[object$family$params_dataresp != "zi"]
+  foopred_checks(object = object, transform = transform, newdata = newdata,
+                 ndraws = ndraws, draw_ids = draw_ids, list_index = list_index)
+  list_index <- match.arg(list_index, c("draws", "species", "sites"))
+
+  n_sites <- length(object$sites)
+  n_species <- length(object$species)
+  n_preds <- length(object$family$preds[[shp_name]])
+  method <- object$jsdm_type
+  orig_data_used <- is.null(newdata)
+
+  if (is.null(newdata)) {
+    newdata <- object$family$data_list$shp_X
+  }
+
+  newdata <- validate_newdata(newdata,
+                              preds = object$family$preds[[shp_name]]
+  )
+
+  model_pars <- "shp_betas"
+
+  model_est <- extract(object, pars = model_pars)
+  n_iter <- dim(model_est[[1]])[1]
+
+  draw_id <- draw_id_check(draw_ids = draw_ids, n_iter = n_iter, ndraws = ndraws)
+
+  model_est <- lapply(model_est, function(x) {
+    switch(length(dim(x)),
+           `1` = x[draw_id, drop = FALSE],
+           `2` = x[draw_id, , drop = FALSE],
+           `3` =  x[draw_id, , , drop = FALSE]
+    )
+  })
+
+  model_pred_list <- lapply(seq_along(draw_id), function(d) {
+
+    if (is.vector(newdata)) {
+      newdata <- matrix(newdata, ncol = 1)
+    }
+    shp <- newdata %*% model_est$shp_betas[d, , ]
+
+    if (isTRUE(transform)) {
+      shp <- apply(shp, c(1,2), inv_logit)
+    }
+
+    return(shp)
+  })
+
+  if (list_index != "draws") {
+    model_pred_list <- switch_indices(model_pred_list, list_index)
+  }
+
+  return(model_pred_list)
+}
+
 # internal ~~~~
 
 validate_newdata <- function(newdata, preds) {
@@ -376,8 +499,7 @@ validate_newdata <- function(newdata, preds) {
       "Model has column names:", paste0(preds_nointercept), "\n"
     ))
   }
-
-  newdata <- newdata[, preds_nointercept]
+  newdata <- newdata[, preds_nointercept, drop = FALSE]
   if ("(Intercept)" %in% preds) {
     newdata <- cbind("(Intercept)" = 1, newdata)
     newdata <- newdata[, preds]

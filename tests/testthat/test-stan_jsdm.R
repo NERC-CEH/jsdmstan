@@ -62,13 +62,6 @@ test_that("neff_ratio works", {
   expect_named(neff_ratio(mglmm_fit))
 })
 
-test_that("loo works", {
-  expect_warning(
-    mglmm_loo <- loo(mglmm_fit),
-    "Pareto k diagnostic"
-  )
-  expect_s3_class(mglmm_loo, "psis_loo")
-})
 
 # GLLVM tests ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 test_that("stan_gllvm fails with wrong inputs", {
@@ -319,3 +312,41 @@ test_that("zi_poisson works okay", {
   expect_named(zip_fit$family$data_list, "zi_X")
 })
 
+set.seed(7684116)
+zinb_sim_data <- mglmm_sim_data(N = 67, S = 6, K = 3, family = "zi_neg_binomial",
+                                zi_param = "covariate", shp_param = "covariate",
+                                shp_k = 1, zi_k = 1)
+
+test_that("shp and zi models error properly",{
+
+  expect_error(stan_mglmm(dat_list = zinb_sim_data, family = "zi_neg_binomial",
+                          zi_param = "fail"))
+
+  expect_error(stan_mglmm(dat_list = zinb_sim_data, family = "zi_neg_binomial",
+                          shp_param = "fail"))
+
+  expect_error(stan_mglmm(dat_list = zinb_sim_data, family = "poisson",
+                          shp_param = "covariate"),
+               "family parameter in response to data")
+})
+
+
+zinb_data <- as.data.frame(cbind(zinb_sim_data$X,
+                                 zinb_sim_data$shp_X[,-1],
+                                 zinb_sim_data$zi_X[,-1]))
+colnames(zinb_data) <- c("X1","X2","X3","S1","Z1")
+
+test_that("shp models run okay", {
+  suppressWarnings(zinb_fit <- stan_mglmm(~X1+X2+X3, data = zinb_data, Y = zinb_sim_data$Y,
+                                          zi_formula = ~Z1, shp_formula = ~S1,
+                                          family = "zi_neg_binomial",
+                                          refresh = 0, chains = 2, iter = 200
+  ))
+  expect_s3_class(zinb_fit, "jsdmStanFit")
+  expect_s3_class(zinb_fit$family, "jsdmStanFamily")
+  expect_output(print(zinb_fit$family),
+                "is modelled in response to")
+  expect_named(zinb_fit$family,
+               c("family" ,"params" ,"params_dataresp","preds","data_list"))
+  expect_named(zinb_fit$family$data_list, c("zi_X","shp_X"))
+})

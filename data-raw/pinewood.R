@@ -104,8 +104,11 @@ tree_site <- tree_wide %>%
 
 all.equal(site_env_tree$SitePlot, rownames(tree_site))
 
-pinewood <- tree_site
+pinewood_abund <- tree_site
 pinewood_env <- site_env_tree
+
+pinewood <- list(abund = pinewood_abund,
+                 env = pinewood_env)
 
 usethis::use_data(pinewood, overwrite = TRUE)
 usethis::use_data(pinewood_env, overwrite = TRUE)

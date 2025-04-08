@@ -21,6 +21,19 @@ test_that("posterior linpred errors appropriately", {
     posterior_linpred(bern_fit, newdata = bad_newdata),
     "New data does not have matching column names to model fit"
   )
+
+  expect_error(posterior_shppred(bern_fit),
+               "only works upon models with a gaussian or")
+  expect_error(posterior_zipred(bern_fit),
+               "models with a zero-inflated family")
+
+  expect_message(
+    posterior_linpred(bern_fit, ndraws = 100, draw_ids = 50:80),
+    "Both ndraws and draw_ids have been specified, ignoring ndraws")
+
+  expect_error(
+    posterior_linpred(bern_fit, draw_ids = c(-1.5,0,45)),
+    "draw_ids must be a vector of positive integers")
 })
 
 test_that("posterior predictive errors appropriately", {
@@ -166,6 +179,16 @@ test_that("posterior_(lin)pred works with gllvm and zip", {
   expect_length(zip_pred2, 7)
   expect_false(any(sapply(zip_pred2, anyNA)))
   expect_false(any(sapply(zip_pred2, function(x) x < 0)))
+
+
+  zip_pred3 <- posterior_predict(zip_fit, ndraws = 100, include_zi = FALSE)
+
+  expect_length(zip_pred3, 100)
+  expect_false(any(sapply(zip_pred3, anyNA)))
+  expect_false(any(sapply(zip_pred3, function(x) x < 0)))
+
+  expect_error(posterior_zipred(zip_fit),
+               "responsive to covariates")
 })
 
 set.seed(9598098)
@@ -197,4 +220,50 @@ test_that("posterior_(lin)pred works with gllvm and zinb", {
   expect_length(zinb_pred2, 7)
   expect_false(any(sapply(zinb_pred2, anyNA)))
   expect_false(any(sapply(zinb_pred2, function(x) x < 0)))
+
+
+
+  zinb_pred4 <- posterior_zipred(zinb_fit, ndraws = 35, list_index = "sites")
+
+  expect_length(zinb_pred4, 100)
+  expect_false(any(sapply(zinb_pred4, anyNA)))
+})
+
+
+
+test_that("zi_neg_bin print works okay", {
+  expect_output(print(zinb_fit$family),
+                "is modelled in response to")
+})
+
+test_that("posterior_(lin)pred works with gllvm and gaussian shp", {
+  set.seed(8801454)
+  expect_message(
+    gauss_sim_data <- gllvm_sim_data(N = 100, S = 7, K = 2,D=1, family = "gaussian",
+                                     shp_param = "covariate",
+                                     shp_X = matrix(sample(0:2,100,replace = TRUE),ncol=1)),
+    "no column names")
+  gauss_pred_data <- matrix(rnorm(100 * 2), nrow = 100)
+  colnames(gauss_pred_data) <- c("V1", "V2")
+  gauss_pred_shp_data <- matrix(sample(0:1,100,replace = TRUE), nrow = 100)
+  colnames(gauss_pred_shp_data) <- c("V1")
+
+  suppressWarnings(gauss_fit <- stan_gllvm(
+    dat_list = gauss_sim_data, family = "gaussian",shp_param="covariate",
+    refresh = 0, chains = 2, iter = 500
+  ))
+
+  gauss_pred <- posterior_predict(gauss_fit, ndraws = 100)
+
+  expect_length(gauss_pred, 100)
+  expect_false(any(sapply(gauss_pred, anyNA)))
+
+  gauss_pred2 <- posterior_predict(gauss_fit,
+                                   newdata = gauss_pred_data,
+                                   shp_newdata = gauss_pred_shp_data,
+                                   ndraws = 50, list_index = "species"
+  )
+
+  expect_length(gauss_pred2, 7)
+  expect_false(any(sapply(gauss_pred2, anyNA)))
 })

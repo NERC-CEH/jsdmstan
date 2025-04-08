@@ -1,0 +1,44 @@
+#' Data from broadleaved woodlands across Great Britain, 1971
+#'
+#' This is the tree and environmental covariate data from a series of sites
+#' across broadleaved woodlands in Great Britain surveyed in 1971. It contains
+#' both measures of 45 tree genera measured over 103 sites and environmental
+#' data from each site. Environmental data includes the average soil pH and
+#' organic matter of each plot plus the average annual rainfall, maximum summer
+#' temperature and minimum winter temperature from 1941-1970. All climate
+#' variables were calculated based upon the HadUK-Grid climate data (Met Office
+#' et al., 2022). For more information on the sites see Wood et al. (2015).
+#'
+#' This data is made available under the terms of the Open Government Licence.
+#'
+#' @format A list that includes two data frames. The first (\code{"abund"}) has
+#'   103 rows and 45 columns. Each column is a genus and each row is a site. The
+#'   site identity is marked in the rownames of the data frame. Every entry is
+#'   given as the number of plots that each genus appears in across the site.
+#'   The second data.frame has 103 rows and 9 columns, as described below.
+#'
+#' \describe{
+#'   \item{Site}{The site identifier (103 in total)}
+#'   \item{Easting}{The Easting of each site (British National Grid)}
+#'   \item{Northing}{The Northing of each site (British National Grid)}
+#'   \item{Nplots}{The total number of plots surveyed per site}
+#'   \item{pH}{The average soil pH across the site}
+#'   \item{SOM}{The average soil organic matter across the site (%)}
+#'   \item{Rainfall}{The average annual rainfall in mm}
+#'   \item{SummerMaxTemp}{The average maximum temperature in summer in deg Celsius}
+#'   \item{WinterMinTemp}{The average minimum temperature in winter in deg Celsius}
+#' }
+#'
+#' @references { Wood, C. M., Smart, S. M. & Bunce, R. G. H. (2015). Woodland
+#'   Survey of Great Britain 1971–2001. Earth System Science Data, 7(2),
+#'   203-214. https://doi.org/10.5194/essd-7-203-2015
+#'
+#'   Met Office; Hollis, D.; McCarthy, M.; Kendon, M.; Legg, T. (2022):
+#'   HadUK-Grid Gridded Climate Observations on a 1km grid over the UK, v1.1.0.0
+#'   (1836-2021). NERC EDS Centre for Environmental Data Analysis, 26 May 2022.
+#'   http://dx.doi.org/10.5285/bbca3267dc7d4219af484976734c9527 }
+#'
+#' @source { <https://doi.org/10.5285/d6409d40-58fe-4fa7-b7c8-71a105b965b4>
+#'   <https://doi.org/10.5285/4d93f9ac-68e3-49cf-8a41-4d02a7ead81a> }
+#'
+"bunce71"

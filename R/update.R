@@ -16,6 +16,11 @@
 #' by default \code{NULL}. In cases where the model was originally fit with the
 #' same X and zi_X data and only newX is supplied to update.jsdmStanFit the zi_X
 #' data will also be set to newX.
+#' @param newShp_X New predictor data for the family parameter in models where
+#' the family parameter is modelled in response to data,
+#' by default \code{NULL}. In cases where the model was originally fit with the
+#' same X and shp_X data and only newX is supplied to update.jsdmStanFit the shp_X
+#' data will also be set to newX.
 #' @param save_data Whether to save the data in the jsdmStanFit object, by default
 #'  \code{TRUE}
 #' @param ... Arguments passed to [rstan::sampling()]
@@ -56,6 +61,7 @@
 #' }
 update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
                                newNtrials = NULL, newZi_X = NULL,
+                               newShp_X = NULL,
                                save_data = TRUE, ...) {
   if (length(object$data_list) == 0) {
     stop("Update requires the original data to be saved in the model object")
@@ -103,6 +109,19 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
   } else{
     zi_X <- NULL
   }
+  if (any(c("sigma","kappa") %in% object$family$params_dataresp)){
+    if(is.null(newShp_X)) {
+      if(isTRUE(all.equal(object$data_list$X, object$family$data_list$shp_X)) & !is.null(newX)){
+        shp_X <- newX
+      } else{
+        shp_X <- object$family$data_list$shp_X
+      }
+    } else {
+      shp_X <- newShp_X
+    }
+  } else{
+    shp_X <- NULL
+  }
 
   species_intercept <- "(Intercept)" %in% colnames(object$data_list$X)
 
@@ -118,7 +137,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = NULL,
     family = family, method = method, Ntrials = Ntrials,
-    zi_X = zi_X
+    zi_X = zi_X, shp_X = shp_X
   )
 
   # get original stan model

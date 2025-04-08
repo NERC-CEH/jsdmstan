@@ -11,6 +11,7 @@
   newD = NULL,
   newNtrials = NULL,
   newZi_X = NULL,
+  newShp_X = NULL,
   save_data = TRUE,
   ...
 )
@@ -30,6 +31,12 @@
 \item{newZi_X}{New predictor data for the zi parameter in zero-inflated models,
 by default \code{NULL}. In cases where the model was originally fit with the
 same X and zi_X data and only newX is supplied to update.jsdmStanFit the zi_X
+data will also be set to newX.}
+
+\item{newShp_X}{New predictor data for the family parameter in models where
+the family parameter is modelled in response to data,
+by default \code{NULL}. In cases where the model was originally fit with the
+same X and shp_X data and only newX is supplied to update.jsdmStanFit the shp_X
 data will also be set to newX.}
 
 \item{save_data}{Whether to save the data in the jsdmStanFit object, by default
