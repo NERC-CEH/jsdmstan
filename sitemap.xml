@@ -5,6 +5,7 @@
 <url><loc>https://nerc-ceh.github.io/jsdmstan/articles/jsdmstan.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/authors.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/index.html</loc></url>
+<url><loc>https://nerc-ceh.github.io/jsdmstan/reference/bunce71.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/corrplot.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/envplot.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/extract.jsdmStanFit.html</loc></url>
@@ -22,10 +23,10 @@
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/multi_pp_check.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/ordiplot.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/pinewood.html</loc></url>
-<url><loc>https://nerc-ceh.github.io/jsdmstan/reference/pinewood_env.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/plot.jsdmStanFit.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/posterior_linpred.jsdmStanFit.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/posterior_predict.jsdmStanFit.html</loc></url>
+<url><loc>https://nerc-ceh.github.io/jsdmstan/reference/posterior_shppred.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/posterior_zipred.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/pp_check.jsdmStanFit.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/print.jsdmStanFamily.html</loc></url>
