@@ -12,7 +12,10 @@
 #' @param cores The number of cores the loo functions use, by default uses the
 #'   mc.cores option (or 1, if unspecified).
 #' @param ... Other arguments passed to the \code{\link[loo]{loo}} function
+#'
 #' @importFrom loo loo
+#'
+#' @export loo
 #' @export
 #' @aliases loo
 #'

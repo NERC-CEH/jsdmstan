@@ -26,6 +26,7 @@
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
 #' @return An object of class \code{jsdmStanFit}
+#' @export update
 #' @export
 #'
 #' @examples
