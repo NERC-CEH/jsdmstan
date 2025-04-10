@@ -58,7 +58,7 @@ llfun <- function(data_i, draws, jsdm_type, family, log = TRUE){
   y <- data_i$Y
 
   if(family == "binomial"){
-    Ntrials <- rep(data_i$Ntrials, nrow(y))
+    Ntrials <- data_i$Ntrials
   }
 
   ll <- sapply(seq_len(dim(draws[[1]])[1]), function(di){

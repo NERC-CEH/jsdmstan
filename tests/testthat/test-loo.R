@@ -117,3 +117,27 @@ test_that("loo works for gllvm gaussian", {
   )
   expect_s3_class(gauss_loo, "psis_loo")
 })
+
+
+set.seed(548935)
+gllvm_data <- gllvm_sim_data(N = 50, S = 16, family = "binomial",
+                             Ntrials = sample.int(20, size = 50, replace = TRUE), D = 3)
+df <- as.data.frame(gllvm_data$X)
+
+suppressWarnings(gllvm_fit <- stan_jsdm(~ 1, D = 3,
+                                        data = df, Y = gllvm_data$Y,
+                                        family = "binomial", Ntrials = gllvm_data$Ntrials,
+                                        method = "gllvm",
+                                        refresh = 0, chains = 2, iter = 200
+))
+
+test_that("loo works for gllvm binomial", {
+  expect_warning(
+    gllvm_loo <- loo(gllvm_fit),
+    "Pareto k diagnostic"
+  )
+  expect_s3_class(gllvm_loo, "psis_loo")
+
+  expect_equal(nrow(gllvm_loo$pointwise), 800)
+
+})

@@ -229,7 +229,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 
 #' @describeIn stan_jsdm Formula interface
 #' @export
-stan_jsdm.formula <- function(formula, data = list(),
+stan_jsdm.formula <- function(formula, data = list(), Y = NULL,
                               zi_formula = NULL, shp_formula = NULL,
                               zi_param = "constant",
                               shp_param = "constant", ...) {
@@ -278,7 +278,25 @@ stan_jsdm.formula <- function(formula, data = list(),
     }
   }
 
-  est <- stan_jsdm.default(X, species_intercept = FALSE,
+  # add checks for intercept only models
+  if(nrow(X) == 0 & ncol(X) == 1){
+    X <- matrix(1, nrow = nrow(Y), ncol = 1)
+    colnames(X) <- "(Intercept)"
+  }
+  if(!is.null(zX)){
+    if(ncol(zX) == 1){
+      if(colnames(zX) == "(Intercept)")
+        stop("Intercept-only models are unsupported by zi_formula, please use zi_param = 'constant' instead.")
+    }
+  }
+  if(!is.null(fX)){
+    if(ncol(fX) == 1){
+      if(colnames(fX) == "(Intercept)")
+        stop("Intercept-only models are unsupported by shp_formula, please use shp_param = 'constant' instead.")
+    }
+  }
+
+  est <- stan_jsdm.default(X, Y = Y, species_intercept = FALSE,
                            shp_X = fX, zi_X = zX,
                            shp_param = shp_param, zi_param = zi_param, ...)
   est$call <- match.call()
@@ -358,6 +376,9 @@ validate_data <- function(Y, D, X, species_intercept,
         stop("Must have at least one latent variable")
       }
     }
+
+    if(is.null(Y))
+      stop("No value for Y has been supplied")
 
     S <- ncol(Y)
     N <- nrow(Y)
