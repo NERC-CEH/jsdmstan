@@ -14,17 +14,17 @@ test_that("loo works for mglmm", {
     "Pareto k diagnostic"
   )
   expect_s3_class(mglmm_loo, "psis_loo")
+  expect_equal(nrow(mglmm_loo$pointwise), 240)
 })
 
 
-gllvm_data <- gllvm_sim_data(N = 63, S = 5, D = 2, family = "zi_poisson", K = 1,
-                             zi_param = "covariate")
+gllvm_data <- gllvm_sim_data(N = 63, S = 5, D = 2, family = "zi_poisson", K = 1)
 df <- as.data.frame(gllvm_data$X)
 
 suppressWarnings(gllvm_fit <- stan_jsdm(~ V1,
                                         data = df, Y = gllvm_data$Y,
                                         family = "zi_poisson", method = "gllvm",
-                                        zi_param = "covariate", D = 2,
+                                        D = 2,
                                         refresh = 0, chains = 2, iter = 200
 ))
 
@@ -34,6 +34,7 @@ test_that("loo works for gllvm", {
     "Pareto k diagnostic"
   )
   expect_s3_class(gllvm_loo, "psis_loo")
+  expect_equal(nrow(gllvm_loo$pointwise), 315)
 })
 
 # test that density functions return numbers
@@ -81,6 +82,7 @@ test_that("loo works for mglmm zi_nb", {
     "Pareto k diagnostic"
   )
   expect_s3_class(mglmm_loo, "psis_loo")
+  expect_equal(nrow(mglmm_loo$pointwise), 1131)
 })
 
 
@@ -116,6 +118,7 @@ test_that("loo works for gllvm gaussian", {
     "Pareto k diagnostic"
   )
   expect_s3_class(gauss_loo, "psis_loo")
+  expect_equal(nrow(gauss_loo$pointwise), 1134)
 })
 
 
@@ -133,7 +136,7 @@ suppressWarnings(gllvm_fit <- stan_jsdm(~ 1, D = 3,
 
 test_that("loo works for gllvm binomial", {
   expect_warning(
-    gllvm_loo <- loo(gllvm_fit),
+    gllvm_loo <- loo(gllvm_fit, calc_reff = FALSE),
     "Pareto k diagnostic"
   )
   expect_s3_class(gllvm_loo, "psis_loo")
@@ -141,3 +144,5 @@ test_that("loo works for gllvm binomial", {
   expect_equal(nrow(gllvm_loo$pointwise), 800)
 
 })
+
+

@@ -64,7 +64,7 @@ test_that("binomial models update", {
   expect_s3_class(gllvm_fit2, "jsdmStanFit")
 })
 
-zip_data <- gllvm_sim_data(N = 97, S = 9,D = 2, family = "zi_poisson",
+zip_data <- gllvm_sim_data(N = 97, S = 9,D = 2, family = "zi_poisson",K=1,
                            zi_param = "covariate")
 
 test_that("zi models update", {
@@ -86,7 +86,17 @@ test_that("zi models update", {
                          refresh = 0, chains = 1, iter = 200
   )), "No column names")
   expect_equal(ncol(gllvm_fit2$data_list$zi_X),3)
+  expect_equal(ncol(gllvm_fit3$data_list$X),2)
   expect_s3_class(gllvm_fit2, "jsdmStanFit")
+
+  expect_message(suppressWarnings(
+    gllvm_fit3 <- update(gllvm_fit, newD = 1,
+                         newX = matrix(rnorm(194),nrow=97),
+                         refresh = 0, chains = 1, iter = 200
+    )), "No column names")
+  expect_equal(ncol(gllvm_fit3$data_list$zi_X),3)
+  expect_equal(ncol(gllvm_fit3$data_list$X),3)
+  expect_s3_class(gllvm_fit3, "jsdmStanFit")
 })
 
 

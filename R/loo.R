@@ -69,20 +69,20 @@ llfun <- function(data_i, draws, jsdm_type, family, log = TRUE){
       if("shp_betas" %in% names(draws)){
         sigma <- c(exp(data_i$shp_X %*% draws$shp_betas[di,,]))
       } else{
-        sigma <- rep(draws$sigma[di,],each = ncol(y))
+        sigma <- rep(draws$sigma[di,],each = nrow(y))
       }
     } else if(family %in% c("neg_binomial","zi_neg_binomial")){
       if("shp_betas" %in% names(draws)){
         kappa <- c(exp(data_i$shp_X %*% draws$shp_betas[di,,]))
       } else{
-        kappa <- rep(draws$kappa[di,],each = ncol(y))
+        kappa <- rep(draws$kappa[di,],each = nrow(y))
       }
     }
     if(family %in% c("zi_neg_binomial","zi_poisson")){
       if("zi_betas" %in% names(draws)){
         zi <- data_i$zi_X %*% draws$zi_betas[di,,]
       } else{
-        zi <- rep(draws$zi[di,],each=ncol(y))
+        zi <- rep(draws$zi[di,],each=nrow(y))
       }
     }
     linpred_i <- switch(
@@ -90,6 +90,7 @@ llfun <- function(data_i, draws, jsdm_type, family, log = TRUE){
       "gllvm" = (x %*% draws$betas[di,,]) + t((draws$Lambda[di,,] * draws$sigma_L[di]) %*% draws$LV[di,,]),
       "mglmm" = (x %*% draws$betas[di,,]) + draws$u[di,,]
     )
+
     ll_vals <- switch(
       family,
       "gaussian" = stats::dnorm(x = c(y), mean = c(linpred_i), sd = sigma,
