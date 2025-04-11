@@ -1,0 +1,136 @@
+---
+title: "Modelling Zero Inflation and Other Family Parameters in Response to Environmental Covariates"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{zero-inflation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+Zero-inflated models allow for highly frequent zero-valued observations within count data, i.e. more zeros appear in the data than can be explained by the covariates within the count model without zero-inflation. A high number of zeros within the data is not sufficient reason to fit a zero-inflated model, as in many cases the high number of zeros may be entirely explained by the covariates already within the model. For example, consider the case where a species only appears on the coast and you are working with data from the entire country (which is mostly non-coastal). Fitting a model that does not include proximity to coast will struggle to explain the distribution of this species, and most likely result in a zero-inflated appearing distribution. However, if you were to include the proximity of the coast as an environmental covariate the large number of zeros would be explained entirely by the model without any need to explicitly consider zero-inflation within the model structure. Therefore, these zero-inflated distributions are particularly useful for cases where any zeros in the data may come from more than one data-generating process. For example, perhaps a species is underreported and as such you have a combination of zeros that are 'true zeros' and zeros that are 'false zeros'. A zero-inflated model could be fit to this data in an attempt to account for this mixture of data-generating processes.
+
+The `jsdmstan` package supports two zero-inflated families, the zero-inflated Poisson distribution and the zero-inflated negative binomial distribution. These models assume that the data arises from a combination of two processes, the zero-inflation process and the count distribution process:
+
+\begin{equation*}
+P(Y_i = y_i) = 
+ \begin{cases}
+   \pi_i + (1 - \pi_i)p(y_i = 0;\mu_i) & y_i = 0 \\
+   (1 - \pi_i)p(y_i;\mu_i) & y_i > 0 
+ \end{cases}
+\end{equation*}
+
+Where $y_i$ is the data at point $i$, $\pi_i$ is the zero-inflation at point $i$, $\mu_i$ is the vector of parameters for any particular count distribution at point $i$. The important thing to note here is that a zero can occur due to either of the $\pi_i$ or the $\mu_i$ parameters, representing the two data generating processes mentioned above. The Poisson or negative binomial parts of the distribution behave as they would in any other jSDM model in `jsdmstan`, where the $\mu_i$ parameters are modelled as a function of a combination of environmental covariates and species covariance.
+
+Within `jsdmstan` the zero-inflation parameter ($\pi$ above) can either be included as a species-specific constant or modelled as a function of environmental covariates (not necessarily the same ones as the rest of the model responds to). Currently the zero-inflation parameter cannot also be modelled as a function of the species covariance. Note that no information is shared between the estimation of the effects of the environmental covariates upon the mean (and kappa, if a negative binomial) parameters within the count distribution and the zero-inflation parameters. This means that the model can very quickly become overspecified and the model fitting struggles to converge upon a single parameter set if the zero-inflation also varies with environmental covariates.
+
+
+
+```{r setup}
+library(jsdmstan)
+```
+
+
+## Example with zero-inflation as a constant by species
+
+First, we can simulate data according to a zero-inflated negative binomial distribution, the default behaviour is to assume zero-inflation is a constant by species so this is what we do here:
+
+```{r}
+set.seed(430150)
+nb_dat <- jsdm_sim_data(N = 100, S = 8, K = 2, method = "mglmm",
+                        family = "zi_neg_bin")
+```
+
+There's a higher probability of simulating a species with no observations whatsoever when using `jsdm_sim_data()` with zero-inflated distributions, but a message warning you of an empty column in `Y` will be printed to the console if that happens in your case.
+
+Now we can fit the model (lowering the number of iterations to improve runtime):
+
+```{r}
+nb_mod <- stan_jsdm(dat_list = nb_dat, family = "zi_neg_bin", method = "mglmm",
+                    refresh = 0, log_lik = FALSE, iter = 2000)
+nb_mod
+```
+
+No warnings are returned, or anything particularly concerning in terms of rhat or neff.
+
+Now we can look at the data recovery, as there are some species that were simulated to have very extreme maximum values (check `max(nb_dat$Y)`), the overall distribution is hard to see using the default multi_pp_check options, so we use the statistics option and simultaneously check the recovery of the mean and the standard deviation:
+
+```{r}
+multi_pp_check(nb_mod, plotfun = "stat_2d")
+```
+
+We can see that the mean and standard deviation of the data are always nested within the model predictions, indicating a reasonable fit to the data.
+
+We can also see if the model did well at recovering the zero-inflation parameters used within the data simulation:
+
+```{r}
+mcmc_plot(nb_mod, plotfun = "recover_hist", pars = "zi", regexp = TRUE,
+          true = nb_dat$pars$zi)
+```
+
+It is quite obvious from this that the zero-inflation estimated by the model is usually larger than that of the data, indicating that the model is assuming more zeros come from the zero-inflation process and therefore possibly overestimating the negative binomial mean part of the model. This demonstrates how these very flexible model structures can end up fitting the data well, but potentially in a different way to the actual data generating process.
+
+## Zero-inflation varying by environmental conditions
+
+We can also fit a zero-inflated model where the zero-inflation part of the model varies due to some set of environmental covariates. These covariates could be the same as those within the rest of the model, or instead be a completely different set of covariates. An example of this could be a model that accounts for recording effort, as you get fewer zeros when recording effort is low.
+
+```{r sim-data}
+set.seed(3950127)
+zi_X <- as.matrix(data.frame(NR = sample(0:3, size = 200, replace = TRUE,
+                                        prob = c(0.5,0.25,0.125,0.05))))
+data_sim <- jsdm_sim_data(S = 17, N = 200, zi_X = zi_X, D = 2, K = 2,
+                          family = "zi_poisson", method = "gllvm",
+                          prior = jsdm_prior(betas="normal(0,0.5)",
+                                             zi_betas = "normal(0,0.5)"))
+```
+
+
+```{r}
+test_fit <- stan_jsdm(dat_list = data_sim, family = "zi_poisson",
+                      method = "gllvm", cores = 4,
+                      prior = jsdm_prior(betas = "normal(0,0.5)",
+                                         zi_betas = "normal(0,0.5)"))
+```
+
+
+```{r}
+mcmc_plot(test_fit, plotfun = "recover_intervals", pars = "zi_betas", 
+          regexp = TRUE,
+          true = c(t(data_sim$pars$zi_betas)))
+```
+
+
+## Shape parameter varying by environmental conditions
+
+Data integration problems.
+
+```{r sim-data}
+set.seed(3395017)
+
+shp_X <- as.matrix(data.frame(S = rep(c(0,1),each=100)))
+
+data_sim <- jsdm_sim_data(S = 9, N = 200, shp_X = shp_X, 
+                          family = "zi_neg_binomial", method = "mglmm")
+```
+
+
+```{r}
+test_fit <- stan_jsdm(dat_list = data_sim, family = "zi_neg_binomial",
+                      method = "mglmm", cores = 4, iter = 6000, warmup = 2000,
+                      control = list(adapt_delta = 0.9))
+```
+
+
+```{r}
+mcmc_plot(test_fit, plotfun = "recover_intervals", pars = "shp_betas", 
+          regexp = TRUE,
+          true = c(t(data_sim$pars$shp_betas)))
+```
+
