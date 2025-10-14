@@ -3,7 +3,7 @@
 # Source of climate data: Met Office; Hollis, D.; McCarthy, M.; Kendon, M.; Legg, T. (2022): HadUK-Grid Gridded Climate Observations on a 1km grid over the UK, v1.1.0.0 (1836-2021). NERC EDS Centre for Environmental Data Analysis, 26 May 2022. doi:10.5285/bbca3267dc7d4219af484976734c9527. http://dx.doi.org/10.5285/bbca3267dc7d4219af484976734c9527
 
 library(dplyr)
-library(raster, exclude = "select")
+library(terra)
 library(sf)
 
 data.dir <- rstudioapi::askForSecret("Data directory")
@@ -27,23 +27,23 @@ clim_files <- list.files(clim_folder)
 rainfall_files <- grep("rainfall", clim_files, value = TRUE)
 
 rain <- sapply(rainfall_files,function(x){
-  annual_rain <- brick(paste0(clim_folder,"/",x))
+  annual_rain <- rast(paste0(clim_folder,"/",x))
   annual_siterain <- extract(annual_rain, site_locs_sf)
-  annual_siterain
+  annual_siterain$rainfall
 })
 
 tasmax_files <- grep("tasmax", clim_files, value = TRUE)
 summer_tasmax <- sapply(tasmax_files,function(x){
-  tasmax <- brick(paste0(clim_folder,"/",x))
+  tasmax <- rast(paste0(clim_folder,"/",x))
   annual_sitetasmax <- extract(tasmax, site_locs_sf)
-  annual_sitetasmax[,3,drop=FALSE]
+  annual_sitetasmax$tasmax_3
 })
 
 tasmin_files <- grep("tasmin", clim_files, value = TRUE)
 winter_tasmin <- sapply(tasmin_files,function(x){
-  tasmin <- brick(paste0(clim_folder,"/",x))
+  tasmin <- rast(paste0(clim_folder,"/",x))
   annual_sitetasmin <- extract(tasmin, site_locs_sf)
-  annual_sitetasmin[,1,drop=FALSE]
+  annual_sitetasmin$tasmin_1
 })
 
 site_locs2 <- mutate(site_locs2,

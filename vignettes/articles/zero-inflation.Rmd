@@ -44,7 +44,7 @@ First, we can simulate data according to a zero-inflated negative binomial distr
 
 ```{r}
 set.seed(430150)
-nb_dat <- jsdm_sim_data(N = 100, S = 8, K = 2, method = "mglmm",
+nb_dat <- jsdm_sim_data(N = 100, S = 8, K = 1, method = "gllvm", D = 2,
                         family = "zi_neg_bin")
 ```
 
@@ -53,8 +53,8 @@ There's a higher probability of simulating a species with no observations whatso
 Now we can fit the model (lowering the number of iterations to improve runtime):
 
 ```{r}
-nb_mod <- stan_jsdm(dat_list = nb_dat, family = "zi_neg_bin", method = "mglmm",
-                    refresh = 0, log_lik = FALSE, iter = 2000)
+nb_mod <- stan_jsdm(dat_list = nb_dat, family = "zi_neg_bin", method = "gllvm",
+                    refresh = 0, iter = 2000)
 nb_mod
 ```
 
@@ -75,62 +75,65 @@ mcmc_plot(nb_mod, plotfun = "recover_hist", pars = "zi", regexp = TRUE,
           true = nb_dat$pars$zi)
 ```
 
-It is quite obvious from this that the zero-inflation estimated by the model is usually larger than that of the data, indicating that the model is assuming more zeros come from the zero-inflation process and therefore possibly overestimating the negative binomial mean part of the model. This demonstrates how these very flexible model structures can end up fitting the data well, but potentially in a different way to the actual data generating process.
+It is obvious from this that the zero-inflation estimated by the model is often larger than that of the data, indicating that the model is assuming more zeros come from the zero-inflation process and therefore possibly overestimating the negative binomial mean part of the model. This demonstrates how these very flexible model structures can end up fitting the data well, but potentially in a different way to the actual data generating process.
+
 
 ## Zero-inflation varying by environmental conditions
 
 We can also fit a zero-inflated model where the zero-inflation part of the model varies due to some set of environmental covariates. These covariates could be the same as those within the rest of the model, or instead be a completely different set of covariates. An example of this could be a model that accounts for recording effort, as you get fewer zeros when recording effort is low.
 
 ```{r sim-data}
-set.seed(3950127)
-zi_X <- as.matrix(data.frame(NR = sample(0:3, size = 200, replace = TRUE,
-                                        prob = c(0.5,0.25,0.125,0.05))))
-data_sim <- jsdm_sim_data(S = 17, N = 200, zi_X = zi_X, D = 2, K = 2,
-                          family = "zi_poisson", method = "gllvm",
-                          prior = jsdm_prior(betas="normal(0,0.5)",
-                                             zi_betas = "normal(0,0.5)"))
+set.seed(3590123)
+zi_X <- as.matrix(data.frame(NR = sample(0:2, size = 500, replace = TRUE,
+                                        prob = c(0.5,0.25,0.1))))
+data_sim <- jsdm_sim_data(S = 6, N = 500, zi_X = zi_X, K = 0,
+                          family = "zi_poisson", method = "mglmm",
+                          prior = jsdm_prior(betas="normal(1,0.5)",
+                                             zi_betas = "normal(0.5,0.25)"))
 ```
 
+We get a message back saying an intercept has been added to zi_X - jsdmstan requires that an intercept is included for prediction of zi, so as we did not include one in our zi_X matrix one is added for us.
 
 ```{r}
-test_fit <- stan_jsdm(dat_list = data_sim, family = "zi_poisson",
-                      method = "gllvm", cores = 4,
-                      prior = jsdm_prior(betas = "normal(0,0.5)",
-                                         zi_betas = "normal(0,0.5)"))
+zip_mod <- stan_jsdm(dat_list = data_sim, family = "zi_poisson",
+                     method = "mglmm", cores = 4, iter = 2000,
+                     prior = jsdm_prior(betas = "normal(1,0.5)",
+                                        zi_betas = "normal(0.5,0.25)"))
 ```
 
+This model runs without any warnings, and if we print the model summary we can see that there are no problematic parameters:
 
 ```{r}
-mcmc_plot(test_fit, plotfun = "recover_intervals", pars = "zi_betas", 
+zip_mod
+```
+
+Note that the printed model summary also includes a little description of how the family-specific zero-inflation parameter is modelled in response to data.
+
+Next, we look at the fit to the data:
+
+```{r}
+multi_pp_check(zip_mod, plotfun = "stat_2d", 
+               stat = list(function(x) sum(x==0), 
+                           function(x) mean(x[x>0])),
+               ndraws = 500)
+```
+
+We can see that the model is massively overestimating the number of zeroes for each species, but is getting the mean correct within the non-zero records.
+
+We now check the recovery of the model parameters, specifically the zi_betas:
+
+```{r}
+mcmc_plot(zip_mod, plotfun = "recover_intervals", pars = "zi_betas", 
           regexp = TRUE,
-          true = c(t(data_sim$pars$zi_betas)))
+          true = c(data_sim$pars$zi_betas))
 ```
 
-
-## Shape parameter varying by environmental conditions
-
-Data integration problems.
-
-```{r sim-data}
-set.seed(3395017)
-
-shp_X <- as.matrix(data.frame(S = rep(c(0,1),each=100)))
-
-data_sim <- jsdm_sim_data(S = 9, N = 200, shp_X = shp_X, 
-                          family = "zi_neg_binomial", method = "mglmm")
-```
-
+From this we can see that the model is overestimating the contribution of the zero-inflation to the model output. 
 
 ```{r}
-test_fit <- stan_jsdm(dat_list = data_sim, family = "zi_neg_binomial",
-                      method = "mglmm", cores = 4, iter = 6000, warmup = 2000,
-                      control = list(adapt_delta = 0.9))
+mcmc_plot(zip_mod, plotfun = "recover_intervals", 
+          pars = paste0("betas[1,",1:6,"]"),
+          true = c(data_sim$pars$betas))
 ```
 
-
-```{r}
-mcmc_plot(test_fit, plotfun = "recover_intervals", pars = "shp_betas", 
-          regexp = TRUE,
-          true = c(t(data_sim$pars$shp_betas)))
-```
-
+This is matched by overestimating the intercepts of the poisson part of the model - the data can be fit by assuming zeroes come from either the zero-inflation part or the poisson part, and this model really 
