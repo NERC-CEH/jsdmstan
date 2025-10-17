@@ -1,9 +1,10 @@
 pandoc: 3.1.11
-pkgdown: 2.1.1
+pkgdown: 2.1.3
 pkgdown_sha: ~
 articles:
   jsdmstan: jsdmstan.html
-last_built: 2025-04-09T09:06Z
+  articles/zero-inflation: zero-inflation.html
+last_built: 2025-10-17T16:15Z
 urls:
   reference: https://nerc-ceh.github.io/jsdmstan/reference
   article: https://nerc-ceh.github.io/jsdmstan/articles
