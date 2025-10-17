@@ -225,7 +225,7 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     post_shppred <- posterior_shppred(object,
                                       newdata = shp_newdata,
                                       draw_ids = draw_id,
-                                      transform = transform, list_index = "draws"
+                                      transform = TRUE, list_index = "draws"
     )
   }
 
@@ -257,7 +257,6 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
   }
 
 
-
   n_sites <- length(object$sites)
   n_species <- length(object$species)
 
@@ -273,13 +272,27 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     } else if (grepl("zi_",family) & "zi" %in% object$family$params_dataresp &
           isTRUE(include_zi)){
       zi2 <- post_zipred[[x]]
-      for(i in seq_len(nrow(x2))){
-        for(j in seq_len(ncol(x2))){
-          x2[i,j] <- switch(
-            object$family$family,
-            "zi_poisson" = (1-stats::rbinom(1, 1, zi2[x,j]))*stats::rpois(1, x2[i,j]),
-            "zi_neg_binomial" = (1-stats::rbinom(1, 1, zi2[x,j]))*rgampois(1, x2[i,j], mod_kappa[x,j])
+      if(isTRUE(shp_param)){
+        mod_kappa <- post_shppred[[x]]
+        for(i in seq_len(nrow(x2))){
+          for(j in seq_len(ncol(x2))){
+            x2[i,j] <- switch(
+              object$family$family,
+              "zi_neg_binomial" = (1-stats::rbinom(1, 1, zi2[i,j]))*
+                rgampois(1, x2[i,j], mod_kappa[i,j])
             )
+          }
+        }
+      } else{
+        for(i in seq_len(nrow(x2))){
+          for(j in seq_len(ncol(x2))){
+            x2[i,j] <- switch(
+              object$family$family,
+              "zi_poisson" = (1-stats::rbinom(1, 1, zi2[i,j]))*stats::rpois(1, x2[i,j]),
+              "zi_neg_binomial" = (1-stats::rbinom(1, 1, zi2[i,j]))*
+                rgampois(1, x2[i,j], mod_kappa[x,j])
+            )
+          }
         }
       }
     } else if (isTRUE(shp_param)) {
@@ -287,6 +300,15 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
         mod_sigma <- post_shppred[[x]]
       } else if(family %in% c("neg_binomial", "zi_neg_binomial")){
         mod_kappa <- post_shppred[[x]]
+      }
+      for(i in seq_len(nrow(x2))){
+        for(j in seq_len(ncol(x2))){
+          x2[i,j] <- switch(
+            object$family$family,
+            "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[i,j]),
+            "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[i,j])
+          )
+        }
       }
     } else {
       for(i in seq_len(nrow(x2))){
@@ -475,7 +497,7 @@ posterior_shppred <- function(object, transform = FALSE,
     shp <- newdata %*% model_est$shp_betas[d, , ]
 
     if (isTRUE(transform)) {
-      shp <- apply(shp, c(1,2), inv_logit)
+      shp <- apply(shp, c(1,2), exp)
     }
 
     return(shp)

@@ -229,7 +229,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
 
 #' @describeIn stan_jsdm Formula interface
 #' @export
-stan_jsdm.formula <- function(formula, data = list(),
+stan_jsdm.formula <- function(formula, data = list(), Y = NULL,
                               zi_formula = NULL, shp_formula = NULL,
                               zi_param = "constant",
                               shp_param = "constant", ...) {
@@ -278,7 +278,25 @@ stan_jsdm.formula <- function(formula, data = list(),
     }
   }
 
-  est <- stan_jsdm.default(X, species_intercept = FALSE,
+  # add checks for intercept only models
+  if(nrow(X) == 0 & ncol(X) == 1){
+    X <- matrix(1, nrow = nrow(Y), ncol = 1)
+    colnames(X) <- "(Intercept)"
+  }
+  if(!is.null(zX)){
+    if(ncol(zX) == 1){
+      if(colnames(zX) == "(Intercept)")
+        stop("Intercept-only models are unsupported by zi_formula, please use zi_param = 'constant' instead.")
+    }
+  }
+  if(!is.null(fX)){
+    if(ncol(fX) == 1){
+      if(colnames(fX) == "(Intercept)")
+        stop("Intercept-only models are unsupported by shp_formula, please use shp_param = 'constant' instead.")
+    }
+  }
+
+  est <- stan_jsdm.default(X, Y = Y, species_intercept = FALSE,
                            shp_X = fX, zi_X = zX,
                            shp_param = shp_param, zi_param = zi_param, ...)
   est$call <- match.call()
@@ -358,6 +376,9 @@ validate_data <- function(Y, D, X, species_intercept,
         stop("Must have at least one latent variable")
       }
     }
+
+    if(is.null(Y))
+      stop("No value for Y has been supplied")
 
     S <- ncol(Y)
     N <- nrow(Y)
@@ -522,15 +543,17 @@ validate_data <- function(Y, D, X, species_intercept,
     if(any(apply(data_list$Y, 2, min)>0)){
       stop("Zero-inflated distributions require zeros to be present in all Y values.")
     }
-    data_list$N_zero <- colSums(data_list$Y==0)
-    data_list$N_nonzero <- colSums(data_list$Y>0)
-    data_list$Sum_nonzero <- sum(data_list$N_nonzero)
-    data_list$Sum_zero <- sum(data_list$N_zero)
-    data_list$Y_nz <- c(as.matrix(data_list$Y))[c(as.matrix(data_list$Y))>0]
-    data_list$nn <- rep(1:data_list$N,data_list$S)[c(data_list$Y>0)]
-    data_list$ss <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y>0)]
-    data_list$nz <- rep(1:data_list$N,data_list$S)[c(data_list$Y==0)]
-    data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
+    if(is.null(shp_X) & is.null(zi_X)){
+      data_list$N_zero <- colSums(data_list$Y==0)
+      data_list$N_nonzero <- colSums(data_list$Y>0)
+      data_list$Sum_nonzero <- sum(data_list$N_nonzero)
+      data_list$Sum_zero <- sum(data_list$N_zero)
+      data_list$Y_nz <- c(as.matrix(data_list$Y))[c(as.matrix(data_list$Y))>0]
+      data_list$nn <- rep(1:data_list$N,data_list$S)[c(data_list$Y>0)]
+      data_list$ss <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y>0)]
+      data_list$nz <- rep(1:data_list$N,data_list$S)[c(data_list$Y==0)]
+      data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
+    }
   }
 
   return(data_list)

@@ -7,3 +7,4 @@ Read-and-delete-me
 ^_pkgdown\.yml$
 ^docs$
 ^pkgdown$
+^vignettes/articles$

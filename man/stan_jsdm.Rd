@@ -34,6 +34,7 @@ stan_jsdm(X, ...)
 \method{stan_jsdm}{formula}(
   formula,
   data = list(),
+  Y = NULL,
   zi_formula = NULL,
   shp_formula = NULL,
   zi_param = "constant",

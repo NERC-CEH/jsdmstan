@@ -18,8 +18,8 @@ multi_pp_check(
 
 \item{plotfun}{The ppc plot function to use, given as a character string. The
 default is to call \link[bayesplot:PPC-distributions]{ppc_dens_overlay}. Can be
-specified as either the entire name of function as a character string or without
-the ppc_ prefix.}
+specified as either the entire name of function as a character string or
+without the ppc_ prefix.}
 
 \item{species}{Which species should be included, by default all}
 
@@ -28,10 +28,13 @@ the ppc_ prefix.}
 \item{grid_args}{Optional list of arguments that are passed to
 \code{\link[gridExtra:arrangeGrob]{gridExtra::arrangeGrob()}} (nrow, ncol, widths, etc.)}
 
-\item{...}{Other options passed to pp_check}
+\item{...}{Other options passed to the bayesplot PPC function or
+posterior_predict. Note that the same value will be used for every species
+included (e.g. binwidth for a histogram cannot be specified by species).}
 }
 \value{
-An object of class \code{"bayesplot_grid"}, for more information see \code{\link[bayesplot:bayesplot_grid]{bayesplot::bayesplot_grid()}}
+An object of class \code{"bayesplot_grid"}, for more information see
+\code{\link[bayesplot:bayesplot_grid]{bayesplot::bayesplot_grid()}}
 }
 \description{
 Multiple pp_check plots per species

@@ -274,15 +274,18 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
 #' @param object The jsdmStanFit model object
 #' @param plotfun The ppc plot function to use, given as a character string. The
 #'   default is to call [ppc_dens_overlay][bayesplot::PPC-distributions]. Can be
-#'   specified as either the entire name of function as a character string or without
-#'   the ppc_ prefix.
+#'   specified as either the entire name of function as a character string or
+#'   without the ppc_ prefix.
 #' @param species Which species should be included, by default all
 #' @param ndraws How many draws should be used within the plots
 #' @param grid_args Optional list of arguments that are passed to
 #'   [gridExtra::arrangeGrob()] (nrow, ncol, widths, etc.)
-#' @param ... Other options passed to pp_check
+#' @param ... Other options passed to the bayesplot PPC function or
+#'   posterior_predict. Note that the same value will be used for every species
+#'   included (e.g. binwidth for a histogram cannot be specified by species).
 #'
-#' @return An object of class \code{"bayesplot_grid"}, for more information see [bayesplot::bayesplot_grid()]
+#' @return An object of class \code{"bayesplot_grid"}, for more information see
+#'   [bayesplot::bayesplot_grid()]
 #' @export
 #'
 multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
@@ -356,8 +359,16 @@ multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
     }
   }
 
+  dots <- list(...)
+  for_pred <- names(dots) %in% union(union(
+    names(formals(jsdm_statsummary)),
+    names(formals(posterior_linpred.jsdmStanFit))
+  ),
+  names(formals(posterior_predict.jsdmStanFit))
+  )
+
   post_fun <- get("posterior_predict", asNamespace("jsdmstan"))
-  post_args <- list(...)
+  post_args <- dots[for_pred]
   post_args$object <- object
   post_args$list_index <- "draws"
   post_args$draw_ids <- draw_ids
@@ -365,10 +376,14 @@ multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
 
   post_res <- do.call(post_fun, post_args)
 
+
+  ppc_args <- dots[!for_pred]
+
   pl_list <- mapply(function(x, name){
     y <- object$data_list$Y[,x]
     yrep <- t(do.call(cbind, lapply(post_res, "[", , x)))
-    ppc_args <- list(y = y, yrep = yrep)
+    ppc_args$y <- y
+    ppc_args$yrep <- yrep
     do.call(ppc_fun, ppc_args) +
       ggplot2::ggtitle(name)
   }, species, species_names, SIMPLIFY = FALSE)

@@ -73,6 +73,10 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
       if (colnames(X) == "(Intercept)") {
         X <- NULL
       }
+    } else{
+      if(colnames(X)[1] == "(Intercept)"){
+        X <- X[,-1,drop=FALSE]
+      }
     }
   } else {
     X <- newX

@@ -328,6 +328,18 @@ test_that("shp and zi models error properly",{
   expect_error(stan_mglmm(dat_list = zinb_sim_data, family = "poisson",
                           shp_param = "covariate"),
                "family parameter in response to data")
+
+  expect_error(stan_jsdm(~V1 + V2, data = as.data.frame(zinb_sim_data$X),
+                         method = "mglmm", family = "zi_neg_binomial",
+                         Y = zinb_sim_data$Y,
+                         zi_formula = ~ 1),
+               "Intercept-only models")
+
+  expect_error(stan_jsdm(~V1 + V2, data = as.data.frame(zinb_sim_data$X),
+                         method = "gllvm", family = "gaussian",
+                         Y = zinb_sim_data$Y,
+                         shp_formula = ~ 1),
+               "Intercept-only models")
 })
 
 
