@@ -543,15 +543,17 @@ validate_data <- function(Y, D, X, species_intercept,
     if(any(apply(data_list$Y, 2, min)>0)){
       stop("Zero-inflated distributions require zeros to be present in all Y values.")
     }
-    data_list$N_zero <- colSums(data_list$Y==0)
-    data_list$N_nonzero <- colSums(data_list$Y>0)
-    data_list$Sum_nonzero <- sum(data_list$N_nonzero)
-    data_list$Sum_zero <- sum(data_list$N_zero)
-    data_list$Y_nz <- c(as.matrix(data_list$Y))[c(as.matrix(data_list$Y))>0]
-    data_list$nn <- rep(1:data_list$N,data_list$S)[c(data_list$Y>0)]
-    data_list$ss <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y>0)]
-    data_list$nz <- rep(1:data_list$N,data_list$S)[c(data_list$Y==0)]
-    data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
+    if(is.null(shp_X) & is.null(zi_X)){
+      data_list$N_zero <- colSums(data_list$Y==0)
+      data_list$N_nonzero <- colSums(data_list$Y>0)
+      data_list$Sum_nonzero <- sum(data_list$N_nonzero)
+      data_list$Sum_zero <- sum(data_list$N_zero)
+      data_list$Y_nz <- c(as.matrix(data_list$Y))[c(as.matrix(data_list$Y))>0]
+      data_list$nn <- rep(1:data_list$N,data_list$S)[c(data_list$Y>0)]
+      data_list$ss <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y>0)]
+      data_list$nz <- rep(1:data_list$N,data_list$S)[c(data_list$Y==0)]
+      data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
+    }
   }
 
   return(data_list)

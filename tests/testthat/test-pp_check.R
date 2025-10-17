@@ -20,6 +20,7 @@ test_that("jsdm_statsummary errors correctly", {
   )
 })
 
+set.seed(214573)
 bern_sim_data <- mglmm_sim_data(N = 50, S = 9, K = 2, family = "bern")
 colnames(bern_sim_data$Y) <- LETTERS[1:9]
 rownames(bern_sim_data$Y) <- paste0("Site", 1:50)

@@ -103,7 +103,7 @@ ifelse(site_intercept == "grouped",
  ifelse(family == "binomial",
         "
   int<lower=0> Ntrials[N]; // Number of trials",""),
-  ifelse(grepl("zi_", family),"
+  ifelse(grepl("zi_", family) & zi_param == "constant" & shp_param == "constant","
   int<lower=0> N_zero[S]; // number of zeros per species
   int<lower=0> N_nonzero[S]; //number of nonzeros per species
   int<lower=0> Sum_nonzero; //Total number of nonzeros across all species
@@ -271,14 +271,11 @@ ifelse(shp_param == "covariate","
   ")
   model <- paste("
   matrix[N,S] mu;
-  ", ifelse(grepl("zi_",family),paste0("
+  ", ifelse(grepl("zi_",family) & shp_param == "constant" & zi_param == "constant",paste0("
   real mu_nz[Sum_nonzero];
   real mu_z[Sum_zero];
   int pos;
-  int neg;",switch(zi_param,"constant" = "",
-                   "covariate" = "
-  real zi_nz[Sum_nonzero];
-  real zi_z[Sum_zero];"),
+  int neg;",
                    ifelse(shp_param== "covariate" & family == "zi_neg_binomial", "
   real kappa_nz[Sum_nonzero];
   real kappa_z[Sum_zero];","")),""),
@@ -288,24 +285,16 @@ ifelse(shp_param == "covariate","
   ),ifelse(grepl("zi_",family),paste0(ifelse(zi_param == "covariate", "
   matrix[N,S] zi = zi_X * zi_betas;",""),
   ifelse(shp_param == "covariate", "
-  matrix[N,S] kappa = exp(shp_X * shp_betas);",""),"
+  matrix[N,S] kappa = exp(shp_X * shp_betas);",""),
+  ifelse(zi_param =="constant" & shp_param == "constant","
   for(i in 1:Sum_nonzero){
-    mu_nz[i] = mu[nn[i],ss[i]];",
-    switch(zi_param, "constant" = "",
-           "covariate" = "
-    zi_nz[i] = zi[nn[i],ss[i]];"),
-    ifelse(shp_param == "covariate" & family == "zi_neg_binomial", "
-    kappa_nz[i] = kappa[nn[i],ss[i]];",""),"
+    mu_nz[i] = mu[nn[i],ss[i]];
   }
   for(i in 1:Sum_zero){
-    mu_z[i] = mu[nz[i],sz[i]];",
-    switch(zi_param, "constant" = "",
-           "covariate" = "
-    zi_z[i] = zi[nz[i],sz[i]];"),
-  ifelse(shp_param == "covariate" & family == "zi_neg_binomial", "
-    kappa_z[i] = kappa[nz[i],sz[i]];",""),"
+    mu_z[i] = mu[nz[i],sz[i]];
   }
-  "),""),ifelse(shp_param == "covariate" & family != "zi_neg_binomial", paste("
+  ","")),""),
+  ifelse(shp_param == "covariate" & family != "zi_neg_binomial", paste("
   matrix[N,S]", switch(family, "gaussian" = "sigma",
                        "neg_binomial" = "kappa"),
                        "= exp(shp_X * shp_betas);",""),"")
@@ -398,7 +387,7 @@ ifelse(shp_param == "covariate","
       "poisson" = "poisson_log(mu[i,]);",
       "binomial" = "binomial_logit(Ntrials[i], mu[i,]);"
     )
-  )} else{paste("
+  )} else if(zi_param == "constant" & shp_param == "constant"){paste("
   pos = 1;
   neg = 1;
   for(s in 1:S){
@@ -431,7 +420,37 @@ ifelse(shp_param == "covariate","
     neg = neg + N_zero[s];
   }
 ")
-  }
+  } else{paste(
+    "
+    for(s in 1:S){
+    for (n in 1:N){
+      if(Y[n,s] == 0){
+        target += log_sum_exp(bernoulli_logit_lpmf(1 |",
+    switch(zi_param, "covariate" =  "zi[n,s])",
+           "constant" = "zi[s])"),",
+                         bernoulli_logit_lpmf(0 | ",
+    switch(zi_param, "covariate" =  "zi[n,s])",
+           "constant" = "zi[s])"),"
+                           +",
+    switch(family,
+           "zi_poisson" = "poisson_log_lpmf(0 | mu[n,s]))",
+           "zi_neg_binomial" = paste("neg_binomial_2_log_lpmf(0 | mu[n,s],",
+                                     switch(shp_param, "constant" = "kappa[s]))",
+                                            "covariate" = "kappa[n,s]))"))),";
+      } else {
+        target += bernoulli_logit_lpmf(0 | ",
+    switch(zi_param, "covariate" =  "zi[n,s])",
+           "constant" = "zi[s])"),"
+                           + ",
+    switch(family,
+           "zi_poisson" = "poisson_log_lpmf(Y[n,s] | mu[n,s])",
+           "zi_neg_binomial" = paste("neg_binomial_2_log_lpmf(Y[n,s] | mu[n,s],",
+                                     switch(shp_param, "constant" = "kappa[s])",
+                                            "covariate" = "kappa[n,s])"))),";
+      }
+    }
+  }"
+  )}
  # generated quantities ####
   generated_quantities <- paste(
     ifelse(method == "gllvm", "

@@ -29,7 +29,7 @@ P(Y_i = y_i) =
 
 Where $y_i$ is the data at point $i$, $\pi_i$ is the zero-inflation at point $i$, $\mu_i$ is the vector of parameters for any particular count distribution at point $i$. The important thing to note here is that a zero can occur due to either of the $\pi_i$ or the $\mu_i$ parameters, representing the two data generating processes mentioned above. The Poisson or negative binomial parts of the distribution behave as they would in any other jSDM model in `jsdmstan`, where the $\mu_i$ parameters are modelled as a function of a combination of environmental covariates and species covariance.
 
-Within `jsdmstan` the zero-inflation parameter ($\pi$ above) can either be included as a species-specific constant or modelled as a function of environmental covariates (not necessarily the same ones as the rest of the model responds to). Currently the zero-inflation parameter cannot also be modelled as a function of the species covariance. Note that no information is shared between the estimation of the effects of the environmental covariates upon the mean (and kappa, if a negative binomial) parameters within the count distribution and the zero-inflation parameters. This means that the model can very quickly become overspecified and the model fitting struggles to converge upon a single parameter set if the zero-inflation also varies with environmental covariates.
+Within `jsdmstan` the zero-inflation parameter ($\pi$ above) can either be included as a species-specific constant or modelled as a function of environmental covariates (not necessarily the same ones as the rest of the model responds to). Currently the zero-inflation parameter cannot also be modelled as a function of the species covariance. Note that no information is shared between the estimation of the effects of the environmental covariates upon the mean (and kappa, if a negative binomial) parameters within the count distribution and the zero-inflation parameters. 
 
 
 
@@ -63,7 +63,10 @@ No warnings are returned, or anything particularly concerning in terms of rhat o
 Now we can look at the data recovery, as there are some species that were simulated to have very extreme maximum values (check `max(nb_dat$Y)`), the overall distribution is hard to see using the default multi_pp_check options, so we use the statistics option and simultaneously check the recovery of the mean and the standard deviation:
 
 ```{r}
-multi_pp_check(nb_mod, plotfun = "stat_2d")
+multi_pp_check(nb_mod, plotfun = "stat_2d", 
+               stat = list(function(x) sum(x==0), 
+                           function(x) mean(x[x>0])),
+               ndraws = 500)
 ```
 
 We can see that the mean and standard deviation of the data are always nested within the model predictions, indicating a reasonable fit to the data.
@@ -96,12 +99,12 @@ We get a message back saying an intercept has been added to zi_X - jsdmstan requ
 
 ```{r}
 zip_mod <- stan_jsdm(dat_list = data_sim, family = "zi_poisson",
-                     method = "mglmm", cores = 4, iter = 2000,
+                     method = "mglmm", cores = 4, iter = 4000, thin = 5,
                      prior = jsdm_prior(betas = "normal(1,0.5)",
                                         zi_betas = "normal(0.5,0.25)"))
 ```
 
-This model runs without any warnings, and if we print the model summary we can see that there are no problematic parameters:
+This model runs without any warnings, and if we print the model summary we can see that while there are a couple of parameters that are flagged for low ESS, the overall Bulk.ESS is still over four hundred so we're not too worried about those:
 
 ```{r}
 zip_mod
@@ -118,7 +121,7 @@ multi_pp_check(zip_mod, plotfun = "stat_2d",
                ndraws = 500)
 ```
 
-We can see that the model is massively overestimating the number of zeroes for each species, but is getting the mean correct within the non-zero records.
+We can see that the model is correctly estimating both the number of zeroes for each species and the mean within the non-zero records.
 
 We now check the recovery of the model parameters, specifically the zi_betas:
 
@@ -128,7 +131,7 @@ mcmc_plot(zip_mod, plotfun = "recover_intervals", pars = "zi_betas",
           true = c(data_sim$pars$zi_betas))
 ```
 
-From this we can see that the model is overestimating the contribution of the zero-inflation to the model output. 
+From this we can see that the model is doing well at recovering the zi_betas, with 75% of the true parameter estimates within the 50% interval of the estimates and 92% within the 95% intervals. Similarly, the beta parameters of the poisson are well recovered.  
 
 ```{r}
 mcmc_plot(zip_mod, plotfun = "recover_intervals", 
@@ -136,4 +139,4 @@ mcmc_plot(zip_mod, plotfun = "recover_intervals",
           true = c(data_sim$pars$betas))
 ```
 
-This is matched by overestimating the intercepts of the poisson part of the model - the data can be fit by assuming zeroes come from either the zero-inflation part or the poisson part, and this model really 
+
