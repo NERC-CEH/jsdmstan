@@ -4,7 +4,7 @@ pkgdown_sha: ~
 articles:
   jsdmstan: jsdmstan.html
   articles/zero-inflation: zero-inflation.html
-last_built: 2025-10-17T16:15Z
+last_built: 2025-10-20T09:16Z
 urls:
   reference: https://nerc-ceh.github.io/jsdmstan/reference
   article: https://nerc-ceh.github.io/jsdmstan/articles
