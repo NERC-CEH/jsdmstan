@@ -10,11 +10,8 @@ jsdm_prior(
   z_preds = "normal(0,1)",
   cor_preds = "lkj_corr(1)",
   betas = "normal(0,1)",
-  a = "normal(0,1)",
-  a_bar = "normal(0,1)",
   sigma_a = "normal(0,1)",
   sigmas_species = "normal(0,1)",
-  z_species = "normal(0,1)",
   cor_species = "lkj_corr(1)",
   cor_species_chol = "lkj_corr_cholesky(1)",
   LV = "normal(0,1)",
@@ -41,19 +38,12 @@ npred correlation matrix) (default \code{"lkj_corr(1)"})}
 \item{betas}{If covariate effects are unstructured, the prior on the
 covariate effects}
 
-\item{a}{The site level intercepts (default standard normal)}
-
-\item{a_bar}{The mean site level intercept}
-
 \item{sigma_a}{The standard deviation of the site level intercepts,
 constrained to be positive and default prior is half standard normal}
 
 \item{sigmas_species}{For MGLMM method, the standard deviations of the
 species covariances, constrained to be positive (default half standard
 normal)}
-
-\item{z_species}{For MGLMM method, the S by N matrix of species covariance by
-site (default standard normal)}
 
 \item{cor_species}{For MGLMM method (data simulation only), the correlation
 between species as the nspecies by nspecies correlation matrix (default

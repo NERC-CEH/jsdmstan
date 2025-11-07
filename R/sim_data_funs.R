@@ -272,11 +272,8 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       "z_preds" = (K + 1 * species_intercept) * S,
       "cor_preds" = K + 1 * species_intercept,
       "betas" = (K + 1 * species_intercept) * S,
-      "a" = N,
-      "a_bar" = 1,
       "sigma_a" = 1,
       "sigmas_species" = S,
-      "z_species" = S * N,
       "cor_species" = S,
       "LV" = D1 * N,
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
@@ -363,19 +360,13 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
 
   ## site intercept
   if (site_intercept %in% c("grouped","ungrouped")) {
-    a_bar <- do.call(
-      match.fun(prior_func[["a_bar"]][[1]]),
-      prior_func[["a_bar"]][[2]]
-    )
+
     sigma_a <- abs(do.call(
       match.fun(prior_func[["sigma_a"]][[1]]),
       prior_func[["sigma_a"]][[2]]
     ))
-    a <- do.call(
-      match.fun(prior_func[["a"]][[1]]),
-      prior_func[["a"]][[2]]
-    )
-    a_i <- a_bar + a * sigma_a
+    z_a <- rnorm(N, 0, 1)
+    a_i <- z_a * sigma_a
   } else {
     a_i <- rep(0, N)
   }
@@ -386,10 +377,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       match.fun(prior_func[["sigmas_species"]][[1]]),
       prior_func[["sigmas_species"]][[2]]
     ))
-    z_species <- matrix(do.call(
-      match.fun(prior_func[["z_species"]][[1]]),
-      prior_func[["z_species"]][[2]]
-    ), nrow = S, ncol = N)
+    z_species <- matrix(rnorm(N*S, 0, 1), nrow = S, ncol = N)
     u_ij <- t((diag(sigmas_species) %*% cor_species) %*% z_species)
   }
 
@@ -577,9 +565,8 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   }
 
   if (site_intercept == "ungrouped") {
-    pars$a_bar <- a_bar
     pars$sigma_a <- sigma_a
-    pars$a <- a
+    pars$z_a <- z_a
   }
   if (method == "gllvm") {
     pars$L <- L

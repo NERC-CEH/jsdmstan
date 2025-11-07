@@ -34,15 +34,11 @@
 #'   npred correlation matrix) (default \code{"lkj_corr(1)"})
 #' @param betas If covariate effects are unstructured, the prior on the
 #'   covariate effects
-#' @param a The site level intercepts (default standard normal)
-#' @param a_bar The mean site level intercept
 #' @param sigma_a The standard deviation of the site level intercepts,
 #'   constrained to be positive and default prior is half standard normal
 #' @param sigmas_species For MGLMM method, the standard deviations of the
 #'   species covariances, constrained to be positive (default half standard
 #'   normal)
-#' @param z_species For MGLMM method, the S by N matrix of species covariance by
-#'   site (default standard normal)
 #' @param cor_species For MGLMM method (data simulation only), the correlation
 #'   between species as the nspecies by nspecies correlation matrix (default
 #'   \code{"lkj_corr(1)"})
@@ -82,11 +78,8 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        z_preds = "normal(0,1)",
                        cor_preds = "lkj_corr(1)",
                        betas = "normal(0,1)",
-                       a = "normal(0,1)",
-                       a_bar = "normal(0,1)",
                        sigma_a = "normal(0,1)",
                        sigmas_species = "normal(0,1)",
-                       z_species = "normal(0,1)",
                        cor_species = "lkj_corr(1)",
                        cor_species_chol = "lkj_corr_cholesky(1)",
                        LV = "normal(0,1)",
@@ -99,9 +92,8 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        shp_betas = "normal(0,1)") {
   res <- list(
     sigmas_preds = sigmas_preds, z_preds = z_preds, cor_preds = cor_preds,
-    betas = betas,
-    a = a, a_bar = a_bar, sigma_a = sigma_a,
-    sigmas_species = sigmas_species, z_species = z_species,
+    betas = betas, sigma_a = sigma_a,
+    sigmas_species = sigmas_species,
     cor_species = cor_species, cor_species_chol = cor_species_chol,
     LV = LV, L = L, sigma_L = sigma_L,
     sigma = sigma, kappa = kappa, zi = zi,
@@ -125,14 +117,14 @@ print.jsdmprior <- function(x, ...) {
     Parameter = names(x),
     Group = c(
       rep("covariate_effects", 4),
-      rep("site_intercept", 3),
-      rep("mglmm", 4),
+      "site_intercept",
+      rep("mglmm", 3),
       rep("gllvm", 3),
       "gaussian", "neg_binomial",rep("zero_inflation",2), "family"
     ),
     Constraint = c(
-      "lower=0", rep("none", 5), rep("lower=0", 2),
-      rep("none", 5), rep("lower=0", 3),"lower=0,upper=1","none","none"
+      "lower=0", rep("none", 4), rep("lower=0", 1),
+      rep("none", 4), rep("lower=0", 3),"lower=0,upper=1","none","none"
     ),
     Prior = unlist(unname(x))
   )

@@ -150,6 +150,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
+  site_intercept <- match.arg(site_intercept, c("none", "grouped", "ungrouped"))
   if(grepl("zi", family)){
     if(zi_param == "covariate"){
       if(is.null(zi_X) & is.null(dat_list)){
@@ -179,6 +180,15 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     is.logical(species_intercept),
     is.logical(save_data)
   )
+  if(site_intercept == "none" & !is.null(dat_list)){
+    if("sigma_a" %in% names(dat_list$pars)){
+      if(length(dat_list$pars$z_a) == dat_list$N){
+        site_intercept <- "ungrouped"
+      } else{
+        site_intercept <- "grouped"
+      }
+    }
+  }
   if(site_intercept == "grouped" & is.null(site_groups) & is.null(dat_list))
     stop("If site_intercept is grouped then groups must be supplied to site_groups")
 

@@ -133,15 +133,13 @@ ifelse(shp_param == "covariate","
   site_inter_par <- switch(site_intercept,
                            "ungrouped" = "
   // Site intercepts
-  real a_bar;
   real<lower=0> sigma_a;
-  vector[N] a;",
+  vector[N] z_a;",
   "none" = "",
   "grouped" = "
   // Site intercepts
-  real a_bar;
   real<lower=0> sigma_a;
-  vector[ngrp] a;")
+  vector[ngrp] z_a;")
   species_pars <- switch(beta_param, "cor" = "
   //betas are hierarchical with covariance model
   vector<lower=0>[K] sigmas_preds;
@@ -235,7 +233,7 @@ ifelse(shp_param == "covariate","
   gllvm_model <- switch(site_intercept, "ungrouped" = "
   // model
   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);
   mu = alpha + (X * betas) + LV_sum;
   ", "none" = "
   // model
@@ -245,7 +243,7 @@ ifelse(shp_param == "covariate","
   matrix[N, S] alpha;
   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
   {
-    vector[ngrp] theta = a_bar + a * sigma_a;
+    vector[ngrp] theta = z_a * sigma_a;
     for (n in 1:N){
       alpha[n,] = rep_row_vector(theta[grps[n]],S);
     }
@@ -254,7 +252,7 @@ ifelse(shp_param == "covariate","
   ")
   mglmm_model <- switch(site_intercept, "ungrouped" = "
   // model
-  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);
   mu = alpha + (X * betas) + u;
   ", "none" = "
   // model
@@ -262,7 +260,7 @@ ifelse(shp_param == "covariate","
   ", "grouped" = "
   matrix[N, S] alpha;
   {
-    vector[ngrp] theta = a_bar + a * sigma_a;
+    vector[ngrp] theta = z_a * sigma_a;
     for (n in 1:N){
       alpha[n,] = rep_row_vector(theta[grps[n]],S);
     }
@@ -303,8 +301,7 @@ ifelse(shp_param == "covariate","
   model_priors <- paste(
     ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
   // Site-level intercept priors
-  a ~ ", prior[["a"]], ";
-  a_bar ~ ", prior[["a_bar"]], ";
+  z_a ~ std_normal();
   sigma_a ~ ", prior[["sigma_a"]], ";
   "), "
   "), switch(beta_param, "cor" = paste(
@@ -329,7 +326,7 @@ ifelse(shp_param == "covariate","
       "mglmm" = paste("
   // Species parameter priors
   sigmas_species ~ ", prior[["sigmas_species"]], ";
-  to_vector(z_species) ~ ", prior[["z_species"]], ";
+  to_vector(z_species) ~ std_normal();
   cor_species_chol ~ ", prior[["cor_species_chol"]], ";
 ")
     ),
