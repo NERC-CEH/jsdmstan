@@ -87,6 +87,7 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        sigma_L = "normal(0,1)",
                        sigma = "normal(0,1)",
                        kappa = "normal(0,1)",
+                       shape = "gamma(0.1,0.1)",
                        zi = "beta(1,1)",
                        zi_betas = "normal(0,1)",
                        shp_betas = "normal(0,1)") {
@@ -96,7 +97,7 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
     sigmas_species = sigmas_species,
     cor_species = cor_species, cor_species_chol = cor_species_chol,
     LV = LV, L = L, sigma_L = sigma_L,
-    sigma = sigma, kappa = kappa, zi = zi,
+    sigma = sigma, kappa = kappa, shape = shape, zi = zi,
     zi_betas = zi_betas, shp_betas = shp_betas
   )
   if (!(all(sapply(res, is.character)))) {
@@ -120,11 +121,11 @@ print.jsdmprior <- function(x, ...) {
       "site_intercept",
       rep("mglmm", 3),
       rep("gllvm", 3),
-      "gaussian", "neg_binomial",rep("zero_inflation",2), "family"
+      "gaussian", "neg_binomial","gamma",rep("zero_inflation",2), "family"
     ),
     Constraint = c(
       "lower=0", rep("none", 4), rep("lower=0", 1),
-      rep("none", 4), rep("lower=0", 3),"lower=0,upper=1","none","none"
+      rep("none", 4), rep("lower=0", 4),"lower=0,upper=1","none","none"
     ),
     Prior = unlist(unname(x))
   )
