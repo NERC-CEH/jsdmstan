@@ -25,42 +25,44 @@ stan_gllvm(X, ...)
 \method{stan_gllvm}{formula}(formula, data = list(), ...)
 }
 \arguments{
-\item{X}{The covariates matrix, with rows being site and columns being covariates.
-Ignored in favour of data when formula approach is used to specify model.}
+\item{X}{The covariates matrix, with rows being site and columns being
+covariates. Ignored in favour of data when formula approach is used to
+specify model.}
 
 \item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 
-\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
-assumed to be species}
+\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns
+are assumed to be species}
 
 \item{D}{The number of latent variables within a GLLVM model}
 
 \item{species_intercept}{Whether the model should be fit with an intercept by
 species, by default \code{TRUE}}
 
-\item{dat_list}{Alternatively, data can be given to the model as a list containing
-Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an
-example of how this can be formatted.}
+\item{dat_list}{Alternatively, data can be given to the model as a list
+containing Y, X, N, S, K, and site_intercept. See output of
+\code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an example of how this can be formatted.}
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
-matching is supported.}
+\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression matching is
+supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
-values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
-with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
-grouping)}
+values \code{"none"} (no site intercept), \code{"grouped"} (a site
+intercept with hierarchical grouping) or \code{"ungrouped"} (site intercept
+with no grouping)}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
-\item{save_data}{If the data used to fit the model should be saved in the model
-object, by default TRUE.}
+\item{save_data}{If the data used to fit the model should be saved in the
+model object, by default TRUE.}
 
-\item{iter}{A positive integer specifying the number of iterations for each chain,
-default 4000.}
+\item{iter}{A positive integer specifying the number of iterations for each
+chain, default 4000.}
 
-\item{formula}{The formula of covariates that the species means are modelled from}
+\item{formula}{The formula of covariates that the species means are modelled
+from}
 
 \item{data}{Dataframe or list of covariates.}
 }

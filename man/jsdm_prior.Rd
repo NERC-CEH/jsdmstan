@@ -19,6 +19,7 @@ jsdm_prior(
   sigma_L = "normal(0,1)",
   sigma = "normal(0,1)",
   kappa = "normal(0,1)",
+  shape = "gamma(1,1)",
   zi = "beta(1,1)",
   zi_betas = "normal(0,1)",
   shp_betas = "normal(0,1)"
@@ -68,6 +69,9 @@ Constrained to be positive (default standard normal)}
 
 \item{kappa}{For negative binomial response, the negative binomial variance
 parameter. Constrained to be positive (default standard normal)}
+
+\item{shape}{For gamma response, the shape parameter. Constrained to be
+positive (default gamma(0.1,0.1))}
 
 \item{zi}{For zero-inflated poisson or negative binomial with no
 environmental covariate effects upon the zero-inflation, the proportion of

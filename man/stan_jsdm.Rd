@@ -21,6 +21,8 @@ stan_jsdm(X, ...)
   site_groups = NULL,
   beta_param = "unstruct",
   Ntrials = NULL,
+  censoring = "none",
+  censor_points = NULL,
   zi_param = "constant",
   zi_X = NULL,
   shp_param = "constant",
@@ -43,112 +45,123 @@ stan_jsdm(X, ...)
 )
 }
 \arguments{
-\item{X}{The covariates matrix, with rows being site and columns being covariates.
-Ignored in favour of data when formula approach is used to specify model.}
+\item{X}{The covariates matrix, with rows being site and columns being
+covariates. Ignored in favour of data when formula approach is used to
+specify model.}
 
 \item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 
-\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
-assumed to be species}
+\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns
+are assumed to be species}
 
 \item{species_intercept}{Whether the model should be fit with an intercept by
 species, by default \code{TRUE}}
 
 \item{method}{Whether to fit a GLLVM or MGLMM model, details in description}
 
-\item{dat_list}{Alternatively, data can be given to the model as a list containing
-Y, X, N, S, K, and site_intercept. See output of \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an
-example of how this can be formatted.}
+\item{dat_list}{Alternatively, data can be given to the model as a list
+containing Y, X, N, S, K, and site_intercept. See output of
+\code{\link[=jsdm_sim_data]{jsdm_sim_data()}} for an example of how this can be formatted.}
 
 \item{family}{is the response family, must be one of \code{"gaussian"},
 \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
-matching is supported.}
+\code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression matching is
+supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
-values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
-with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
-grouping)}
+values \code{"none"} (no site intercept), \code{"grouped"} (a site
+intercept with hierarchical grouping) or \code{"ungrouped"} (site intercept
+with no grouping)}
 
 \item{D}{The number of latent variables within a GLLVM model}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
-\item{site_groups}{If the site intercept is grouped, a vector of group identities
-per site}
+\item{site_groups}{If the site intercept is grouped, a vector of group
+identities per site}
 
-\item{beta_param}{The parameterisation of the environmental covariate effects, by
-default \code{"unstruct"}. See details for further information.}
+\item{beta_param}{The parameterisation of the environmental covariate
+effects, by default \code{"unstruct"}. See details for further information.}
 
 \item{Ntrials}{For the binomial distribution the number of trials, given as
 either a single integer which is assumed to be constant across sites or as
 a site-length vector of integers.}
 
-\item{zi_param}{For the zero-inflated families, whether the zero-inflation parameter
-is a species-specific constant (default, \code{"constant"}), or varies by
-covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{zi_formula}
-is specified.}
+\item{censoring}{If the response is left-censored (\code{"left"}) or not
+censored (default, \code{"none"}).}
 
-\item{zi_X}{If \code{zi_param = "covariate"}, the matrix of predictors
-that the zero-inflation is modelled in response to. If there is not already
-an intercept column (identified by all values being equal to one), one will
-be added to the front of the matrix. Overridden by \code{zi_formula}
-when formula approach is used.}
+\item{censor_points}{For censored models, the values at which censoring
+occurs, to be provided as a S-length vector.}
 
-\item{shp_param}{For the families with shape parameters, whether the shape parameter
-is a species-specific constant (default, \code{"constant"}), or varies by
-covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{shp_formula}
-is specified.}
+\item{zi_param}{For the zero-inflated families, whether the zero-inflation
+parameter is a species-specific constant (default, \code{"constant"}), or
+varies by covariates (\code{"covariate"}). Set to \code{"covariate"} if
+\code{zi_formula} is specified.}
 
-\item{shp_X}{If \code{shp_param = "covariate"}, the matrix of predictors
-that the shape parameter is modelled in response to. If there is not already
-an intercept column (identified by all values being equal to one), one will
-be added to the front of the matrix. Overridden by \code{shp_formula}
-when formula approach is used.}
+\item{zi_X}{If \code{zi_param = "covariate"}, the matrix of predictors that
+the zero-inflation is modelled in response to. If there is not already an
+intercept column (identified by all values being equal to one), one will be
+added to the front of the matrix. Overridden by \code{zi_formula} when
+formula approach is used.}
 
-\item{save_data}{If the data used to fit the model should be saved in the model
-object, by default TRUE.}
+\item{shp_param}{For the families with shape parameters, whether the shape
+parameter is a species-specific constant (default, \code{"constant"}), or
+varies by covariates (\code{"covariate"}). Set to \code{"covariate"} if
+\code{shp_formula} is specified.}
 
-\item{iter}{A positive integer specifying the number of iterations for each chain,
-default 4000.}
+\item{shp_X}{If \code{shp_param = "covariate"}, the matrix of predictors that
+the shape parameter is modelled in response to. If there is not already an
+intercept column (identified by all values being equal to one), one will be
+added to the front of the matrix. Overridden by \code{shp_formula} when
+formula approach is used.}
+
+\item{save_data}{If the data used to fit the model should be saved in the
+model object, by default TRUE.}
+
+\item{iter}{A positive integer specifying the number of iterations for each
+chain, default 4000.}
 
 \item{init}{Initialisation values for the sampling, see \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}.
 If unspecified and \code{method = "mglmm"} then set to \code{"0"}.}
 
-\item{formula}{The formula of covariates that the species means are modelled from}
+\item{formula}{The formula of covariates that the species means are modelled
+from}
 
 \item{data}{Dataframe or list of covariates.}
 
-\item{zi_formula}{For the zero-inflated families, the formula of any covariate
-effect upon the zi parameter. Covariates are sourced from the \code{data}
-argument. Only works if main effect is specified using formula argument.}
+\item{zi_formula}{For the zero-inflated families, the formula of any
+covariate effect upon the zi parameter. Covariates are sourced from the
+\code{data} argument. Only works if main effect is specified using formula
+argument.}
 
-\item{shp_formula}{For the families with shape parameters, the formula of any covariate
-effect upon the shape parameter. Covariates are sourced from the \code{data}
-argument. Only works if main effect is specified using formula argument.}
+\item{shp_formula}{For the families with shape parameters, the formula of any
+covariate effect upon the shape parameter. Covariates are sourced from the
+\code{data} argument. Only works if main effect is specified using formula
+argument.}
 }
 \value{
 A \code{jsdmStanFit} object, comprising a list including the StanFit
-object, the data used to fit the model plus a few other bits of information. See
-\link{jsdmStanFit} for details.
+object, the data used to fit the model plus a few other bits of
+information. See \link{jsdmStanFit} for details.
 }
 \description{
 This function fits joint Species Distribution models in Stan, using either a
-generalised linear latent variable model approach (\code{method = "gllvm"}), or a
-multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
+generalised linear latent variable model approach (\code{method = "gllvm"}),
+or a multivariate generalised linear mixed model approach (\code{method =
+"mglmm"}).
 }
 \details{
-Environmental covariate effects (\code{"betas"}) can be parameterised in two
-ways. With the \code{"cor"} parameterisation all covariate effects are assumed
-to be constrained by a correlation matrix between the covariates. With the
-\code{"unstruct"} parameterisation all covariate effects are assumed to draw
-from a simple distribution with no correlation structure. Both parameterisations
-can be modified using the prior object.
-Families supported are the Gaussian family, the negative binomial family,
-the Poisson family, the binomial family (with number of trials specificied
-using the \code{Ntrials} parameter), the Bernoulli family (the special case
-of the binomial family where number of trials is equal to one), the
-zero-inflated Poisson and the zero-inflated negative binomial. For both
+Environmental covariate effects (\code{"betas"}) can be
+parameterised in two ways. With the \code{"cor"} parameterisation all
+covariate effects are assumed to be constrained by a correlation matrix
+between the covariates. With the \code{"unstruct"} parameterisation all
+covariate effects are assumed to draw from a simple distribution with no
+correlation structure. Both parameterisations can be modified using the prior
+object. Families supported are the Gaussian family, the negative binomial
+family, the Poisson family, the binomial family (with number of trials
+specificied using the \code{Ntrials} parameter), the Bernoulli family (the
+special case of the binomial family where number of trials is equal to one),
+the zero-inflated Poisson and the zero-inflated negative binomial. For both
 zero-inflated families the zero-inflation is assumed to be a species-specific
 constant.
 }

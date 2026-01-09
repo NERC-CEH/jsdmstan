@@ -93,8 +93,9 @@ ifelse(method == "gllvm",
 ifelse(site_intercept == "grouped",
             "
   int<lower=1> ngrp; // Number of groups in site intercept
-  int<lower=0, upper = ngrp> grps[N]; // Vector matching sites to groups
- ",""),
+  array[N] int<lower=0, upper = ngrp> grps; // Vector matching sites to groups
+ ",""),"
+  array[N,S]",
   switch(family,
       "gaussian" = "real",
       "lognormal" = "real<lower=0>",
@@ -106,20 +107,20 @@ ifelse(site_intercept == "grouped",
       "binomial" = "int<lower=0>",
       "gamma" = "real<lower=0>",
       "beta" = "real<lower=0,upper=1>",
-    ), "Y[N,S]; //Species matrix",
+    ), "Y; //Species matrix",
  ifelse(family == "binomial",
         "
-  int<lower=0> Ntrials[N]; // Number of trials",""),
+  array[N] int<lower=0> Ntrials; // Number of trials",""),
   ifelse(grepl("zi_", family) & zi_param == "constant" & shp_param == "constant","
-  int<lower=0> N_zero[S]; // number of zeros per species
-  int<lower=0> N_nonzero[S]; //number of nonzeros per species
+  array[S] int<lower=0> N_zero; // number of zeros per species
+  array[S] int<lower=0> N_nonzero; //number of nonzeros per species
   int<lower=0> Sum_nonzero; //Total number of nonzeros across all species
   int<lower=0> Sum_zero; //Total number of zeros across all species
-  int<lower=0> Y_nz[Sum_nonzero]; //Y values for nonzeros
-  int<lower=0> ss[Sum_nonzero]; //species index for Y_nz
-  int<lower=0> nn[Sum_nonzero]; //site index for Y_nz
-  int<lower=0> sz[Sum_zero]; //species index for Y_z
-  int<lower=0> nz[Sum_zero]; //site index for Y_z",""),
+  array[Sum_nonzero] int<lower=0> Y_nz; //Y values for nonzeros
+  array[Sum_nonzero] int<lower=0> ss; //species index for Y_nz
+  array[Sum_nonzero] int<lower=0> nn; //site index for Y_nz
+  array[Sum_zero] int<lower=0> sz; //species index for Y_z
+  array[Sum_zero] int<lower=0> nz; //site index for Y_z",""),
 ifelse(grepl("zi_", family) & zi_param == "covariate","
   int<lower=1> zi_k; //number of covariates for env effects on zi
   matrix[N, zi_k] zi_X; //environmental covariate matrix for zi",""),
@@ -127,8 +128,10 @@ ifelse(shp_param == "covariate","
   int<lower=1> shp_k; //number of covariates for env effects on family parameter
   matrix[N, shp_k] shp_X; //environmental covariate matrix for family parameter",""),
 ifelse(censoring == "left", "
-  real U_l[S]; // left censoring point per species
-  array[N,S] int<lower=0,upper=1> CensL_ID; //location of left-censored observations","")
+  array[S] int<lower=0> N_cens; // number of cens per species
+  array[S] int<lower=0> N_noncens; //number of noncens per species
+  array[N,S] int<lower=0> J_cens; //Indices of cens across all species
+  array[N,S] int<lower=0> J_noncens; //Indices of noncens across all species","")
 )
 
 
@@ -171,32 +174,32 @@ ifelse(censoring == "left", "
 
   var_pars <- switch(family,
     "gaussian" = switch(shp_param, "constant" = "
-  real<lower=0> sigma[S]; // Gaussian parameters", "covariate" = "
+  array[S] real<lower=0> sigma; // Gaussian parameters", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "lognormal" = switch(shp_param, "constant" = "
-  real<lower=0> sigma[S]; // Lognormal parameters", "covariate" = "
+  array[S] real<lower=0> sigma; // Lognormal parameters", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "gamma" = switch(shp_param, "constant" = "
   vector<lower=0>[S] shape; // Gaussian parameters", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "bernoulli" = "",
     "neg_binomial" = switch(shp_param, "constant" = "
-  real<lower=0> kappa[S]; // neg_binomial parameters","covariate" = "
+  array[S] real<lower=0> kappa; // neg_binomial parameters","covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "poisson" = "",
     "zi_poisson" = switch(zi_param,
     "constant" = "
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter",
+  array[S] real<lower=0,upper=1> zi; // zero-inflation parameter",
     "covariate" = "
   matrix[zi_k,S] zi_betas; //environmental effects for zi"),
   "zi_neg_binomial" = switch(zi_param,
                              "constant" = switch(shp_param, "constant" = "
-  real<lower=0> kappa[S]; // neg_binomial parameters
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter", "covariate" = "
+  array[S] real<lower=0> kappa; // neg_binomial parameters
+  array[S] real<lower=0,upper=1> zi; // zero-inflation parameter", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter"),
+  array[S] real<lower=0,upper=1> zi; // zero-inflation parameter"),
                              "covariate" = switch(shp_param, "constant" = "
-  real<lower=0> kappa[S]; // neg_binomial parameters
+  array[S] real<lower=0> kappa; // neg_binomial parameters
   matrix[zi_k,S] zi_betas; //environmental effects for zi", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param
   matrix[zi_k,S] zi_betas; //environmental effects for zi"))
@@ -291,8 +294,8 @@ ifelse(censoring == "left", "
   int pos;
   int neg;",
                    ifelse(shp_param== "covariate" & family == "zi_neg_binomial", "
-  real kappa_nz[Sum_nonzero];
-  real kappa_z[Sum_zero];","")),""),
+  array[Sum_nonzero] real kappa_nz;
+  array[Sum_zero] real kappa_z;","")),""),
   switch(method,
     "gllvm" = gllvm_model,
     "mglmm" = mglmm_model
@@ -419,34 +422,36 @@ ifelse(censoring == "left", "
                               "covariate" = "neg_binomial_2_log(mu[i,], kappa[i,]);"),
       "poisson" = "poisson_log(mu[i,]);",
       "binomial" = "binomial_logit(Ntrials[i], mu[i,]);",
-      "gamma" = switch(shp_param,"constant" = "gamma(mu[i,], shape ./ to_vector(mu[i,]));",
-                           "covariate" = "gamma(mu[i,],shape[i,] ./ to_vector(mu[i,]));")
+      "gamma" = switch(shp_param,"constant" = "gamma(shape, shape ./ to_vector(mu[i,]));",
+                           "covariate" = "gamma(shape[i,],shape[i,] ./ to_vector(mu[i,]));")
     )
   )} else if(censoring == "left"){ paste("
   for (s in 1:S){
-    for(n in 1:N){
-       if(CensL_ID[n,s] == 0){
-         target += ",
+    target += ",
   switch(family,
-         "gaussian" = switch(shp_param,"constant" = "normal_lpdf(Y[n,s] | mu[n,s], sigma[s]);",
-                             "covariate" = "normal_lpdf(Y[n,s] | mu[n,s],sigma[n,s]);"),
-         "lognormal" = switch(shp_param,"constant" = "lognormal_lpdf(Y[n,s] | mu[n,s], sigma[s]);",
-                              "covariate" = "lognormal_lpdf(Y[n,s] | mu[n,s],sigma[n,s]);"),
-         "gamma" = switch(shp_param,"constant" = "gamma_lpdf(Y[n,s] | mu[n,s], shape / mu[n,s]);",
-                          "covariate" = "gamma_lpdf(Y[n,s] | mu[n,s],shape[n,s] / mu[n,s]);")
+         "gaussian" = switch(shp_param,"constant" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
+                                mu[J_noncens[1:N_noncens[s],s],s], sigma[s]);",
+                             "covariate" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
+                                mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
+         "lognormal" = switch(shp_param,"constant" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
+                                mu[J_noncens[1:N_noncens[s],s],s], sigma[s]);",
+                              "covariate" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
+                                mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
+         "gamma" = switch(shp_param,"constant" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s] | shape[s],
+                               shape[s] /  mu[J_noncens[1:N_noncens[s],s],s]);",
+                          "covariate" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  | shape[s],
+                               shape[,s] / mu[J_noncens[1:N_noncens[s],s],s]);")
          ),"
-       } else {
-          target += ",
+    target += ",
   switch(family,
-         "gaussian" = switch(shp_param,"constant" = "normal_lcdf(U_l[s] | mu[n,s], sigma[s]);",
-                             "covariate" = "normal_lcdf(U_l[s] | mu[n,s],sigma[n,s]);"),
-         "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(U_l[s] | mu[n,s], sigma[s]);",
-                              "covariate" = "lognormal_lcdf(U_l[s]| mu[n,s],sigma[n,s]);"),
-         "gamma" = switch(shp_param,"constant" = "gamma_lcdf(U_l[s] | mu[n,s], shape / mu[n,s]);",
-                          "covariate" = "gamma_lcdf(U_l[s] | mu[n,s],shape[n,s] / mu[n,s]);")
+         "gaussian" = switch(shp_param,"constant" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma[s]);",
+                             "covariate" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
+         "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma[s]);",
+                              "covariate" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s]| mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
+         "gamma" = switch(shp_param,"constant" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[s], shape[s] / mu[J_cens[1:N_cens[s],s],s]);",
+                          "covariate" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[n,s], shape[n,s] / mu[J_cens[1:N_cens[s],s],s]);")
   ),"
-      }
-    }
+
   }"
   )
   } else if(zi_param == "constant" & shp_param == "constant"){paste("

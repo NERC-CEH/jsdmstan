@@ -121,7 +121,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
-  censoring <- match.arg(censoring, c("none", "left", "right", "interval"))
+  censoring <- match.arg(censoring, c("none", "left", "right", "left-and-right"))
   if(!is.null(zi_X)){
     zi_param <- "covariate"
   }
@@ -251,18 +251,18 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
         stop("For left- and right- censored models the censor_points must be supplied as a S-length vector")
       }
     } else{
-      interval_error <-
-        paste("For interval-censored models censor_points must be supplied",
-                   "as a list with two S-length vectors named left and right",
-                   "containing the censoring points")
+      leftright_error <-
+        paste("For left and right censored models censor_points must be supplied",
+              "as a list with two S-length vectors named left and right",
+              "containing the censoring points")
       if(!is.list(censor_points)){
-        stop(interval_error)
+        stop(leftright_error)
       }
       if(!identical(names(censor_points), c("left", "right"))){
-        stop(interval_error)
+        stop(leftright_error)
       }
       if(!all(sapply(censor_points, function(x) length(x) == S))){
-        stop(interval_error)
+        stop(leftright_error)
       }
     }
   }
@@ -404,7 +404,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       match.fun(prior_func[["sigma_a"]][[1]]),
       prior_func[["sigma_a"]][[2]]
     ))
-    z_a <- rnorm(N, 0, 1)
+    z_a <- stats::rnorm(N, 0, 1)
     a_i <- z_a * sigma_a
   } else {
     a_i <- rep(0, N)
@@ -416,7 +416,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       match.fun(prior_func[["sigmas_species"]][[1]]),
       prior_func[["sigmas_species"]][[2]]
     ))
-    z_species <- matrix(rnorm(N*S, 0, 1), nrow = S, ncol = N)
+    z_species <- matrix(stats::rnorm(N*S, 0, 1), nrow = S, ncol = N)
     u_ij <- t((diag(sigmas_species) %*% cor_species) %*% z_species)
   }
 
@@ -614,7 +614,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
         for(n in 1:N){
           if(Y_cens[n,s]< censor_points[s]){
             Cens_ID[n,s] <- 1
-            Y_cens[n,s] <- NA
+            Y_cens[n,s] <- censor_points[s]
           } else{
             Cens_ID[n,s] <- 0
           }
@@ -627,23 +627,23 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
           for(n in 1:N){
             if(Y_cens[n,s]> censor_points[s]){
               Cens_ID[n,s] <- 1
-              Y_cens[n,s] <- NA
+              Y_cens[n,s] <- censor_points[s]
             } else{
               Cens_ID[n,s] <- 0
             }
           }
         }
-      } else if(censoring == "interval"){
+      } else if(censoring == "left-and-right"){
           Y_cens <- Y
           Cens_ID <- Y
           for(s in 1:S){
             for(n in 1:N){
               if(Y_cens[n,s]< censor_points$left[s]){
                 Cens_ID[n,s] <- 1
-                Y_cens[n,s] <- NA
+                Y_cens[n,s] <- censor_points$left[s]
               } else if(Y_cens[n,s] > censor_points$right[s]){
                 Cens_ID[n,s] <- 2
-                Y_cens[n,s] <- NA
+                Y_cens[n,s] <- censor_points$right[s]
               } else{
                 Cens_ID[n,s] <- 0
               }
@@ -725,6 +725,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   if(censoring != "none"){
     output$Y_uncensored <- Y
     output$Y <- Y_cens
+    output$censor_points <- censor_points
     output$Cens_ID <- Cens_ID
     output$censoring <- censoring
   }

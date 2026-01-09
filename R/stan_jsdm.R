@@ -1,33 +1,35 @@
 #' Fit jsdm models in Stan
 #'
 #' This function fits joint Species Distribution models in Stan, using either a
-#' generalised linear latent variable model approach (\code{method = "gllvm"}), or a
-#' multivariate generalised linear mixed model approach (\code{method = "mglmm"}).
+#' generalised linear latent variable model approach (\code{method = "gllvm"}),
+#' or a multivariate generalised linear mixed model approach (\code{method =
+#' "mglmm"}).
 #'
-#' @details
-#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
-#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
-#'   to be constrained by a correlation matrix between the covariates. With the
-#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
-#'   from a simple distribution with no correlation structure. Both parameterisations
-#'   can be modified using the prior object.
-#'   Families supported are the Gaussian family, the negative binomial family,
-#'   the Poisson family, the binomial family (with number of trials specificied
-#'   using the \code{Ntrials} parameter), the Bernoulli family (the special case
-#'   of the binomial family where number of trials is equal to one), the
-#'   zero-inflated Poisson and the zero-inflated negative binomial. For both
-#'   zero-inflated families the zero-inflation is assumed to be a species-specific
-#'   constant.
+#' @details Environmental covariate effects (\code{"betas"}) can be
+#' parameterised in two ways. With the \code{"cor"} parameterisation all
+#' covariate effects are assumed to be constrained by a correlation matrix
+#' between the covariates. With the \code{"unstruct"} parameterisation all
+#' covariate effects are assumed to draw from a simple distribution with no
+#' correlation structure. Both parameterisations can be modified using the prior
+#' object. Families supported are the Gaussian family, the negative binomial
+#' family, the Poisson family, the binomial family (with number of trials
+#' specificied using the \code{Ntrials} parameter), the Bernoulli family (the
+#' special case of the binomial family where number of trials is equal to one),
+#' the zero-inflated Poisson and the zero-inflated negative binomial. For both
+#' zero-inflated families the zero-inflation is assumed to be a species-specific
+#' constant.
 #'
-#' @param formula The formula of covariates that the species means are modelled from
+#' @param formula The formula of covariates that the species means are modelled
+#'   from
 #'
 #' @param data Dataframe or list of covariates.
 #'
-#' @param Y Matrix of species by sites. Rows are assumed to be sites, columns are
-#'   assumed to be species
+#' @param Y Matrix of species by sites. Rows are assumed to be sites, columns
+#'   are assumed to be species
 #'
-#' @param X The covariates matrix, with rows being site and columns being covariates.
-#'   Ignored in favour of data when formula approach is used to specify model.
+#' @param X The covariates matrix, with rows being site and columns being
+#'   covariates. Ignored in favour of data when formula approach is used to
+#'   specify model.
 #'
 #' @param method Whether to fit a GLLVM or MGLMM model, details in description
 #'
@@ -35,23 +37,23 @@
 #'
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   \code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression
-#'   matching is supported.
+#'   \code{"bernoulli"}, or \code{"zi_poisson"}. Regular expression matching is
+#'   supported.
 #'
 #' @param species_intercept Whether the model should be fit with an intercept by
 #'   species, by default \code{TRUE}
 #'
-#' @param dat_list Alternatively, data can be given to the model as a list containing
-#'   Y, X, N, S, K, and site_intercept. See output of [jsdm_sim_data()] for an
-#'   example of how this can be formatted.
+#' @param dat_list Alternatively, data can be given to the model as a list
+#'   containing Y, X, N, S, K, and site_intercept. See output of
+#'   [jsdm_sim_data()] for an example of how this can be formatted.
 #'
 #' @param site_intercept Whether a site intercept should be included, potential
-#'   values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
-#'   with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
-#'   grouping)
+#'   values \code{"none"} (no site intercept), \code{"grouped"} (a site
+#'   intercept with hierarchical grouping) or \code{"ungrouped"} (site intercept
+#'   with no grouping)
 #'
-#' @param site_groups If the site intercept is grouped, a vector of group identities
-#'   per site
+#' @param site_groups If the site intercept is grouped, a vector of group
+#'   identities per site
 #'
 #' @param Ntrials For the binomial distribution the number of trials, given as
 #'   either a single integer which is assumed to be constant across sites or as
@@ -59,44 +61,52 @@
 #'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 #'
-#' @param save_data If the data used to fit the model should be saved in the model
-#'   object, by default TRUE.
+#' @param save_data If the data used to fit the model should be saved in the
+#'   model object, by default TRUE.
 #'
-#' @param iter A positive integer specifying the number of iterations for each chain,
-#'   default 4000.
+#' @param iter A positive integer specifying the number of iterations for each
+#'   chain, default 4000.
 #'
-#' @param beta_param The parameterisation of the environmental covariate effects, by
-#'   default \code{"unstruct"}. See details for further information.
+#' @param beta_param The parameterisation of the environmental covariate
+#'   effects, by default \code{"unstruct"}. See details for further information.
 #'
-#' @param zi_formula For the zero-inflated families, the formula of any covariate
-#'   effect upon the zi parameter. Covariates are sourced from the \code{data}
-#'   argument. Only works if main effect is specified using formula argument.
+#' @param censoring If the response is left-censored (\code{"left"}) or not
+#'   censored (default, \code{"none"}).
 #'
-#' @param zi_param For the zero-inflated families, whether the zero-inflation parameter
-#'   is a species-specific constant (default, \code{"constant"}), or varies by
-#'   covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{zi_formula}
-#'   is specified.
+#' @param censor_points For censored models, the values at which censoring
+#'   occurs, to be provided as a S-length vector.
 #'
-#' @param zi_X If \code{zi_param = "covariate"}, the matrix of predictors
-#'   that the zero-inflation is modelled in response to. If there is not already
-#'   an intercept column (identified by all values being equal to one), one will
-#'   be added to the front of the matrix. Overridden by \code{zi_formula}
-#'   when formula approach is used.
+#' @param zi_formula For the zero-inflated families, the formula of any
+#'   covariate effect upon the zi parameter. Covariates are sourced from the
+#'   \code{data} argument. Only works if main effect is specified using formula
+#'   argument.
 #'
-#' @param shp_formula For the families with shape parameters, the formula of any covariate
-#'   effect upon the shape parameter. Covariates are sourced from the \code{data}
-#'   argument. Only works if main effect is specified using formula argument.
+#' @param zi_param For the zero-inflated families, whether the zero-inflation
+#'   parameter is a species-specific constant (default, \code{"constant"}), or
+#'   varies by covariates (\code{"covariate"}). Set to \code{"covariate"} if
+#'   \code{zi_formula} is specified.
 #'
-#' @param shp_param For the families with shape parameters, whether the shape parameter
-#'   is a species-specific constant (default, \code{"constant"}), or varies by
-#'   covariates (\code{"covariate"}). Set to \code{"covariate"} if \code{shp_formula}
-#'   is specified.
+#' @param zi_X If \code{zi_param = "covariate"}, the matrix of predictors that
+#'   the zero-inflation is modelled in response to. If there is not already an
+#'   intercept column (identified by all values being equal to one), one will be
+#'   added to the front of the matrix. Overridden by \code{zi_formula} when
+#'   formula approach is used.
 #'
-#' @param shp_X If \code{shp_param = "covariate"}, the matrix of predictors
-#'   that the shape parameter is modelled in response to. If there is not already
-#'   an intercept column (identified by all values being equal to one), one will
-#'   be added to the front of the matrix. Overridden by \code{shp_formula}
-#'   when formula approach is used.
+#' @param shp_formula For the families with shape parameters, the formula of any
+#'   covariate effect upon the shape parameter. Covariates are sourced from the
+#'   \code{data} argument. Only works if main effect is specified using formula
+#'   argument.
+#'
+#' @param shp_param For the families with shape parameters, whether the shape
+#'   parameter is a species-specific constant (default, \code{"constant"}), or
+#'   varies by covariates (\code{"covariate"}). Set to \code{"covariate"} if
+#'   \code{shp_formula} is specified.
+#'
+#' @param shp_X If \code{shp_param = "covariate"}, the matrix of predictors that
+#'   the shape parameter is modelled in response to. If there is not already an
+#'   intercept column (identified by all values being equal to one), one will be
+#'   added to the front of the matrix. Overridden by \code{shp_formula} when
+#'   formula approach is used.
 #'
 #' @param init Initialisation values for the sampling, see [rstan::sampling()].
 #'   If unspecified and \code{method = "mglmm"} then set to \code{"0"}.
@@ -104,8 +114,8 @@
 #' @param ... Arguments passed to [rstan::sampling()]
 #'
 #' @return A \code{jsdmStanFit} object, comprising a list including the StanFit
-#'   object, the data used to fit the model plus a few other bits of information. See
-#'   [jsdmStanFit] for details.
+#'   object, the data used to fit the model plus a few other bits of
+#'   information. See [jsdmStanFit] for details.
 #'
 #' @examples
 #' \dontrun{
@@ -141,16 +151,18 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               dat_list = NULL, family, site_intercept = "none",
                               D = NULL, prior = jsdm_prior(), site_groups = NULL,
                               beta_param = "unstruct", Ntrials = NULL,
+                              censoring = "none", censor_points = NULL,
                               zi_param = "constant", zi_X = NULL,
                               shp_param = "constant", shp_X = NULL,
                               save_data = TRUE, iter = 4000, init = NULL, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial", "zi_poisson",
-                                "zi_neg_binomial"))
+                                "zi_neg_binomial","lognormal","gamma"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
   site_intercept <- match.arg(site_intercept, c("none", "grouped", "ungrouped"))
+  censoring <- match.arg(censoring, c("none","left"))
   if(grepl("zi", family)){
     if(zi_param == "covariate"){
       if(is.null(zi_X) & is.null(dat_list)){
@@ -198,14 +210,15 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = dat_list,
     family = family, method = method, Ntrials = Ntrials,
-    shp_X = shp_X, zi_X = zi_X
+    shp_X = shp_X, zi_X = zi_X,
+    censoring = censoring, censor_points = censor_points
   )
 
   # Create stancode
   model_code <- jsdm_stancode(
     family = family,
     method = method, prior = prior,
-    site_intercept = site_intercept,
+    site_intercept = site_intercept, censoring = censoring,
     beta_param = beta_param, zi_param = zi_param, shp_param = shp_param
   )
 
@@ -369,7 +382,7 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept,
                           method, site_groups, Ntrials,
-                          zi_X, shp_X) {
+                          zi_X, shp_X, censoring, censor_points) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -439,6 +452,19 @@ validate_data <- function(Y, D, X, species_intercept,
         stop("site_groups must be coercible to a numeric vector with no NAs")
       ngrp <- max(grps)
     }
+    if (censoring == "left") {
+      if(is.null(censor_points)){
+        stop("Censored models require censor_points to be given")
+      } else if(!is.numeric(censor_points) | length(censor_points) != S){
+        stop("censor_points needs to be a S-length vector")
+      }
+      censor_points_matrix <- matrix(rep(censor_points, each = N),
+                                     ncol = S, nrow = N)
+      Cens_ID <- 1*(!apply(Y < censor_points_matrix, c(1,2), isFALSE))
+      if(anyNA(Y)){
+        Y[is.na(Y)] <- 0
+      }
+    }
 
     if (method == "mglmm") {
       data_list <- list(
@@ -455,6 +481,10 @@ validate_data <- function(Y, D, X, species_intercept,
     }
     if(family == "binomial"){
       data_list$Ntrials <- Ntrials
+    }
+    if(censoring == "left"){
+      data_list$U_l <- censor_points
+      data_list$Cens_ID <- Cens_ID
     }
     if(grepl("zi_",family) & !is.null(zi_X)){
       data_list$zi_k <- zi_k
@@ -497,6 +527,19 @@ validate_data <- function(Y, D, X, species_intercept,
       if (!all(c("ngrp","grps") %in% names(dat_list))) {
         stop("Grouped site intercept models require ngrp and grps in dat_list")
       }
+    }
+    if("censoring" %in% names(dat_list)){
+      censoring <- dat_list$censoring
+    }
+
+    if(censoring == "left") {
+      if(!all(c("Cens_ID","censor_points") %in% names(dat_list))){
+        stop("Censoring requires Cens_ID and censor_points in dat_list")
+      }
+      if(anyNA(dat_list$Y)){
+        dat_list$Y[is.na(dat_list$Y)] <- 0
+      }
+      dat_list$U_l <- dat_list$censor_points
     }
 
     if (isTRUE(species_intercept)) {
@@ -565,7 +608,19 @@ validate_data <- function(Y, D, X, species_intercept,
       data_list$sz <- rep(1:data_list$S,each=data_list$N)[c(data_list$Y==0)]
     }
   }
+  # create censored/non-censored for censored models
+  if(censoring == "left") {
+    data_list$N_cens <- colSums(data_list$Cens_ID==1)
+    data_list$N_noncens <- colSums(data_list$Cens_ID==0)
+    J_cens <- sapply(apply(data_list$Cens_ID,2, function(x) which(x==1)), `length<-`, data_list$N)
+    J_cens[is.na(J_cens)] <- 0
 
+    J_noncens <- sapply(apply(data_list$Cens_ID,2, function(x) which(x==0)), `length<-`, data_list$N)
+    J_noncens[is.na(J_noncens)] <- 0
+
+    data_list$J_cens <- J_cens
+    data_list$J_noncens <- J_noncens
+  }
   return(data_list)
 }
 
@@ -601,6 +656,8 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
                               "bernoulli" = character(),
                               "poisson" = character(),
                               "neg_binomial" = "kappa",
+                              "lognormal" = "sigma",
+                              "gamma" = "shape",
                               "binomial" = character(),
                               "zi_poisson" = "zi",
                               "zi_neg_binomial" = c("kappa","zi")),
@@ -634,6 +691,13 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
                                "zi_neg_binomial" = "kappa")
     if(isTRUE(save_data)){
       fam$data_list <- list(shp_X = data_list$shp_X)
+    }
+  }
+  if("Cens_ID" %in% names(data_list)){
+    fam$censoring <- "left"
+    fam$censoring_data <- list(censor_points = data_list$censor_points)
+    if(isTRUE(save_data)){
+      fam$censoring_data$Cens_ID <- data_list$Cens_ID
     }
   }
 
