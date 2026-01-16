@@ -155,6 +155,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     }
   } else {
     censor_points <- NULL
+    cens_ID <- NULL
   }
 
 
@@ -165,7 +166,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     dat_list = NULL,
     family = family, method = method, Ntrials = Ntrials,
     zi_X = zi_X, shp_X = shp_X,
-    censoring = censoring, censor_points = censor_points
+    censoring = censoring, censor_points = censor_points, cens_ID = cens_ID
   )
 
   # get original stan model

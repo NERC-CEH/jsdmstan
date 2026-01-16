@@ -49,15 +49,21 @@ cens_mod
 
 No warnings are returned, or anything particularly concerning in terms of rhat or neff.
 
-Now we can look at the data recovery, as there are some species that were simulated to have very extreme maximum values (check `max(nb_dat$Y)`), the overall distribution is hard to see using the default multi_pp_check options, so we use the statistics option and simultaneously check the recovery of the mean and the standard deviation:
+Now we can look at the data recovery, specifically comparing the empirical cumulative distribution function of the data to a random subset of model draws. The empirical CDF estimates deal better with the censoring in the original data as opposed to the default smoothed density kernel estimation.
 
 ```{r}
-pp_check(cens_mod, plotfun="ecdf_overlay") + 
-  ggplot2::coord_cartesian(xlim=c(0,5000))
 multi_pp_check(cens_mod, plotfun = "ecdf_overlay")
 ```
 
-We can see that the mean and standard deviation of the data are always nested within the model predictions, indicating a reasonable fit to the data.
+We can see that the data are always nested within the model predictions (with the exception of the initial jumps due to the censoring, visible as the straight lines), indicating a reasonable fit to the data.
+
+
+```{r}
+pp_check(cens_mod, plotfun="ecdf_overlay") + 
+  ggplot2::coord_cartesian(xlim=c(0,2000))
+```
+
+In this case the distribution of the overall predicted sum across all variables per site is relatively similar between the raw data and the model estimates, but in cases where more of the data is censored or just above the censoring limit this would not necessarily be true in a well-fitted model.
 
 We can also see if the model did well at recovering the parameters used within the data simulation:
 
@@ -75,3 +81,4 @@ mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:
 
 ```
 
+Overall the model has performed well at recovering the various parameters.

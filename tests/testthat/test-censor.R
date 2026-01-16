@@ -22,7 +22,7 @@ gamma_dat <- jsdm_sim_data(9,75,D=2,family = "gamma", method = "gllvm",
                            censor_points = rep(c(1,1.5,2),each=3))
 test_that("gamma sim_data returns correct censored data",{
   expect_named(gamma_dat, c("Y","pars","N","S","D","K","X",
-                            "Y_uncensored","censor_points","Cens_ID",
+                            "Y_uncensored","censor_points","cens_ID",
                             "censoring"))
 
   expect_false(anyNA(gamma_dat$Y))
@@ -48,7 +48,7 @@ lnorm_dat <- jsdm_sim_data(8,53,K = 3,family = "lognorm", method = "mglmm",
                            censor_points = rep(0.5,8))
 test_that("lnorm sim_data returns correct censored data",{
   expect_named(lnorm_dat, c("Y","pars","N","S","D","K","X",
-                            "Y_uncensored","censor_points","Cens_ID",
+                            "Y_uncensored","censor_points","cens_ID",
                             "censoring"))
 
   expect_false(anyNA(lnorm_dat$Y))
@@ -116,6 +116,21 @@ test_that("neff_ratio works", {
   expect_named(neff_ratio(gamma_mod))
 })
 
+test_that("update works", {
+  cens_matrix <- matrix(runif(9*75,2,3),nrow=75)
+  cens_ID <- 1*(gamma_dat$Y < cens_matrix)
+  suppressWarnings(gamma_mod2 <- update(gamma_mod,
+                                        cens_ID = cens_ID,
+                                        refresh = 0))
+  expect_s3_class(gamma_mod2, "jsdmStanFit")
+  expect_s3_class(gamma_mod2$family, "jsdmStanFamily")
+  expect_named(gamma_mod2$family, c("family","params","params_dataresp",
+                                    "preds","data_list",
+                                    "censoring","censoring_data"))
+
+})
+
+
 # lognormal censoring ####
 suppressWarnings(lnorm_mod <- stan_jsdm(dat_list = lnorm_dat, family = "lognormal",
                                         method = "mglmm",
@@ -170,5 +185,12 @@ test_that("neff_ratio works", {
 })
 
 test_that("update works", {
-  lnorm_mod2 <- update(lnorm_mod, censor_points = rep(0.7,8))
+  suppressWarnings(lnorm_mod2 <- update(lnorm_mod, censor_points = rep(0.7,8),
+                                        refresh = 0))
+  expect_s3_class(lnorm_mod2, "jsdmStanFit")
+  expect_s3_class(lnorm_mod2$family, "jsdmStanFamily")
+  expect_named(lnorm_mod2$family, c("family","params","params_dataresp",
+                                   "preds","data_list",
+                                   "censoring","censoring_data"))
+
 })
