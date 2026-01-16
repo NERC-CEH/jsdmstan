@@ -59,10 +59,10 @@ multi_pp_check(cens_mod, plotfun = "ecdf_overlay")
 
 We can see that the mean and standard deviation of the data are always nested within the model predictions, indicating a reasonable fit to the data.
 
-We can also see if the model did well at recovering the zero-inflation parameters used within the data simulation:
+We can also see if the model did well at recovering the parameters used within the data simulation:
 
 ```{r}
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigma[",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = "sigma",
           true = cens_dat$pars$sigma)
 mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]"), #regexp = TRUE,
           true = cens_dat$pars$betas[1,])
@@ -74,6 +74,4 @@ mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:
           true = cens_dat$pars$sigmas_species)
 
 ```
-
-It is obvious from this that the zero-inflation estimated by the model is often larger than that of the data, indicating that the model is assuming more zeros come from the zero-inflation process and therefore possibly overestimating the negative binomial mean part of the model. This demonstrates how these very flexible model structures can end up fitting the data well, but potentially in a different way to the actual data generating process.
 

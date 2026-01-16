@@ -174,10 +174,10 @@ ifelse(censoring == "left", "
 
   var_pars <- switch(family,
     "gaussian" = switch(shp_param, "constant" = "
-  array[S] real<lower=0> sigma; // Gaussian parameters", "covariate" = "
+  real<lower=0> sigma; // Gaussian parameters", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "lognormal" = switch(shp_param, "constant" = "
-  array[S] real<lower=0> sigma; // Lognormal parameters", "covariate" = "
+  real<lower=0> sigma; // Lognormal parameters", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "gamma" = switch(shp_param, "constant" = "
   vector<lower=0>[S] shape; // Gaussian parameters", "covariate" = "
@@ -430,11 +430,11 @@ ifelse(censoring == "left", "
     target += ",
   switch(family,
          "gaussian" = switch(shp_param,"constant" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
-                                mu[J_noncens[1:N_noncens[s],s],s], sigma[s]);",
+                                mu[J_noncens[1:N_noncens[s],s],s], sigma);",
                              "covariate" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
                                 mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
          "lognormal" = switch(shp_param,"constant" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
-                                mu[J_noncens[1:N_noncens[s],s],s], sigma[s]);",
+                                mu[J_noncens[1:N_noncens[s],s],s], sigma);",
                               "covariate" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
                                 mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
          "gamma" = switch(shp_param,"constant" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s] | shape[s],
@@ -444,9 +444,9 @@ ifelse(censoring == "left", "
          ),"
     target += ",
   switch(family,
-         "gaussian" = switch(shp_param,"constant" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma[s]);",
+         "gaussian" = switch(shp_param,"constant" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
                              "covariate" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
-         "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma[s]);",
+         "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
                               "covariate" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s]| mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
          "gamma" = switch(shp_param,"constant" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[s], shape[s] / mu[J_cens[1:N_cens[s],s],s]);",
                           "covariate" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[n,s], shape[n,s] / mu[J_cens[1:N_cens[s],s],s]);")

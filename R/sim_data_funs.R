@@ -316,12 +316,13 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       "LV" = D1 * N,
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
-      "sigma" = S,
+      "sigma" = 1,
       "kappa" = S,
       "shape" = S,
       "zi" = S,
       "zi_betas" = S*(ZI_K+1),
-      "shp_betas" = S*(SHP_K + 1)
+      "shp_betas" = ifelse(response %in% c("gaussian", "lognormal"),
+                           SHP_K + 1,S*(SHP_K + 1))
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
@@ -463,10 +464,10 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
         prior_func[["sigma"]][[2]]
       ))
     } else if(shp_param == "covariate"){
-      shp_betas <- matrix(do.call(
+      shp_betas <- do.call(
         match.fun(prior_func[["shp_betas"]][[1]]),
         prior_func[["shp_betas"]][[2]]
-      ), ncol = S)
+      )
     }
   } else if (response == "neg_binomial") {
     if(shp_param == "constant"){
@@ -544,7 +545,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
     zi <- inv_logit(zi_X %*% zi_betas)
   }
 
-  # zero-inflation in case of covariates
+  # shape parameters in case of covariates
   if(shp_param == "covariate"){
     if(is.null(shp_X)){
       if(is.null(shp_k)){
@@ -579,12 +580,14 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
           scale = switch(shp_param, "constant" = kappa[j],
                          "covariate" = kappa[i,j])
         ),
-        "gaussian" = stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma[j],
-                                                   "covariate" = sigma[i,j])),
-        "lognormal" = exp(stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma[j],
-                                                        "covariate" = sigma[i,j]))),
-        "gamma" = stats::rgamma(1, exp(mu_ij), switch(shp_param, "constant" = shape[j],
-                                                      "covariate" = shape[i,j])/exp(mu_ij)),
+        "gaussian" = stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma,
+                                                   "covariate" = sigma[i])),
+        "lognormal" = exp(stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma,
+                                                        "covariate" = sigma[i]))),
+        "gamma" = stats::rgamma(1, switch(shp_param, "constant" = shape[j],
+                                          "covariate" = shape[i,j]),
+                                switch(shp_param, "constant" = shape[j],
+                                       "covariate" = shape[i,j])/exp(mu_ij)),
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
         "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij)),
@@ -609,43 +612,43 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   if(censoring != "none"){
     if(censoring == "left"){
       Y_cens <- Y
-      Cens_ID <- Y
+      cens_ID <- Y
       for(s in 1:S){
         for(n in 1:N){
           if(Y_cens[n,s]< censor_points[s]){
-            Cens_ID[n,s] <- 1
+            cens_ID[n,s] <- 1
             Y_cens[n,s] <- censor_points[s]
           } else{
-            Cens_ID[n,s] <- 0
+            cens_ID[n,s] <- 0
           }
         }
       }
     } else if(censoring == "right"){
         Y_cens <- Y
-        Cens_ID <- Y
+        cens_ID <- Y
         for(s in 1:S){
           for(n in 1:N){
             if(Y_cens[n,s]> censor_points[s]){
-              Cens_ID[n,s] <- 1
+              cens_ID[n,s] <- 1
               Y_cens[n,s] <- censor_points[s]
             } else{
-              Cens_ID[n,s] <- 0
+              cens_ID[n,s] <- 0
             }
           }
         }
       } else if(censoring == "left-and-right"){
           Y_cens <- Y
-          Cens_ID <- Y
+          cens_ID <- Y
           for(s in 1:S){
             for(n in 1:N){
               if(Y_cens[n,s]< censor_points$left[s]){
-                Cens_ID[n,s] <- 1
+                cens_ID[n,s] <- 1
                 Y_cens[n,s] <- censor_points$left[s]
               } else if(Y_cens[n,s] > censor_points$right[s]){
-                Cens_ID[n,s] <- 2
+                cens_ID[n,s] <- 2
                 Y_cens[n,s] <- censor_points$right[s]
               } else{
-                Cens_ID[n,s] <- 0
+                cens_ID[n,s] <- 0
               }
             }
           }
@@ -726,7 +729,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
     output$Y_uncensored <- Y
     output$Y <- Y_cens
     output$censor_points <- censor_points
-    output$Cens_ID <- Cens_ID
+    output$cens_ID <- cens_ID
     output$censoring <- censoring
   }
 

@@ -72,7 +72,7 @@ suppressWarnings(gamma_mod <- stan_jsdm(dat_list = gamma_dat, family = "gamma",
 test_that("gamma censor model runs", {
   expect_s3_class(gamma_mod, "jsdmStanFit")
   expect_s3_class(gamma_mod$family, "jsdmStanFamily")
-  expect_names(gamma_mod$family, c("family","params","params_dataresp",
+  expect_named(gamma_mod$family, c("family","params","params_dataresp",
                                    "preds","data_list",
                                    "censoring","censoring_data"))
 })
@@ -125,7 +125,7 @@ suppressWarnings(lnorm_mod <- stan_jsdm(dat_list = lnorm_dat, family = "lognorma
 test_that("lnorm censor model runs", {
   expect_s3_class(lnorm_mod, "jsdmStanFit")
   expect_s3_class(lnorm_mod$family, "jsdmStanFamily")
-  expect_names(lnorm_mod$family, c("family","params","params_dataresp",
+  expect_named(lnorm_mod$family, c("family","params","params_dataresp",
                                    "preds","data_list",
                                    "censoring","censoring_data"))
 })
@@ -169,3 +169,6 @@ test_that("neff_ratio works", {
   expect_named(neff_ratio(lnorm_mod))
 })
 
+test_that("update works", {
+  lnorm_mod2 <- update(lnorm_mod, censor_points = rep(0.7,8))
+})

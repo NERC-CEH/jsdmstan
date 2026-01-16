@@ -147,6 +147,12 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     } else {
       censor_points <- object$family$censor_points
     }
+    if("cens_ID" %in% names(model_args)){
+      cens_ID <- model_args$cens_ID
+      model_args <- model_args[names(model_args) != "cens_ID"]
+    } else {
+      cens_ID <- object$family$cens_ID
+    }
   } else {
     censor_points <- NULL
   }

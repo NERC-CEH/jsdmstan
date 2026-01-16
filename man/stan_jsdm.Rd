@@ -23,6 +23,7 @@ stan_jsdm(X, ...)
   Ntrials = NULL,
   censoring = "none",
   censor_points = NULL,
+  cens_ID = NULL,
   zi_param = "constant",
   zi_X = NULL,
   shp_param = "constant",
@@ -51,8 +52,8 @@ specify model.}
 
 \item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 
-\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns
-are assumed to be species}
+\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
+assumed to be species}
 
 \item{species_intercept}{Whether the model should be fit with an intercept by
 species, by default \code{TRUE}}
@@ -69,9 +70,9 @@ containing Y, X, N, S, K, and site_intercept. See output of
 supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
-values \code{"none"} (no site intercept), \code{"grouped"} (a site
-intercept with hierarchical grouping) or \code{"ungrouped"} (site intercept
-with no grouping)}
+values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+grouping)}
 
 \item{D}{The number of latent variables within a GLLVM model}
 
@@ -80,18 +81,23 @@ with no grouping)}
 \item{site_groups}{If the site intercept is grouped, a vector of group
 identities per site}
 
-\item{beta_param}{The parameterisation of the environmental covariate
-effects, by default \code{"unstruct"}. See details for further information.}
+\item{beta_param}{The parameterisation of the environmental covariate effects,
+by default \code{"unstruct"}. See details for further information.}
 
 \item{Ntrials}{For the binomial distribution the number of trials, given as
-either a single integer which is assumed to be constant across sites or as
-a site-length vector of integers.}
+either a single integer which is assumed to be constant across sites or as a
+site-length vector of integers.}
 
 \item{censoring}{If the response is left-censored (\code{"left"}) or not
 censored (default, \code{"none"}).}
 
-\item{censor_points}{For censored models, the values at which censoring
+\item{censor_points}{For left-censored models, the values at which censoring
 occurs, to be provided as a S-length vector.}
+
+\item{cens_ID}{For left-censored models, an alternative way of declaring where
+censoring occurs where a N by S binary matrix is supplied with value 0 where
+the measurement is uncensored and a value of 1 where the measurement is
+censored.}
 
 \item{zi_param}{For the zero-inflated families, whether the zero-inflation
 parameter is a species-specific constant (default, \code{"constant"}), or
@@ -129,10 +135,9 @@ from}
 
 \item{data}{Dataframe or list of covariates.}
 
-\item{zi_formula}{For the zero-inflated families, the formula of any
-covariate effect upon the zi parameter. Covariates are sourced from the
-\code{data} argument. Only works if main effect is specified using formula
-argument.}
+\item{zi_formula}{For the zero-inflated families, the formula of any covariate
+effect upon the zi parameter. Covariates are sourced from the \code{data}
+argument. Only works if main effect is specified using formula argument.}
 
 \item{shp_formula}{For the families with shape parameters, the formula of any
 covariate effect upon the shape parameter. Covariates are sourced from the
@@ -141,8 +146,8 @@ argument.}
 }
 \value{
 A \code{jsdmStanFit} object, comprising a list including the StanFit
-object, the data used to fit the model plus a few other bits of
-information. See \link{jsdmStanFit} for details.
+object, the data used to fit the model plus a few other bits of information.
+See \link{jsdmStanFit} for details.
 }
 \description{
 This function fits joint Species Distribution models in Stan, using either a
@@ -151,19 +156,19 @@ or a multivariate generalised linear mixed model approach (\code{method =
 "mglmm"}).
 }
 \details{
-Environmental covariate effects (\code{"betas"}) can be
-parameterised in two ways. With the \code{"cor"} parameterisation all
-covariate effects are assumed to be constrained by a correlation matrix
-between the covariates. With the \code{"unstruct"} parameterisation all
-covariate effects are assumed to draw from a simple distribution with no
-correlation structure. Both parameterisations can be modified using the prior
-object. Families supported are the Gaussian family, the negative binomial
-family, the Poisson family, the binomial family (with number of trials
-specificied using the \code{Ntrials} parameter), the Bernoulli family (the
-special case of the binomial family where number of trials is equal to one),
-the zero-inflated Poisson and the zero-inflated negative binomial. For both
-zero-inflated families the zero-inflation is assumed to be a species-specific
-constant.
+Environmental covariate effects (\code{"betas"}) can be parameterised
+in two ways. With the \code{"cor"} parameterisation all covariate effects
+are assumed to be constrained by a correlation matrix between the
+covariates. With the \code{"unstruct"} parameterisation all covariate
+effects are assumed to draw from a simple distribution with no correlation
+structure. Both parameterisations can be modified using the prior object.
+Families supported are the Gaussian family, the negative binomial family,
+the Poisson family, the binomial family (with number of trials specificied
+using the \code{Ntrials} parameter), the Bernoulli family (the special case
+of the binomial family where number of trials is equal to one), the
+zero-inflated Poisson and the zero-inflated negative binomial. For both
+zero-inflated families the zero-inflation is assumed to be a
+species-specific constant.
 }
 \section{Methods (by class)}{
 \itemize{

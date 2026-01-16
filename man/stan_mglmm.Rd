@@ -30,8 +30,8 @@ specify model.}
 
 \item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
 
-\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns
-are assumed to be species}
+\item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
+assumed to be species}
 
 \item{species_intercept}{Whether the model should be fit with an intercept by
 species, by default \code{TRUE}}
@@ -46,9 +46,9 @@ containing Y, X, N, S, K, and site_intercept. See output of
 supported.}
 
 \item{site_intercept}{Whether a site intercept should be included, potential
-values \code{"none"} (no site intercept), \code{"grouped"} (a site
-intercept with hierarchical grouping) or \code{"ungrouped"} (site intercept
-with no grouping)}
+values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
+with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
+grouping)}
 
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
