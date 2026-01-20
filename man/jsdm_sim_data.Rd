@@ -21,6 +21,8 @@ jsdm_sim_data(
   zi_k = NULL,
   shp_param = "constant",
   shp_k = NULL,
+  censoring = "none",
+  censor_points = NULL,
   prior = jsdm_prior(),
   X = NULL,
   zi_X = NULL,
@@ -86,19 +88,26 @@ as the mean parameter. Otherwise, a different set of random environmental
 covariates are generated and used to predict the shape parameter. Will be
 ignored if shp_X is supplied.}
 
+\item{censoring}{If the response is left-censored (\code{"left"}) or not
+censored (default, \code{"none"}).}
+
+\item{censor_points}{The values at which censoring occurs, to be provided as
+either a S-length vector (if \code{censoring = "left" or "right"}) or a
+named list}
+
 \item{prior}{Set of prior specifications from call to \code{\link[=jsdm_prior]{jsdm_prior()}}}
 
 \item{X}{The X matrix to be used to simulate data, by default \code{NULL} -
 i.e. the X matrix is simulated using a random draw from a standard normal
 distribution.}
 
-\item{zi_X}{The zi_X matrix to be used to simulate data, by default \code{NULL} -
-i.e. the zi_X matrix is simulated using a random draw from a standard normal
-distribution.}
+\item{zi_X}{The zi_X matrix to be used to simulate data, by default
+\code{NULL} - i.e. the zi_X matrix is simulated using a random draw from a
+standard normal distribution.}
 
-\item{shp_X}{The shp_X matrix to be used to simulate data, by default \code{NULL} -
-i.e. the shp_X matrix is simulated using a random draw from a standard normal
-distribution.}
+\item{shp_X}{The shp_X matrix to be used to simulate data, by default
+\code{NULL} - i.e. the shp_X matrix is simulated using a random draw from a
+standard normal distribution.}
 
 \item{...}{Arguments passed to jsdm_sim_data}
 }

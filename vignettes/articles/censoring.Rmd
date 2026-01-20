@@ -1,0 +1,84 @@
+---
+title: "Modelling censored data"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{zero-inflation}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+
+Censored data occurs where the observation falls either below or above some limit of detection. When the data falls below some limit of detection this is referred to as left-censoring, while when it falls above some limit of detection it is referred to as right-censoring. Interval censoring occurs when you know the upper and lower limit of the datapoint but not the actual value.
+
+The `jsdmstan` package supports left-censoring in three families, the Gaussian (or normal) distribution , the lognormal distribution and the gamma distribution. Data can be simulated with left-censoring, which will return both the censored and uncensored response matrix. For fitting censored models, jsdmstan requires a matrix of the reponse plus an index matrix that says where in the matrix censoring occurs. For left-censoring the index matrix should be 1 when left-censored or 0 when not censored.
+
+
+```{r setup}
+library(jsdmstan)
+```
+
+
+## Example with simulated data
+
+First, we can simulate data according to a lognormal distribution:
+
+```{r}
+set.seed(430150)
+cens_dat <- jsdm_sim_data(N = 100, S = 15, K = 2, method = "mglmm", 
+                        family = "lognormal", censor = "left", 
+                        censor_points = sample(seq(0.05,1,0.05), 15, replace = TRUE))
+```
+
+We have to supply the censoring point per species to the data simulation. In this case we randomly choose those to be between 0.05 and 1. 
+
+Now we can fit the model (lowering the number of iterations to improve runtime):
+
+```{r}
+cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm",
+                      censoring = "left", iter = 2000, 
+                      control = list(adapt_delta = 0.9))
+cens_mod
+```
+
+No warnings are returned, or anything particularly concerning in terms of rhat or neff.
+
+Now we can look at the data recovery, specifically comparing the empirical cumulative distribution function of the data to a random subset of model draws. The empirical CDF estimates deal better with the censoring in the original data as opposed to the default smoothed density kernel estimation.
+
+```{r}
+multi_pp_check(cens_mod, plotfun = "ecdf_overlay")
+```
+
+We can see that the data are always nested within the model predictions (with the exception of the initial jumps due to the censoring, visible as the straight lines), indicating a reasonable fit to the data.
+
+
+```{r}
+pp_check(cens_mod, plotfun="ecdf_overlay") + 
+  ggplot2::coord_cartesian(xlim=c(0,2000))
+```
+
+In this case the distribution of the overall predicted sum across all variables per site is relatively similar between the raw data and the model estimates, but in cases where more of the data is censored or just above the censoring limit this would not necessarily be true in a well-fitted model.
+
+We can also see if the model did well at recovering the parameters used within the data simulation:
+
+```{r}
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = "sigma",
+          true = cens_dat$pars$sigma)
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]"), #regexp = TRUE,
+          true = cens_dat$pars$betas[1,])
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[2,",1:15,"]"), #regexp = TRUE,
+          true = cens_dat$pars$betas[2,])
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[3,",1:15,"]"), #regexp = TRUE,
+          true = cens_dat$pars$betas[3,])
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:15,"]"), #regexp = TRUE,
+          true = cens_dat$pars$sigmas_species)
+
+```
+
+Overall the model has performed well at recovering the various parameters.

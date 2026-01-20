@@ -9,6 +9,12 @@ multi_pp_check(
   plotfun = "dens_overlay",
   species = NULL,
   ndraws = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  titles = character(),
+  subtitles = character(),
+  legends = TRUE,
+  save_gg_objects = TRUE,
   grid_args = list(...),
   ...
 )
@@ -25,8 +31,25 @@ without the ppc_ prefix.}
 
 \item{ndraws}{How many draws should be used within the plots}
 
-\item{grid_args}{Optional list of arguments that are passed to
-\code{\link[gridExtra:arrangeGrob]{gridExtra::arrangeGrob()}} (nrow, ncol, widths, etc.)}
+\item{xlim, ylim}{Optionally, numeric vectors of length 2 specifying lower and
+upper limits for the axes that will be shared across all plots.}
+
+\item{titles, subtitles}{Optional character vectors of plot titles and
+subtitles. If specified, \code{titles} and \code{subtitles} must must have
+length equal to the number of plots specified.}
+
+\item{legends}{If any of the plots have legends should they be displayed?
+Defaults to \code{TRUE}.}
+
+\item{save_gg_objects}{If \code{TRUE}, the default, then the ggplot objects
+specified in \code{...} or via the \code{plots} argument are saved in a
+list in the \code{"bayesplots"} component of the returned object.
+Setting this to \code{FALSE} will make the returned object smaller but
+these individual plot objects will not be available.}
+
+\item{grid_args}{An optional named list of arguments to pass to
+\code{\link[gridExtra:arrangeGrob]{gridExtra::arrangeGrob()}} (\code{nrow}, \code{ncol},
+\code{widths}, etc.).}
 
 \item{...}{Other options passed to the bayesplot PPC function or
 posterior_predict. Note that the same value will be used for every species

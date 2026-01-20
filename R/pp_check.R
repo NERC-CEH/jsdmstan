@@ -278,18 +278,20 @@ jsdm_statsummary <- function(object, species = NULL, sites = NULL,
 #'   without the ppc_ prefix.
 #' @param species Which species should be included, by default all
 #' @param ndraws How many draws should be used within the plots
-#' @param grid_args Optional list of arguments that are passed to
-#'   [gridExtra::arrangeGrob()] (nrow, ncol, widths, etc.)
 #' @param ... Other options passed to the bayesplot PPC function or
 #'   posterior_predict. Note that the same value will be used for every species
 #'   included (e.g. binwidth for a histogram cannot be specified by species).
 #'
+#' @inheritParams bayesplot::bayesplot_grid
 #' @return An object of class \code{"bayesplot_grid"}, for more information see
 #'   [bayesplot::bayesplot_grid()]
 #' @export
 #'
 multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
-                           ndraws = NULL, grid_args = list(...), ...){
+                           ndraws = NULL, xlim = NULL, ylim = NULL,
+                           titles = character(), subtitles  = character(),
+                           legends = TRUE, save_gg_objects = TRUE,
+                           grid_args = list(...), ...){
   if (!inherits(object, "jsdmStanFit"))
     stop("multi_pp_check only supports jsdmStanFit objects")
   if (!is.null(species) & !is.character(species)) {
@@ -388,7 +390,10 @@ multi_pp_check <- function(object, plotfun = "dens_overlay", species = NULL,
       ggplot2::ggtitle(name)
   }, species, species_names, SIMPLIFY = FALSE)
 
-  bayesplot::bayesplot_grid(plots = pl_list, grid_args = grid_args)
+  bayesplot::bayesplot_grid(plots = pl_list, grid_args = grid_args,
+                            xlim = xlim, ylim = ylim, titles = titles,
+                            subtitles = subtitles, legends = legends,
+                            save_gg_objects = save_gg_objects)
 
 }
 

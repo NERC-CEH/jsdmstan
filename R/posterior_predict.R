@@ -130,7 +130,9 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
           "neg_binomial" = exp(x),
           "binomial" = inv_logit(x),
           "zi_poisson" = exp(x),
-          "zi_neg_binomial" = exp(x)
+          "zi_neg_binomial" = exp(x),
+          "lognormal" = x,
+          "gamma" = exp(x)
         )
       })
     }
@@ -229,14 +231,16 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
     )
   }
 
-  if (object$family$family == "gaussian" & isFALSE(shp_param)) {
-      mod_sigma <- extract(object, pars = "sigma")[[1]][draw_id,]
+  if (object$family$family %in% c("gaussian","lognormal") & isFALSE(shp_param)) {
+      mod_sigma <- extract(object, pars = "sigma")[[1]][draw_id]
   } else  if(object$family$family == "binomial"){
     if(is.null(newdata)) {
       Ntrials <- object$data_list$Ntrials
     } else {
       Ntrials <- ntrials_check(Ntrials, nrow(newdata))
     }
+  } else if(object$family$family == "gamma" & isFALSE(shp_param)) {
+    mod_shape <- extract(object, pars = "shape")[[1]][draw_id,]
   }
   if(grepl("zi",object$family$family) & !("zi" %in% object$family$params_dataresp) & isTRUE(include_zi)){
     mod_zi <- extract(object, pars = "zi")[[1]][draw_id,]
@@ -296,17 +300,20 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
         }
       }
     } else if (isTRUE(shp_param)) {
-      if(family == "gaussian"){
+      if(family %in% c("gaussian", "lognormal")){
         mod_sigma <- post_shppred[[x]]
       } else if(family %in% c("neg_binomial", "zi_neg_binomial")){
         mod_kappa <- post_shppred[[x]]
+      } else if(family == "gamma"){
+        mod_shape <- post_shppred[[x]]
       }
       for(i in seq_len(nrow(x2))){
         for(j in seq_len(ncol(x2))){
           x2[i,j] <- switch(
             object$family$family,
             "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[i,j]),
-            "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[i,j])
+            "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[i,j]),
+            "gamma" = stats::rgamma(1, mod_shape[i,j], mod_shape[i,j]/x2[i,j])
           )
         }
       }
@@ -315,10 +322,12 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
         for(j in seq_len(ncol(x2))){
           x2[i,j] <- switch(
             object$family$family,
-            "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[x,j]),
+            "gaussian" = stats::rnorm(1, x2[i,j], mod_sigma[x]),
+            "lognormal" = exp(stats::rnorm(1, x2[i,j], mod_sigma[x])),
             "bernoulli" = stats::rbinom(1, 1, x2[i,j]),
             "poisson" = stats::rpois(1, x2[i,j]),
             "neg_binomial" = rgampois(1, x2[i,j], mod_kappa[x,j]),
+            "gamma" = stats::rgamma(1, mod_shape[x,j], mod_shape[x,j]/x2[i,j]),
             "zi_poisson" = if(isTRUE(include_zi)){
               (1-stats::rbinom(1, 1, mod_zi[x,j]))*stats::rpois(1, x2[i,j])
             } else {

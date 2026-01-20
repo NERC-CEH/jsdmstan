@@ -66,6 +66,9 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
   if (length(object$data_list) == 0) {
     stop("Update requires the original data to be saved in the model object")
   }
+
+  model_args <- list(...)
+
   # Use new options if specified, otherwise original options
   if (is.null(newX)) {
     X <- object$data_list$X
@@ -135,19 +138,40 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
   site_groups <- if(site_intercept == "grouped"){
     object$data_list$grps} else{NULL}
 
+  censoring <- ifelse("censoring" %in% names(object$family),
+                      object$family$censoring,"none")
+  if(censoring == "left"){
+    if("censor_points" %in% names(model_args)){
+      censor_points <- model_args$censor_points
+      model_args <- model_args[names(model_args) != "censor_points"]
+    } else {
+      censor_points <- object$family$censor_points
+    }
+    if("cens_ID" %in% names(model_args)){
+      cens_ID <- model_args$cens_ID
+      model_args <- model_args[names(model_args) != "cens_ID"]
+    } else {
+      cens_ID <- object$family$cens_ID
+    }
+  } else {
+    censor_points <- NULL
+    cens_ID <- NULL
+  }
+
+
   # validate data
   data_list <- validate_data(
     Y = Y, X = X, species_intercept = species_intercept,
     D = D, site_intercept = site_intercept, site_groups = site_groups,
     dat_list = NULL,
     family = family, method = method, Ntrials = Ntrials,
-    zi_X = zi_X, shp_X = shp_X
+    zi_X = zi_X, shp_X = shp_X,
+    censoring = censoring, censor_points = censor_points, cens_ID = cens_ID
   )
 
   # get original stan model
   stanmod <- rstan::get_stanmodel(object$fit)
 
-  model_args <- list(...)
   if (any(c("pars", "include") %in% names(model_args))) {
     warning("Specified pars and include arguments are ignored")
   }

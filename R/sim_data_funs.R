@@ -81,19 +81,26 @@
 #'   covariates are generated and used to predict the shape parameter. Will be
 #'   ignored if shp_X is supplied.
 #'
+#' @param censoring If the response is left-censored (\code{"left"}) or not
+#'   censored (default, \code{"none"}).
+#'
+#' @param censor_points The values at which censoring occurs, to be provided as
+#'   either a S-length vector (if \code{censoring = "left" or "right"}) or a
+#'   named list
+#'
 #' @param prior Set of prior specifications from call to [jsdm_prior()]
 #'
 #' @param X The X matrix to be used to simulate data, by default \code{NULL} -
 #'   i.e. the X matrix is simulated using a random draw from a standard normal
 #'   distribution.
 #'
-#' @param zi_X The zi_X matrix to be used to simulate data, by default \code{NULL} -
-#'   i.e. the zi_X matrix is simulated using a random draw from a standard normal
-#'   distribution.
+#' @param zi_X The zi_X matrix to be used to simulate data, by default
+#'   \code{NULL} - i.e. the zi_X matrix is simulated using a random draw from a
+#'   standard normal distribution.
 #'
-#' @param shp_X The shp_X matrix to be used to simulate data, by default \code{NULL} -
-#'   i.e. the shp_X matrix is simulated using a random draw from a standard normal
-#'   distribution.
+#' @param shp_X The shp_X matrix to be used to simulate data, by default
+#'   \code{NULL} - i.e. the shp_X matrix is simulated using a random draw from a
+#'   standard normal distribution.
 jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
                           method = c("gllvm", "mglmm"),
                           species_intercept = TRUE,
@@ -102,15 +109,19 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
                           beta_param = "unstruct",
                           zi_param = "constant", zi_k = NULL,
                           shp_param = "constant", shp_k = NULL,
+                          censoring = "none", censor_points = NULL,
                           prior = jsdm_prior(),
                           X = NULL, zi_X = NULL, shp_X = NULL) {
   response <- match.arg(family, c("gaussian", "neg_binomial", "poisson",
                                   "bernoulli", "binomial", "zi_poisson",
-                                  "zi_neg_binomial"))
+                                  "zi_neg_binomial", "normal", "lognormal",
+                                  "gamma"))
+  response <- ifelse(response == "normal", "gaussian", response)
   site_intercept <- match.arg(site_intercept, c("none","ungrouped","grouped"))
   beta_param <- match.arg(beta_param, c("cor", "unstruct"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
+  censoring <- match.arg(censoring, c("none", "left", "right", "left-and-right"))
   if(!is.null(zi_X)){
     zi_param <- "covariate"
   }
@@ -227,7 +238,34 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
     }
   }
 
-
+  # censoring
+  if(censoring != "none"){
+    if(is.null(censor_points)){
+      stop("For censor models please supply the censoring points")
+    }
+    if(censoring %in% c("left","right")){
+      if(!is.numeric(censor_points)){
+        stop("For left- and right- censored models the censor_points must be supplied as a S-length vector")
+      }
+      if(length(censor_points)!= S){
+        stop("For left- and right- censored models the censor_points must be supplied as a S-length vector")
+      }
+    } else{
+      leftright_error <-
+        paste("For left and right censored models censor_points must be supplied",
+              "as a list with two S-length vectors named left and right",
+              "containing the censoring points")
+      if(!is.list(censor_points)){
+        stop(leftright_error)
+      }
+      if(!identical(names(censor_points), c("left", "right"))){
+        stop(leftright_error)
+      }
+      if(!all(sapply(censor_points, function(x) length(x) == S))){
+        stop(leftright_error)
+      }
+    }
+  }
 
 
   # prior object breakdown
@@ -272,20 +310,19 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       "z_preds" = (K + 1 * species_intercept) * S,
       "cor_preds" = K + 1 * species_intercept,
       "betas" = (K + 1 * species_intercept) * S,
-      "a" = N,
-      "a_bar" = 1,
       "sigma_a" = 1,
       "sigmas_species" = S,
-      "z_species" = S * N,
       "cor_species" = S,
       "LV" = D1 * N,
       "L" = D1 * (S - D1) + (D1 * (D1 - 1) / 2) + D1,
       "sigma_L" = 1,
-      "sigma" = S,
+      "sigma" = 1,
       "kappa" = S,
+      "shape" = S,
       "zi" = S,
       "zi_betas" = S*(ZI_K+1),
-      "shp_betas" = S*(SHP_K + 1)
+      "shp_betas" = ifelse(response %in% c("gaussian", "lognormal"),
+                           SHP_K + 1,S*(SHP_K + 1))
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
@@ -363,19 +400,13 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
 
   ## site intercept
   if (site_intercept %in% c("grouped","ungrouped")) {
-    a_bar <- do.call(
-      match.fun(prior_func[["a_bar"]][[1]]),
-      prior_func[["a_bar"]][[2]]
-    )
+
     sigma_a <- abs(do.call(
       match.fun(prior_func[["sigma_a"]][[1]]),
       prior_func[["sigma_a"]][[2]]
     ))
-    a <- do.call(
-      match.fun(prior_func[["a"]][[1]]),
-      prior_func[["a"]][[2]]
-    )
-    a_i <- a_bar + a * sigma_a
+    z_a <- stats::rnorm(N, 0, 1)
+    a_i <- z_a * sigma_a
   } else {
     a_i <- rep(0, N)
   }
@@ -386,10 +417,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       match.fun(prior_func[["sigmas_species"]][[1]]),
       prior_func[["sigmas_species"]][[2]]
     ))
-    z_species <- matrix(do.call(
-      match.fun(prior_func[["z_species"]][[1]]),
-      prior_func[["z_species"]][[2]]
-    ), nrow = S, ncol = N)
+    z_species <- matrix(stats::rnorm(N*S, 0, 1), nrow = S, ncol = N)
     u_ij <- t((diag(sigmas_species) %*% cor_species) %*% z_species)
   }
 
@@ -429,11 +457,23 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   }
 
   # variance parameters
-  if (response == "gaussian") {
+  if (response %in% c("gaussian","lognormal")) {
     if(shp_param == "constant"){
       sigma <- abs(do.call(
         match.fun(prior_func[["sigma"]][[1]]),
         prior_func[["sigma"]][[2]]
+      ))
+    } else if(shp_param == "covariate"){
+      shp_betas <- do.call(
+        match.fun(prior_func[["shp_betas"]][[1]]),
+        prior_func[["shp_betas"]][[2]]
+      )
+    }
+  } else if (response == "neg_binomial") {
+    if(shp_param == "constant"){
+      kappa <- abs(do.call(
+        match.fun(prior_func[["kappa"]][[1]]),
+        prior_func[["kappa"]][[2]]
       ))
     } else if(shp_param == "covariate"){
       shp_betas <- matrix(do.call(
@@ -441,11 +481,11 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
         prior_func[["shp_betas"]][[2]]
       ), ncol = S)
     }
-  } else if (response == "neg_binomial") {
+  } else if (response == "gamma"){
     if(shp_param == "constant"){
-      kappa <- abs(do.call(
-        match.fun(prior_func[["kappa"]][[1]]),
-        prior_func[["kappa"]][[2]]
+      shape <- abs(do.call(
+        match.fun(prior_func[["shape"]][[1]]),
+        prior_func[["shape"]][[2]]
       ))
     } else if(shp_param == "covariate"){
       shp_betas <- matrix(do.call(
@@ -505,7 +545,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
     zi <- inv_logit(zi_X %*% zi_betas)
   }
 
-  # zero-inflation in case of covariates
+  # shape parameters in case of covariates
   if(shp_param == "covariate"){
     if(is.null(shp_X)){
       if(is.null(shp_k)){
@@ -517,10 +557,12 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
 
       }
     }
-    if(family == "gaussian"){
+    if(family %in% c("gaussian","lognormal")){
      sigma <- exp(shp_X %*% shp_betas)
     } else if(family %in% c("neg_binomial","zi_neg_binomial")){
       kappa <- exp(shp_X %*% shp_betas)
+    } else if(family == "gamma"){
+      shape <- exp(shp_X %*% shp_betas)
     }
   }
 
@@ -540,8 +582,14 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
           scale = switch(shp_param, "constant" = kappa[j],
                          "covariate" = kappa[i,j])
         ),
-        "gaussian" = stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma[j],
-                                                   "covariate" = sigma[i,j])),
+        "gaussian" = stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma,
+                                                   "covariate" = sigma[i])),
+        "lognormal" = exp(stats::rnorm(1, mu_ij, switch(shp_param, "constant" = sigma,
+                                                        "covariate" = sigma[i]))),
+        "gamma" = stats::rgamma(1, switch(shp_param, "constant" = shape[j],
+                                          "covariate" = shape[i,j]),
+                                switch(shp_param, "constant" = shape[j],
+                                       "covariate" = shape[i,j])/exp(mu_ij)),
         "poisson" = stats::rpois(1, exp(mu_ij)),
         "bernoulli" = stats::rbinom(1, 1, inv_logit(mu_ij)),
         "binomial" = stats::rbinom(1, Ntrials[i], inv_logit(mu_ij)),
@@ -562,8 +610,54 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
                   "jsdm fitting, it is recommended that the simulation is run again."))
   }
 
+  # censoring
+  if(censoring != "none"){
+    if(censoring == "left"){
+      Y_cens <- Y
+      cens_ID <- Y
+      for(s in 1:S){
+        for(n in 1:N){
+          if(Y_cens[n,s]< censor_points[s]){
+            cens_ID[n,s] <- 1
+            Y_cens[n,s] <- censor_points[s]
+          } else{
+            cens_ID[n,s] <- 0
+          }
+        }
+      }
+    } else if(censoring == "right"){
+        Y_cens <- Y
+        cens_ID <- Y
+        for(s in 1:S){
+          for(n in 1:N){
+            if(Y_cens[n,s]> censor_points[s]){
+              cens_ID[n,s] <- 1
+              Y_cens[n,s] <- censor_points[s]
+            } else{
+              cens_ID[n,s] <- 0
+            }
+          }
+        }
+      } else if(censoring == "left-and-right"){
+          Y_cens <- Y
+          cens_ID <- Y
+          for(s in 1:S){
+            for(n in 1:N){
+              if(Y_cens[n,s]< censor_points$left[s]){
+                cens_ID[n,s] <- 1
+                Y_cens[n,s] <- censor_points$left[s]
+              } else if(Y_cens[n,s] > censor_points$right[s]){
+                cens_ID[n,s] <- 2
+                Y_cens[n,s] <- censor_points$right[s]
+              } else{
+                cens_ID[n,s] <- 0
+              }
+            }
+          }
+        }
+  }
 
-
+  # prepare output
   pars <- list(
     betas = beta_sim
   )
@@ -577,9 +671,8 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   }
 
   if (site_intercept == "ungrouped") {
-    pars$a_bar <- a_bar
     pars$sigma_a <- sigma_a
-    pars$a <- a
+    pars$z_a <- z_a
   }
   if (method == "gllvm") {
     pars$L <- L
@@ -591,17 +684,14 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
     pars$cor_species <- cor_species
     pars$z_species <- z_species
   }
-  if (response == "gaussian") {
+  if (response %in% c("gaussian","lognormal")) {
     pars$sigma <- sigma
   }
   if (response == "neg_binomial") {
     pars$kappa <- kappa
   }
-  if(response == "gaussian" & shp_param == "constant"){
-    pars$sigma <- sigma
-  }
-  if(response == "neg_binomial" & shp_param == "constant"){
-    pars$kappa <- kappa
+  if(response == "gamma") {
+    pars$shape <- shape
   }
   if(shp_param == "covariate"){
     pars$shp_betas <- shp_betas
@@ -636,6 +726,13 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
   if(shp_param == "covariate"){
     output$shp_k <- SHP_K + 1
     output$shp_X <- shp_X
+  }
+  if(censoring != "none"){
+    output$Y_uncensored <- Y
+    output$Y <- Y_cens
+    output$censor_points <- censor_points
+    output$cens_ID <- cens_ID
+    output$censoring <- censoring
   }
 
   return(output)

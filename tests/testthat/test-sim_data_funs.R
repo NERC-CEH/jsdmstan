@@ -115,14 +115,14 @@ test_that("jsdm_sim_data returns all appropriate pars", {
                              beta_param = "unstruct",
                              site_intercept = "ungrouped")
   expect_named(gllvm_sim$pars, c(
-    "betas","a_bar","sigma_a","a","L","LV","sigma_L","kappa"
+    "betas","sigma_a","z_a","L","LV","sigma_L","kappa"
   ))
 
   gllvm_sim2 <- jsdm_sim_data(100,12,D=2,family = "zi_poisson", method = "gllvm",
                               beta_param = "unstruct",
                               site_intercept = "ungrouped")
   expect_named(gllvm_sim2$pars, c(
-    "betas","a_bar","sigma_a","a","L","LV","sigma_L","zi"
+    "betas","sigma_a","z_a","L","LV","sigma_L","zi"
   ))
 
 
@@ -131,7 +131,7 @@ test_that("jsdm_sim_data returns all appropriate pars", {
                               site_intercept = "ungrouped", zi_param = "covariate",
                               zi_k = 1)
   expect_named(gllvm_sim3$pars, c(
-    "betas","a_bar","sigma_a","a","L","LV","sigma_L","zi_betas","kappa"
+    "betas","sigma_a","z_a","L","LV","sigma_L","zi_betas","kappa"
   ))
 
 })
@@ -140,7 +140,6 @@ test_that("prior specification works", {
   jsdm_sim <- jsdm_sim_data(
     N = 100, S = 8, K = 2, family = "gaus", method = "mglmm",
     prior = jsdm_prior(
-      z_species = "student_t(3,0,2)",
       sigma = "gamma(1,1)"
     )
   )

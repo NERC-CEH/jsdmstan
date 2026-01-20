@@ -1,36 +1,37 @@
 
 #' Make stancode for the jsdm model
 #'
-#' This function returns the Stan code used to fit the model as specified by the data
-#' list, family and method.
+#' This function returns the Stan code used to fit the model as specified by the
+#' data list, family and method.
 #'
-#' @details
-#'   Environmental covariate effects (\code{"betas"}) can be parameterised in two
-#'   ways. With the \code{"cor"} parameterisation all covariate effects are assumed
-#'   to be constrained by a correlation matrix between the covariates. With the
-#'   \code{"unstruct"} parameterisation all covariate effects are assumed to draw
-#'   from a simple distribution with no correlation structure. Both parameterisations
-#'   can be modified using the prior object.
+#' @details Environmental covariate effects (\code{"betas"}) can be
+#' parameterised in two ways. With the \code{"cor"} parameterisation all
+#' covariate effects are assumed to be constrained by a correlation matrix
+#' between the covariates. With the \code{"unstruct"} parameterisation all
+#' covariate effects are assumed to draw from a simple distribution with no
+#' correlation structure. Both parameterisations can be modified using the prior
+#' object.
 #'
 #' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
 #' @param family is the response family, must be one of \code{"gaussian"},
 #'   \code{"neg_binomial"}, \code{"poisson"}, \code{"binomial"},
-#'   \code{"bernoulli"}, \code{"zi_poisson"}, or
-#'    \code{"zi_neg_binomial"}. Regular expression
-#'   matching is supported.
+#'   \code{"bernoulli"}, \code{"zi_poisson"}, or \code{"zi_neg_binomial"}.
+#'   Regular expression matching is supported.
 #' @param prior The prior, given as the result of a call to [jsdm_prior()]
 #' @param site_intercept Whether a site intercept should be included, potential
-#'   values \code{"none"} (no site intercept), \code{"grouped"} (a site intercept
-#'   with hierarchical grouping) or \code{"ungrouped"} (site intercept with no
-#'   grouping)
-#' @param beta_param The parameterisation of the environmental covariate effects, by
-#'   default \code{"cor"}. See details for further information.
-#' @param zi_param For the zero-inflated families, whether the zero-inflation parameter
-#'   is a species-specific constant (default, \code{"constant"}), or varies by
-#'   environmental covariates (\code{"covariate"}).
-#' @param shp_param For the families with shape parameters, whether the shape parameter
-#'   is a species-specific constant (default, \code{"constant"}), or varies by
-#'   environmental covariates (\code{"covariate"}).
+#'   values \code{"none"} (no site intercept), \code{"grouped"} (a site
+#'   intercept with hierarchical grouping) or \code{"ungrouped"} (site intercept
+#'   with no grouping)
+#' @param beta_param The parameterisation of the environmental covariate
+#'   effects, by default \code{"cor"}. See details for further information.
+#' @param zi_param For the zero-inflated families, whether the zero-inflation
+#'   parameter is a species-specific constant (default, \code{"constant"}), or
+#'   varies by environmental covariates (\code{"covariate"}).
+#' @param shp_param For the families with shape parameters, whether the shape
+#'   parameter is a species-specific constant (default, \code{"constant"}), or
+#'   varies by environmental covariates (\code{"covariate"}).
+#' @param censoring If the response is left-censored (\code{"left"}) or not
+#'   censored (default, \code{"none"}).
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
@@ -42,16 +43,18 @@
 jsdm_stancode <- function(method, family, prior = jsdm_prior(),
                           site_intercept = "none",
                           beta_param = "cor", zi_param = "constant",
-                          shp_param = "constant") {
+                          shp_param = "constant", censoring = "none") {
   # checks
-  family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
+  family <- match.arg(family, c("gaussian","normal", "bernoulli", "poisson",
                                 "neg_binomial","binomial","zi_poisson",
-                                "zi_neg_binomial"))
+                                "zi_neg_binomial","lognormal","gamma","beta"))
+  family <- ifelse(family == "normal", "gaussian", family)
   method <- match.arg(method, c("gllvm", "mglmm"))
   beta_param <- match.arg(beta_param, c("cor","unstruct"))
   site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
+  censoring <- match.arg(censoring, c("none","left"))
   if(shp_param == "covariate" & family %in% c("poisson","bernoulli","binomial",
                                                  "zi_poisson"))
     stop(paste("Modelling the family parameter in response to data only works",
@@ -64,7 +67,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   scode <- .modelcode(
     method = method, family = family,
     phylo = FALSE, prior = prior, site_intercept = site_intercept,
-    beta_param = beta_param, zi_param = zi_param, shp_param = shp_param
+    beta_param = beta_param, zi_param = zi_param, shp_param = shp_param,
+    censoring = censoring
   )
   class(scode) <- c("jsdmstan_model", "character")
   return(scode)
@@ -72,7 +76,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 
 .modelcode <- function(method, family, phylo, prior, site_intercept,
-                       beta_param, zi_param, shp_param) {
+                       beta_param, zi_param, shp_param, censoring) {
   model_functions <- "
 "
   data <- paste(
@@ -89,36 +93,45 @@ ifelse(method == "gllvm",
 ifelse(site_intercept == "grouped",
             "
   int<lower=1> ngrp; // Number of groups in site intercept
-  int<lower=0, upper = ngrp> grps[N]; // Vector matching sites to groups
- ",""),
+  array[N] int<lower=0, upper = ngrp> grps; // Vector matching sites to groups
+ ",""),"
+  array[N,S]",
   switch(family,
       "gaussian" = "real",
+      "lognormal" = "real<lower=0>",
       "bernoulli" = "int<lower=0,upper=1>",
       "neg_binomial" = "int<lower=0>",
       "poisson" = "int<lower=0>",
       "zi_poisson" = "int<lower=0>",
       "zi_neg_binomial" = "int<lower=0>",
-      "binomial" = "int<lower=0>"
-    ), "Y[N,S]; //Species matrix",
+      "binomial" = "int<lower=0>",
+      "gamma" = "real<lower=0>",
+      "beta" = "real<lower=0,upper=1>",
+    ), "Y; //Species matrix",
  ifelse(family == "binomial",
         "
-  int<lower=0> Ntrials[N]; // Number of trials",""),
+  array[N] int<lower=0> Ntrials; // Number of trials",""),
   ifelse(grepl("zi_", family) & zi_param == "constant" & shp_param == "constant","
-  int<lower=0> N_zero[S]; // number of zeros per species
-  int<lower=0> N_nonzero[S]; //number of nonzeros per species
+  array[S] int<lower=0> N_zero; // number of zeros per species
+  array[S] int<lower=0> N_nonzero; //number of nonzeros per species
   int<lower=0> Sum_nonzero; //Total number of nonzeros across all species
   int<lower=0> Sum_zero; //Total number of zeros across all species
-  int<lower=0> Y_nz[Sum_nonzero]; //Y values for nonzeros
-  int<lower=0> ss[Sum_nonzero]; //species index for Y_nz
-  int<lower=0> nn[Sum_nonzero]; //site index for Y_nz
-  int<lower=0> sz[Sum_zero]; //species index for Y_z
-  int<lower=0> nz[Sum_zero]; //site index for Y_z",""),
+  array[Sum_nonzero] int<lower=0> Y_nz; //Y values for nonzeros
+  array[Sum_nonzero] int<lower=0> ss; //species index for Y_nz
+  array[Sum_nonzero] int<lower=0> nn; //site index for Y_nz
+  array[Sum_zero] int<lower=0> sz; //species index for Y_z
+  array[Sum_zero] int<lower=0> nz; //site index for Y_z",""),
 ifelse(grepl("zi_", family) & zi_param == "covariate","
   int<lower=1> zi_k; //number of covariates for env effects on zi
   matrix[N, zi_k] zi_X; //environmental covariate matrix for zi",""),
 ifelse(shp_param == "covariate","
   int<lower=1> shp_k; //number of covariates for env effects on family parameter
-  matrix[N, shp_k] shp_X; //environmental covariate matrix for family parameter","")
+  matrix[N, shp_k] shp_X; //environmental covariate matrix for family parameter",""),
+ifelse(censoring == "left", "
+  array[S] int<lower=0> N_cens; // number of cens per species
+  array[S] int<lower=0> N_noncens; //number of noncens per species
+  array[N,S] int<lower=0> J_cens; //Indices of cens across all species
+  array[N,S] int<lower=0> J_noncens; //Indices of noncens across all species","")
 )
 
 
@@ -133,15 +146,13 @@ ifelse(shp_param == "covariate","
   site_inter_par <- switch(site_intercept,
                            "ungrouped" = "
   // Site intercepts
-  real a_bar;
   real<lower=0> sigma_a;
-  vector[N] a;",
+  vector[N] z_a;",
   "none" = "",
   "grouped" = "
   // Site intercepts
-  real a_bar;
   real<lower=0> sigma_a;
-  vector[ngrp] a;")
+  vector[ngrp] z_a;")
   species_pars <- switch(beta_param, "cor" = "
   //betas are hierarchical with covariance model
   vector<lower=0>[K] sigmas_preds;
@@ -163,26 +174,32 @@ ifelse(shp_param == "covariate","
 
   var_pars <- switch(family,
     "gaussian" = switch(shp_param, "constant" = "
-  real<lower=0> sigma[S]; // Gaussian parameters", "covariate" = "
+  real<lower=0> sigma; // Gaussian parameters", "covariate" = "
+  matrix[shp_k,S] shp_betas; //environmental effects for family param"),
+    "lognormal" = switch(shp_param, "constant" = "
+  real<lower=0> sigma; // Lognormal parameters", "covariate" = "
+  matrix[shp_k,S] shp_betas; //environmental effects for family param"),
+    "gamma" = switch(shp_param, "constant" = "
+  vector<lower=0>[S] shape; // Gaussian parameters", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "bernoulli" = "",
     "neg_binomial" = switch(shp_param, "constant" = "
-  real<lower=0> kappa[S]; // neg_binomial parameters","covariate" = "
+  array[S] real<lower=0> kappa; // neg_binomial parameters","covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param"),
     "poisson" = "",
     "zi_poisson" = switch(zi_param,
     "constant" = "
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter",
+  array[S] real<lower=0,upper=1> zi; // zero-inflation parameter",
     "covariate" = "
   matrix[zi_k,S] zi_betas; //environmental effects for zi"),
   "zi_neg_binomial" = switch(zi_param,
                              "constant" = switch(shp_param, "constant" = "
-  real<lower=0> kappa[S]; // neg_binomial parameters
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter", "covariate" = "
+  array[S] real<lower=0> kappa; // neg_binomial parameters
+  array[S] real<lower=0,upper=1> zi; // zero-inflation parameter", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param
-  real<lower=0,upper=1> zi[S]; // zero-inflation parameter"),
+  array[S] real<lower=0,upper=1> zi; // zero-inflation parameter"),
                              "covariate" = switch(shp_param, "constant" = "
-  real<lower=0> kappa[S]; // neg_binomial parameters
+  array[S] real<lower=0> kappa; // neg_binomial parameters
   matrix[zi_k,S] zi_betas; //environmental effects for zi", "covariate" = "
   matrix[shp_k,S] shp_betas; //environmental effects for family param
   matrix[zi_k,S] zi_betas; //environmental effects for zi"))
@@ -235,7 +252,7 @@ ifelse(shp_param == "covariate","
   gllvm_model <- switch(site_intercept, "ungrouped" = "
   // model
   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);
   mu = alpha + (X * betas) + LV_sum;
   ", "none" = "
   // model
@@ -245,7 +262,7 @@ ifelse(shp_param == "covariate","
   matrix[N, S] alpha;
   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
   {
-    vector[ngrp] theta = a_bar + a * sigma_a;
+    vector[ngrp] theta = z_a * sigma_a;
     for (n in 1:N){
       alpha[n,] = rep_row_vector(theta[grps[n]],S);
     }
@@ -254,7 +271,7 @@ ifelse(shp_param == "covariate","
   ")
   mglmm_model <- switch(site_intercept, "ungrouped" = "
   // model
-  matrix[N, S] alpha = rep_matrix(a_bar + a * sigma_a, S);
+  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);
   mu = alpha + (X * betas) + u;
   ", "none" = "
   // model
@@ -262,7 +279,7 @@ ifelse(shp_param == "covariate","
   ", "grouped" = "
   matrix[N, S] alpha;
   {
-    vector[ngrp] theta = a_bar + a * sigma_a;
+    vector[ngrp] theta = z_a * sigma_a;
     for (n in 1:N){
       alpha[n,] = rep_row_vector(theta[grps[n]],S);
     }
@@ -277,8 +294,8 @@ ifelse(shp_param == "covariate","
   int pos;
   int neg;",
                    ifelse(shp_param== "covariate" & family == "zi_neg_binomial", "
-  real kappa_nz[Sum_nonzero];
-  real kappa_z[Sum_zero];","")),""),
+  array[Sum_nonzero] real kappa_nz;
+  array[Sum_zero] real kappa_z;","")),""),
   switch(method,
     "gllvm" = gllvm_model,
     "mglmm" = mglmm_model
@@ -296,15 +313,18 @@ ifelse(shp_param == "covariate","
   ","")),""),
   ifelse(shp_param == "covariate" & family != "zi_neg_binomial", paste("
   matrix[N,S]", switch(family, "gaussian" = "sigma",
+                       "lognormal" = "sigma",
+                       "gamma" = "shape",
                        "neg_binomial" = "kappa"),
-                       "= exp(shp_X * shp_betas);",""),"")
+                       "= exp(shp_X * shp_betas);",""),""),
+  ifelse(family == "gamma", "
+  mu = exp(mu);","")
   )
   # priors ####
   model_priors <- paste(
     ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
   // Site-level intercept priors
-  a ~ ", prior[["a"]], ";
-  a_bar ~ ", prior[["a_bar"]], ";
+  z_a ~ std_normal();
   sigma_a ~ ", prior[["sigma_a"]], ";
   "), "
   "), switch(beta_param, "cor" = paste(
@@ -329,7 +349,7 @@ ifelse(shp_param == "covariate","
       "mglmm" = paste("
   // Species parameter priors
   sigmas_species ~ ", prior[["sigmas_species"]], ";
-  to_vector(z_species) ~ ", prior[["z_species"]], ";
+  to_vector(z_species) ~ std_normal();
   cor_species_chol ~ ", prior[["cor_species_chol"]], ";
 ")
     ),
@@ -341,11 +361,25 @@ ifelse(shp_param == "covariate","
   //Standard deviation parameters
   to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
 ")),
+      "lognormal" = switch(shp_param, "constant" = paste("
+  //Standard deviation parameters
+  sigma ~ ", prior[["sigma"]], ";
+"), "covariate" = paste("
+  //Standard deviation parameters
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+")),
       "neg_binomial" = switch(shp_param, "constant" = paste("
   //Scale parameter
   kappa ~ ", prior[["kappa"]], ";
 "), "covariate" = paste("
   //Scale parameters
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+")),
+      "gamma" = switch(shp_param, "constant" = paste("
+  //Standard deviation parameters
+  shape ~ ", prior[["shape"]], ";
+"), "covariate" = paste("
+  //Standard deviation parameters
   to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
 ")),
       "bern" = "",
@@ -374,20 +408,53 @@ ifelse(shp_param == "covariate","
     )
   ))
   # model ####
-  model_pt2 <- if(!grepl("zi_", family)){ paste(
+  model_pt2 <- if(!grepl("zi_", family) & censoring == "none"){ paste(
     "
   for(i in 1:N) Y[i,] ~ ",
     switch(family,
       "gaussian" = switch(shp_param,"constant" = "normal(mu[i,], sigma);",
                           "covariate" = "normal(mu[i,],sigma[i,]);"),
+      "lognormal" = switch(shp_param,"constant" = "lognormal(mu[i,], sigma);",
+                          "covariate" = "lognormal(mu[i,],sigma[i,]);"),
       "bernoulli" = "bernoulli_logit(mu[i,]);",
       "neg_binomial" = switch(shp_param,
                               "constant" = "neg_binomial_2_log(mu[i,], kappa);",
                               "covariate" = "neg_binomial_2_log(mu[i,], kappa[i,]);"),
       "poisson" = "poisson_log(mu[i,]);",
-      "binomial" = "binomial_logit(Ntrials[i], mu[i,]);"
+      "binomial" = "binomial_logit(Ntrials[i], mu[i,]);",
+      "gamma" = switch(shp_param,"constant" = "gamma(shape, shape ./ to_vector(mu[i,]));",
+                           "covariate" = "gamma(shape[i,],shape[i,] ./ to_vector(mu[i,]));")
     )
-  )} else if(zi_param == "constant" & shp_param == "constant"){paste("
+  )} else if(censoring == "left"){ paste("
+  for (s in 1:S){
+    target += ",
+  switch(family,
+         "gaussian" = switch(shp_param,"constant" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
+                                mu[J_noncens[1:N_noncens[s],s],s], sigma);",
+                             "covariate" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
+                                mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
+         "lognormal" = switch(shp_param,"constant" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
+                                mu[J_noncens[1:N_noncens[s],s],s], sigma);",
+                              "covariate" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
+                                mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
+         "gamma" = switch(shp_param,"constant" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s] | shape[s],
+                               shape[s] /  mu[J_noncens[1:N_noncens[s],s],s]);",
+                          "covariate" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  | shape[s],
+                               shape[,s] / mu[J_noncens[1:N_noncens[s],s],s]);")
+         ),"
+    target += ",
+  switch(family,
+         "gaussian" = switch(shp_param,"constant" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
+                             "covariate" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
+         "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
+                              "covariate" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s]| mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
+         "gamma" = switch(shp_param,"constant" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[s], shape[s] / mu[J_cens[1:N_cens[s],s],s]);",
+                          "covariate" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[n,s], shape[n,s] / mu[J_cens[1:N_cens[s],s],s]);")
+  ),"
+
+  }"
+  )
+  } else if(zi_param == "constant" & shp_param == "constant"){paste("
   pos = 1;
   neg = 1;
   for(s in 1:S){
