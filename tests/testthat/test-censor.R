@@ -1,3 +1,4 @@
+# censored data simulation ####
 test_that("sim_data errors appropriately", {
   expect_error(jsdm_sim_data(100,10,D=2,family = "gamma", method = "gllvm",
                              censoring = "left"),
@@ -14,6 +15,79 @@ test_that("sim_data errors appropriately", {
   expect_error(jsdm_sim_data(7,89,D=2,family = "lognormal", method = "gllvm",
                              censoring = "right", censor_points = c(1,2)),
                "S-length vector")
+
+  expect_error(jsdm_sim_data(7,89,D=2,family = "lognormal", method = "gllvm",
+                             censoring = "left-and-right", censor_points = c(1,2)),
+               "list with two S-length vectors")
+
+  expect_error(jsdm_sim_data(7,89,D=2,family = "lognormal", method = "gllvm",
+                             censoring = "left-and-right",
+                             censor_points = list(c(1:7),c(1:7))),
+               "list with two S-length vectors")
+
+  expect_error(jsdm_sim_data(7,89,D=2,family = "lognormal", method = "gllvm",
+                             censoring = "left-and-right",
+                             censor_points = list(left = c(1:7),right = c(1:5))),
+               "list with two S-length vectors")
+})
+
+test_that("right censoring works", {
+  set.seed(962127)
+  rt_dat <- jsdm_sim_data(9,75, K = 1,D=2,family = "gamma", method = "gllvm",
+                          censoring = "right", shp_param = "covariate",
+                          censor_points = rep(10,9))
+
+  expect_named(rt_dat, c("Y","pars","N","S","D","K","X",
+                         "shp_k", "shp_X",
+                         "Y_uncensored","censor_points","cens_ID",
+                         "censoring"))
+
+  expect_false(anyNA(rt_dat$Y))
+
+  expect_false(anyNA(rt_dat$Y_uncensored))
+
+  expect_true(all(rt_dat$Y_uncensored>0))
+  expect_true(all(rt_dat$Y>0))
+
+  expect_true(all(sapply(1:9, function(i) all(rt_dat$Y[,i] <= rt_dat$censor_points[i]))))
+
+  expect_length(rt_dat$censor_points, 9)
+  expect_type(rt_dat$censor_points, "double")
+
+  expect_equal(rt_dat$censoring, "right")
+
+  expect_error(stan_jsdm(~V1, Y = rt_dat$Y, shp_formula = ~ V1,
+                         shp_param = "covariate",
+                         data = as.data.frame(rt_dat$X),
+                         censoring = "right", family = "gamma"),
+               "should be one of")
+})
+
+test_that("left and right censoring works", {
+  set.seed(962127)
+  rt_dat <- jsdm_sim_data(7,100,family = "lognormal", method = "mglmm",
+                          censoring = "left-and-right", shp_param = "covariate",
+                          censor_points = list(left = rep(1,7), right = rep(10,7)))
+
+  expect_named(rt_dat, c("Y","pars","N","S","D","K","X",
+                         "shp_k","shp_X",
+                         "Y_uncensored","censor_points","cens_ID",
+                         "censoring"))
+
+  expect_false(anyNA(rt_dat$Y))
+
+  expect_false(anyNA(rt_dat$Y_uncensored))
+
+  expect_true(all(rt_dat$Y_uncensored>0))
+  expect_true(all(rt_dat$Y>0))
+
+  expect_true(all(sapply(1:7, function(i) all(rt_dat$Y[,i] >= rt_dat$censor_points$left[i]))))
+  expect_true(all(sapply(1:7, function(i) all(rt_dat$Y[,i] <= rt_dat$censor_points$right[i]))))
+
+  expect_length(rt_dat$censor_points, 2)
+  expect_type(rt_dat$censor_points, "list")
+
+  expect_equal(rt_dat$censoring, "left-and-right")
 })
 
 set.seed(676981)
@@ -66,6 +140,8 @@ test_that("lnorm sim_data returns correct censored data",{
   expect_equal(lnorm_dat$censoring, "left")
 })
 
+
+# gamma censoring ####
 suppressWarnings(gamma_mod <- stan_jsdm(dat_list = gamma_dat, family = "gamma",
                                         method = "gllvm",
                                         refresh = 0, iter = 500, chains = 2))
@@ -130,8 +206,42 @@ test_that("update works", {
 
 })
 
+test_that("posterior_(lin)pred works with gamma", {
+  gamma_pred <- posterior_predict(gamma_mod, ndraws = 100)
+
+  expect_length(gamma_pred, 100)
+  expect_false(any(sapply(gamma_pred, anyNA)))
+  expect_false(any(sapply(gamma_pred, function(x) x < 0)))
+})
+
+
 
 # lognormal censoring ####
+test_that("censor model errors if not supplied correctly", {
+  expect_error(stan_jsdm(Y = lnorm_dat$Y, censoring = "left", family="lognormal",
+                         method = "mglmm"),
+               "require censor_points")
+
+  expect_error(stan_jsdm(Y = lnorm_dat$Y, censoring = "left", family="lognormal",
+                         censor_points = 1, method = "mglmm"),
+               "S-length vector")
+
+  expect_error(stan_jsdm(Y = lnorm_dat$Y, censoring = "left", family="lognormal",
+                         cens_ID = matrix(sample.int(1e4,5*8),ncol=8),
+                         method = "mglmm"),
+               "matrix is not binary")
+
+  expect_error(stan_jsdm(Y = lnorm_dat$Y, censoring = "left", family="lognormal",
+                         cens_ID = matrix(sample(0:1,5*7,replace = TRUE),ncol=7),
+                         method = "mglmm"),
+               "must have the same dimensions")
+
+
+  expect_error(stan_jsdm(dat_list = lnorm_dat[c(1:8)], censoring = "left", family="lognormal",
+                         method = "mglmm"),
+               "requires cens_ID and censor_points")
+})
+
 suppressWarnings(lnorm_mod <- stan_jsdm(dat_list = lnorm_dat, family = "lognormal",
                                         method = "mglmm",
                                         prior = jsdm_prior(betas = "normal(0,0.25)",
@@ -193,4 +303,12 @@ test_that("update works", {
                                    "preds","data_list",
                                    "censoring","censoring_data"))
 
+})
+
+test_that("posterior_(lin)pred works with lognormal", {
+  lnorm_pred <- posterior_predict(lnorm_mod, ndraws = 100)
+
+  expect_length(lnorm_pred, 100)
+  expect_false(any(sapply(lnorm_pred, anyNA)))
+  expect_false(any(sapply(lnorm_pred, function(x) x < 0)))
 })

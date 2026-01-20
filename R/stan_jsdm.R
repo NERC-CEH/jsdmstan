@@ -475,6 +475,8 @@ validate_data <- function(Y, D, X, species_intercept,
         ))) {
           stop("cens_ID matrix is not binary")
         }
+        if(!isTRUE(all.equal(dim(cens_ID),dim(Y))))
+          stop("cens_ID must have the same dimensions as Y")
       }
     }
 

@@ -557,10 +557,12 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
 
       }
     }
-    if(family == "gaussian"){
+    if(family %in% c("gaussian","lognormal")){
      sigma <- exp(shp_X %*% shp_betas)
     } else if(family %in% c("neg_binomial","zi_neg_binomial")){
       kappa <- exp(shp_X %*% shp_betas)
+    } else if(family == "gamma"){
+      shape <- exp(shp_X %*% shp_betas)
     }
   }
 
