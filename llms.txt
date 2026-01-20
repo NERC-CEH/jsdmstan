@@ -1,0 +1,222 @@
+# jsdmstan: joint Species Distribution Models in Stan
+
+This is an R package for running joint Species Distribution Models
+(jSDM) in [Stan](https://mc-stan.org/). jSDMs are models where multiple
+response variables (i.e. species) are fit at the same time, and the
+covariance between these species are used to inform the model results.
+For a review of jSDMs see Warton et al. (2015) So many variables: joint
+modelling in community ecology. *TREE*, 30:766-779 DOI:
+[10.1016/j.tree.2015.09.007](http://doi.org/10.1016/j.tree.2015.09.007).
+
+This package can fit data to a Multivariate Generalised Linear Mixed
+Model (MGLMM) or a Generalised Linear Latent Variable Model (GLLVM), and
+also provides functionality for simulating data under these scenarios
+and an interface to the [bayesplot](https://mc-stan.org/bayesplot/)
+package for a wide variety of plotting options.
+
+# Installation
+
+This package can be installed using the
+[remotes](https://remotes.r-lib.org/index.html) package using the
+following code:
+
+    # install.packages("remotes")
+    remotes::install_github("NERC-CEH/jsdmstan")
+
+# Using jsdmstan
+
+Example code:
+
+    library(jsdmstan)
+
+Simulate data:
+
+    nsites <- 200
+    nspecies <- 9
+    ncovar <- 2
+    mglmm_test_data <- mglmm_sim_data(N = nsites, S = nspecies,
+                                      K = ncovar, family = "pois")
+
+Fit Stan model:
+
+    dat <- as.data.frame(mglmm_test_data$X)
+    mglmm_fit <- stan_jsdm(~ V1 + V2, data = dat, Y = mglmm_test_data$Y,
+                           family = "pois", method = "mglmm")
+
+Plot results:
+
+    plot(mglmm_fit)
+    mcmc_plot(mglmm_fit, plotfun = "rhat_hist")
+
+------------------------------------------------------------------------
+
+This work was funded by the Natural Environment Research Council (part
+of UK Research and Innovation) under the UK-SCAPE Programme delivering
+National Capability (Grant Reference NE/R016429/1).
+
+![UKCEH logo](./reference/figures/UKCEH-Logo.png)![UKSCAPE
+logo](./reference/figures/uk_scape_logo.png)
+
+# Package index
+
+## Simulate data
+
+Simulate data according to the jsdm model structures
+
+- [`jsdm_sim_data()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_sim_data.md)
+  [`gllvm_sim_data()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_sim_data.md)
+  [`mglmm_sim_data()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_sim_data.md)
+  : Generate simulated data within a variety of jSDM methodologies
+- [`rgampois()`](https://nerc-ceh.github.io/jsdmstan/reference/sim_helpers.md)
+  [`rlkj()`](https://nerc-ceh.github.io/jsdmstan/reference/sim_helpers.md)
+  [`rinvgamma()`](https://nerc-ceh.github.io/jsdmstan/reference/sim_helpers.md)
+  [`rstudentt()`](https://nerc-ceh.github.io/jsdmstan/reference/sim_helpers.md)
+  : Helper functions for simulating data
+
+## Model
+
+Run jsdmstan models
+
+- [`stan_jsdm()`](https://nerc-ceh.github.io/jsdmstan/reference/stan_jsdm.md)
+  : Fit jsdm models in Stan
+
+- [`stan_gllvm()`](https://nerc-ceh.github.io/jsdmstan/reference/stan_gllvm.md)
+  :
+
+  Alias for `stan_jsdm` with `method = "gllvm"`
+
+- [`stan_mglmm()`](https://nerc-ceh.github.io/jsdmstan/reference/stan_mglmm.md)
+  :
+
+  Alias for `stan_jsdm` with `method = "mglmm"`
+
+- [`update(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/update.jsdmStanFit.md)
+  : Update a jsdmStanFit model object with new data or Stan arguments
+
+## Set-up functions
+
+Functions used to set up the prior structure (used in both data
+simulation and model fitting) and the Stan code used within model
+fitting
+
+- [`jsdm_stancode()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_stancode.md)
+  [`print(`*`<jsdmstan_model>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_stancode.md)
+  : Make stancode for the jsdm model
+- [`jsdm_prior()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_prior.md)
+  [`print(`*`<jsdmprior>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_prior.md)
+  : Create prior object for jsdmstan models and data simulation
+
+## Summaries
+
+Extract useful quantities from the model objects. This includes overall
+summaries of model parameters and model diagnostics.
+
+- [`extract()`](https://nerc-ceh.github.io/jsdmstan/reference/extract.jsdmStanFit.md)
+  : Extract samples from jsdmStanFit object
+
+- [`loo(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/loo.jsdmStanFit.md)
+  :
+
+  Efficient approximate leave-one-out cross-validation using the loo
+  package
+
+- [`get_parnames()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-extractors.md)
+  [`nuts_params(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-extractors.md)
+  [`log_posterior(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-extractors.md)
+  [`rhat(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-extractors.md)
+  [`neff_ratio(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-extractors.md)
+  : Extract quantities useful for model summaries
+
+- [`print(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/print.jsdmStanFit.md)
+  : Print the default summary for the model
+
+- [`summary(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/summary.jsdmStanFit.md)
+  : Summarise the model fit and data structure and give summaries for
+  the parameters
+
+- [`print(`*`<jsdmStanFamily>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/print.jsdmStanFamily.md)
+  : Print jsdmStanFamily object
+
+## Graphical summaries
+
+Plots of various model parameters, including jSDM specific summary plots
+as well as more general model summaries
+
+- [`corrplot()`](https://nerc-ceh.github.io/jsdmstan/reference/corrplot.md)
+  : Plot modelled correlations between species
+
+- [`envplot()`](https://nerc-ceh.github.io/jsdmstan/reference/envplot.md)
+  : Plotting environmental effects on species
+
+- [`ordiplot()`](https://nerc-ceh.github.io/jsdmstan/reference/ordiplot.md)
+  : Plotting an ordination plot for a GLLVM model
+
+- [`mcmc_plot()`](https://nerc-ceh.github.io/jsdmstan/reference/mcmc_plot.jsdmStanFit.md)
+  :
+
+  MCMC plots implemented in bayesplot
+
+- [`plot(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/plot.jsdmStanFit.md)
+  : Plot the traceplots and density plots for parameters within a
+  jsdmStanFit object
+
+## Posterior prediction
+
+Extract posterior distributions and predict from them, including
+graphical posterior checks
+
+- [`posterior_linpred(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/posterior_linpred.jsdmStanFit.md)
+  : Access the posterior distribution of the linear predictor
+
+- [`posterior_predict(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/posterior_predict.jsdmStanFit.md)
+  : Draw from the posterior predictive distribution
+
+- [`posterior_shppred()`](https://nerc-ceh.github.io/jsdmstan/reference/posterior_shppred.md)
+  : Access the posterior distribution of the linear predictor for the
+  shape parameter
+
+- [`posterior_zipred()`](https://nerc-ceh.github.io/jsdmstan/reference/posterior_zipred.md)
+  : Access the posterior distribution of the linear predictor for
+  zero-inflation parameter
+
+- [`pp_check(`*`<jsdmStanFit>`*`)`](https://nerc-ceh.github.io/jsdmstan/reference/pp_check.jsdmStanFit.md)
+  :
+
+  Posterior predictive checks for `jsdmStanFit` objects
+
+- [`multi_pp_check()`](https://nerc-ceh.github.io/jsdmstan/reference/multi_pp_check.md)
+  : Multiple pp_check plots per species
+
+- [`jsdm_statsummary()`](https://nerc-ceh.github.io/jsdmstan/reference/jsdm_statsummary.md)
+  :
+
+  Extract site- or species-level summary statistics for predictions from
+  a `jsdmStanFit` model
+
+## Other
+
+Objects and classes used within jsdmstan
+
+- [`jsdmStanFit`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmStanFit.md)
+  : jsdmStanFit class
+- [`jsdmStanFamily`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmStanFamily.md)
+  : jsdmStanFamily class
+- [`jsdmstan-package`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-package.md)
+  [`jsdmstan`](https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-package.md)
+  : The 'jsdmstan' package.
+- [`bunce71`](https://nerc-ceh.github.io/jsdmstan/reference/bunce71.md)
+  : Data from broadleaved woodlands across Great Britain, 1971
+- [`pinewood`](https://nerc-ceh.github.io/jsdmstan/reference/pinewood.md)
+  : Data from a survey of native pinewoods in Scotland, 1971
+
+# Articles
+
+### All vignettes
+
+- [Modelling censored
+  data](https://nerc-ceh.github.io/jsdmstan/articles/censoring.md):
+- [Introduction to
+  jsdmstan](https://nerc-ceh.github.io/jsdmstan/articles/jsdmstan.md):
+- [Modelling Zero Inflation and Other Family Parameters in Response to
+  Environmental
+  Covariates](https://nerc-ceh.github.io/jsdmstan/articles/zero-inflation.md):
