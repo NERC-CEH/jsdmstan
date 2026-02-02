@@ -54,16 +54,29 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 
   n_sites <- length(object$sites)
   n_species <- length(object$species)
-  n_preds <- length(object$preds)
+  n_preds <- length(object$preds$fixef)
   method <- object$jsdm_type
   orig_data_used <- is.null(newdata)
 
   if (is.null(newdata)) {
     newdata <- object$data_list$X
+    if (isTRUE(any(grep("^nfs_b", names(object$fit))))) {
+      new_nfsdata <- object$preds$spl_smooth$nfs$sm_data
+    }
+    if (isTRUE(any(grep("^fs_b", names(object$fit))))) {
+      new_fsdata <- object$preds$spl_smooth$fs$sm_data
+    }
+  } else {
+    if (isTRUE(any(grep("^nfs_b", names(object$fit))))) {
+      new_nfsdata <- newdata[,colnames(object$preds$smooth$nfs$sm_data)]
+    }
+    if (isTRUE(any(grep("^fs_b", names(object$fit))))) {
+      new_fsdata <- newdata[,colnames(object$preds$smooth$fs$sm_data)]
+    }
   }
 
   newdata <- validate_newdata(newdata,
-    preds = object$preds
+    preds = object$preds$fixef
   )
 
   model_pars <- "betas"
@@ -73,8 +86,26 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
   if (method == "mglmm") {
     model_pars <- c(model_pars, "u")
   }
-  if (isTRUE(grep("a_bar", names(object$fit)))) {
+  if (isTRUE(any(grepl("^a_bar", names(object$fit))))) {
     model_pars <- c(model_pars, "a", "sigma_a", "a_bar")
+  }
+  if (isTRUE(any(grep("^nfs_b", names(object$fit))))) {
+    model_pars <- c(model_pars, "nfs_b")
+    nfs_smooth <- TRUE
+    nfs_predmat <- lapply(object$preds$spl_smooth$nfs$sm, function(i){
+      mgcv::PredictMat(i, new_nfsdata)
+    })
+  } else{
+    nfs_smooth <- FALSE
+  }
+  if (isTRUE(any(grep("^fs_b", names(object$fit))))) {
+    model_pars <- c(model_pars, "fs_b")
+    fs_smooth <- TRUE
+    fs_predmat <- lapply(object$preds$spl_smooth$fs$sm, function(i){
+      mgcv::PredictMat(i, new_fsdata)
+    })
+  } else {
+    fs_smooth <- FALSE
   }
 
   model_est <- extract(object, pars = model_pars)
@@ -110,16 +141,47 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
       }
     }
     if (isTRUE(grep("a_bar", names(object$fit)))) {
-      alpha <- model_est$a_bar[d, ] + model_est$a[d, ] * model_est$sigma_a[d]
+      alpha <- c(model_est$a_bar[d, ] + model_est$a[d, ] * model_est$sigma_a[d])
     } else {
       alpha <- 0
+    }
+    if(isTRUE(nfs_smooth)) {
+      off <- 0
+      smoo <- matrix(nrow=nrow(nfs_predmat[[1]]),
+                     ncol=length(object$preds$spl_smooth$nfs$sm))
+      for(i in seq_along(object$preds$spl_smooth$nfs$sm)){
+        ndf <- object$preds$spl_smooth$nfs$sm[[i]]$df
+        smoo[,i] <- nfs_predmat[[i]] %*% t(model_est$nfs_b[d, (off+1):(off+ndf),drop=FALSE])
+        off <- off+ndf
+      }
+      nfs <- rowSums(smoo)
+      # nfs <- c(nfs_predmat %*% t(model_est$nfs_b[d, ,drop=FALSE]))
+      # print(str(nfs))
+    } else {
+      nfs <- 0
+    }
+    if(isTRUE(fs_smooth)) {
+      off <- 0
+      smoo <- list()
+      # smoo <- matrix(nrow=nrow(fs_predmat[[1]]),
+      #                ncol=length(object$preds$spl_smooth$fs$sm))
+      for(i in seq_along(object$preds$spl_smooth$fs$sm)){
+        ndf <- object$preds$spl_smooth$fs$sm[[i]]$bs.dim
+        smoo[[i]] <- matrix(fs_predmat[[i]] %*% t(model_est$fs_b[d, (off+1):(off+ndf),drop=FALSE]),
+                              ncol = length(object$preds$spl_smooth$fs$sm[[i]]$flev))
+        off <- off+ndf
+      }
+      fs <- Reduce('+',smoo)
+    } else {
+      fs <- 0
     }
     if (is.vector(newdata)) {
       newdata <- matrix(newdata, ncol = 1)
     }
+
     mu <- switch(method,
-      "gllvm" = LV_sum + newdata %*% model_est$betas[d, , ] + alpha,
-      "mglmm" = newdata %*% model_est$betas[d, , ] + alpha + u_ij
+      "gllvm" = LV_sum + newdata %*% model_est$betas[d, , ] + alpha + nfs + fs,
+      "mglmm" = newdata %*% model_est$betas[d, , ] + alpha + u_ij + nfs + fs
     )
     if (isTRUE(transform)) {
       mu <- apply(mu, 1:2, function(x) {

@@ -157,6 +157,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     censor_points <- NULL
     cens_ID <- NULL
   }
+  spl_smooth <- object$preds$spl_smooth
 
 
   # validate data
@@ -166,7 +167,8 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     dat_list = NULL,
     family = family, method = method, Ntrials = Ntrials,
     zi_X = zi_X, shp_X = shp_X,
-    censoring = censoring, censor_points = censor_points, cens_ID = cens_ID
+    censoring = censoring, censor_points = censor_points, cens_ID = cens_ID,
+    spl_smooth = spl_smooth
   )
 
   # get original stan model
@@ -203,7 +205,8 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     model_fit = model_fit, method = method,
     data_list = data_list,
     species_intercept = species_intercept,
-    family = family, save_data = save_data
+    family = family, save_data = save_data,
+    spl_smooth = spl_smooth
   )
 
   return(model_output)

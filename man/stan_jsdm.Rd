@@ -28,6 +28,7 @@ stan_jsdm(X, ...)
   zi_X = NULL,
   shp_param = "constant",
   shp_X = NULL,
+  spl_smooth = NULL,
   save_data = TRUE,
   iter = 4000,
   init = NULL,
@@ -120,6 +121,10 @@ the shape parameter is modelled in response to. If there is not already an
 intercept column (identified by all values being equal to one), one will be
 added to the front of the matrix. Overridden by \code{shp_formula} when
 formula approach is used.}
+
+\item{spl_smooth}{The construction of the spline process, do not supply
+directly as user but instead include a spline within the formula interface
+as would be provided in \code{\link[mgcv:gam]{mgcv::gam()}}}
 
 \item{save_data}{If the data used to fit the model should be saved in the
 model object, by default TRUE.}

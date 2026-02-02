@@ -13,7 +13,9 @@ jsdm_stancode(
   beta_param = "cor",
   zi_param = "constant",
   shp_param = "constant",
-  censoring = "none"
+  censoring = "none",
+  site_smooth = "none",
+  species_smooth = "none"
 )
 
 \method{print}{jsdmstan_model}(x, ...)
@@ -47,6 +49,12 @@ varies by environmental covariates (\code{"covariate"}).}
 \item{censoring}{If the response is left-censored (\code{"left"}) or not
 censored (default, \code{"none"}).}
 
+\item{site_smooth}{If there is a smooth over a predictor that is constant
+across all species, default \code{"none"}.}
+
+\item{species_smooth}{If there is a factor smooth over a predictor that
+varies by species, default \code{"none"}.}
+
 \item{x}{The jsdm_stancode object}
 
 \item{...}{Currently unused}
@@ -64,8 +72,8 @@ parameterised in two ways. With the \code{"cor"} parameterisation all
 covariate effects are assumed to be constrained by a correlation matrix
 between the covariates. With the \code{"unstruct"} parameterisation all
 covariate effects are assumed to draw from a simple distribution with no
-correlation structure. Both parameterisations can be modified using the prior
-object.
+correlation structure. Both parameterisations can be modified using the
+prior object.
 }
 \section{Functions}{
 \itemize{

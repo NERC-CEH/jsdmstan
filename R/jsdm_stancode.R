@@ -1,16 +1,15 @@
-
 #' Make stancode for the jsdm model
 #'
 #' This function returns the Stan code used to fit the model as specified by the
 #' data list, family and method.
 #'
 #' @details Environmental covariate effects (\code{"betas"}) can be
-#' parameterised in two ways. With the \code{"cor"} parameterisation all
-#' covariate effects are assumed to be constrained by a correlation matrix
-#' between the covariates. With the \code{"unstruct"} parameterisation all
-#' covariate effects are assumed to draw from a simple distribution with no
-#' correlation structure. Both parameterisations can be modified using the prior
-#' object.
+#'   parameterised in two ways. With the \code{"cor"} parameterisation all
+#'   covariate effects are assumed to be constrained by a correlation matrix
+#'   between the covariates. With the \code{"unstruct"} parameterisation all
+#'   covariate effects are assumed to draw from a simple distribution with no
+#'   correlation structure. Both parameterisations can be modified using the
+#'   prior object.
 #'
 #' @param method The method, one of \code{"gllvm"} or \code{"mglmm"}
 #' @param family is the response family, must be one of \code{"gaussian"},
@@ -32,6 +31,10 @@
 #'   varies by environmental covariates (\code{"covariate"}).
 #' @param censoring If the response is left-censored (\code{"left"}) or not
 #'   censored (default, \code{"none"}).
+#' @param site_smooth If there is a smooth over a predictor that is constant
+#'   across all species, default \code{"none"}.
+#' @param species_smooth If there is a factor smooth over a predictor that
+#'   varies by species, default \code{"none"}.
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
@@ -43,7 +46,8 @@
 jsdm_stancode <- function(method, family, prior = jsdm_prior(),
                           site_intercept = "none",
                           beta_param = "cor", zi_param = "constant",
-                          shp_param = "constant", censoring = "none") {
+                          shp_param = "constant", censoring = "none",
+                          site_smooth = "none", species_smooth = "none") {
   # checks
   family <- match.arg(family, c("gaussian","normal", "bernoulli", "poisson",
                                 "neg_binomial","binomial","zi_poisson",
@@ -55,6 +59,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
   censoring <- match.arg(censoring, c("none","left"))
+  site_smooth <- match.arg(site_smooth, c("none", "single", "multiple"))
+  species_smooth <- match.arg(species_smooth, c("none", "single", "multiple"))
   if(shp_param == "covariate" & family %in% c("poisson","bernoulli","binomial",
                                                  "zi_poisson"))
     stop(paste("Modelling the family parameter in response to data only works",
@@ -68,7 +74,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
     method = method, family = family,
     phylo = FALSE, prior = prior, site_intercept = site_intercept,
     beta_param = beta_param, zi_param = zi_param, shp_param = shp_param,
-    censoring = censoring
+    censoring = censoring, site_smooth = site_smooth, species_smooth = species_smooth
   )
   class(scode) <- c("jsdmstan_model", "character")
   return(scode)
@@ -76,9 +82,11 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 
 .modelcode <- function(method, family, phylo, prior, site_intercept,
-                       beta_param, zi_param, shp_param, censoring) {
+                       beta_param, zi_param, shp_param, censoring,
+                       site_smooth, species_smooth) {
   model_functions <- "
 "
+  # data ####
   data <- paste(
     " int<lower=1> N; // Number of sites
   int<lower=1> S; // Number of species
@@ -131,10 +139,12 @@ ifelse(censoring == "left", "
   array[S] int<lower=0> N_cens; // number of cens per species
   array[S] int<lower=0> N_noncens; //number of noncens per species
   array[N,S] int<lower=0> J_cens; //Indices of cens across all species
-  array[N,S] int<lower=0> J_noncens; //Indices of noncens across all species","")
+  array[N,S] int<lower=0> J_noncens; //Indices of noncens across all species",""),
+.smooth_datacode("nfs", site_smooth),
+.smooth_datacode("fs", species_smooth)
 )
 
-
+  # transformed data ####
   transformed_data <- ifelse(method == "gllvm", "
   // Ensures identifiability of the model - no rotation of factors
   int<lower=1> M;
@@ -142,7 +152,7 @@ ifelse(censoring == "left", "
 ", "")
 
 
-
+  # parameters ####
   site_inter_par <- switch(site_intercept,
                            "ungrouped" = "
   // Site intercepts
@@ -204,6 +214,12 @@ ifelse(censoring == "left", "
   matrix[shp_k,S] shp_betas; //environmental effects for family param
   matrix[zi_k,S] zi_betas; //environmental effects for zi"))
   )
+  sitesmooth_pars <- ifelse(site_smooth=="none","","
+  vector[nfs_ncoef] nfs_b; // smooth coefs
+  vector<lower=1e-16>[nfs_nsp] nfs_sp; // smoothing parameters")
+  speciessmooth_pars <- ifelse(species_smooth=="none","","
+  vector[fs_ncoef] fs_b; // smooth coefs
+  vector<lower=1e-16>[fs_nsp] fs_sp; // smoothing parameters")
 
   pars <- paste(
     site_inter_par, species_pars,
@@ -211,8 +227,10 @@ ifelse(censoring == "left", "
       "gllvm" = gllvm_pars,
       "mglmm" = mglmm_spcov_pars
     ),
-    var_pars
+    var_pars,sitesmooth_pars,speciessmooth_pars
   )
+
+  # transformed parameters ####
   transformed_pars <- paste(if(beta_param == "cor"){ "
   // covariance matrix on betas by preds
   matrix[K, S] betas;
@@ -248,44 +266,36 @@ ifelse(censoring == "left", "
 "} else {""})
 
 
+  model_pt1 <- paste(if(species_smooth == "none"){""} else{"
+  matrix[N,S] fs_Xb = to_matrix(fs_X * fs_b, N, S);"
+    },if(site_smooth == "none"){""} else{"
+  matrix[N,S] nfs_Xb = rep_matrix(nfs_X * nfs_b, S);"
+    },
+    switch(site_intercept, "none" = "",
+                            "ungrouped" = "
+  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);",
+                            "grouped" = "
+  matrix[N, S] alpha;"),
+  switch(method,
+         "gllvm" = "
+  // model
+  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';",
+         "mglmm" = ""),
+  if(site_intercept == "grouped"){"
+  {
+    vector[ngrp] theta = z_a * sigma_a;
+    for (n in 1:N){
+      alpha[n,] = rep_row_vector(theta[grps[n]],S);
+    }
+  }"
+  } else {""},"
+  mu =", ifelse(site_intercept == "none","","alpha +"),"(X * betas) +",
+  ifelse(site_smooth == "none","", "nfs_Xb +"),
+  ifelse(species_smooth == "none","", "fs_Xb +"),
+  switch(method, "gllvm" = "LV_sum;",
+         "mglmm" = "u;"))
 
-  gllvm_model <- switch(site_intercept, "ungrouped" = "
-  // model
-  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);
-  mu = alpha + (X * betas) + LV_sum;
-  ", "none" = "
-  // model
-  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-  mu = (X * betas) + LV_sum;
-  ", "grouped" = "
-  matrix[N, S] alpha;
-  matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-  {
-    vector[ngrp] theta = z_a * sigma_a;
-    for (n in 1:N){
-      alpha[n,] = rep_row_vector(theta[grps[n]],S);
-    }
-  }
-  mu = alpha + (X * betas) + LV_sum;
-  ")
-  mglmm_model <- switch(site_intercept, "ungrouped" = "
-  // model
-  matrix[N, S] alpha = rep_matrix(z_a * sigma_a, S);
-  mu = alpha + (X * betas) + u;
-  ", "none" = "
-  // model
-  mu = (X * betas) + u;
-  ", "grouped" = "
-  matrix[N, S] alpha;
-  {
-    vector[ngrp] theta = z_a * sigma_a;
-    for (n in 1:N){
-      alpha[n,] = rep_row_vector(theta[grps[n]],S);
-    }
-  }
-  mu = alpha + (X * betas) + u;
-  ")
+  # model ####
   model <- paste("
   matrix[N,S] mu;
   ", ifelse(grepl("zi_",family) & shp_param == "constant" & zi_param == "constant",paste0("
@@ -296,10 +306,8 @@ ifelse(censoring == "left", "
                    ifelse(shp_param== "covariate" & family == "zi_neg_binomial", "
   array[Sum_nonzero] real kappa_nz;
   array[Sum_zero] real kappa_z;","")),""),
-  switch(method,
-    "gllvm" = gllvm_model,
-    "mglmm" = mglmm_model
-  ),ifelse(grepl("zi_",family),paste0(ifelse(zi_param == "covariate", "
+  model_pt1,
+  ifelse(grepl("zi_",family),paste0(ifelse(zi_param == "covariate", "
   matrix[N,S] zi = zi_X * zi_betas;",""),
   ifelse(shp_param == "covariate", "
   matrix[N,S] kappa = exp(shp_X * shp_betas);",""),
@@ -318,96 +326,15 @@ ifelse(censoring == "left", "
                        "neg_binomial" = "kappa"),
                        "= exp(shp_X * shp_betas);",""),""),
   ifelse(family == "gamma", "
-  mu = exp(mu);","")
+  mu = exp(mu);",""),
+
+  .smooth_codechunk("nfs",site_smooth),
+  .smooth_codechunk("fs",species_smooth)
   )
-  # priors ####
-  model_priors <- paste(
-    ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
-  // Site-level intercept priors
-  z_a ~ std_normal();
-  sigma_a ~ ", prior[["sigma_a"]], ";
-  "), "
-  "), switch(beta_param, "cor" = paste(
-  "
-  // Species parameter priors
-  sigmas_preds ~ ", prior[["sigmas_preds"]], ";
-  to_vector(z_preds) ~ ", prior[["z_preds"]], ";
-  // covariance matrix priors
-  cor_preds ~ ", prior[["cor_preds"]], ";
-"), "unstruct" = paste(
-  "
-  // Species parameter priors
-  to_vector(betas) ~ ", prior[["betas"]],";
-  ")),
-    switch(method,
-      "gllvm" = paste("
-  // Factor priors
-  to_vector(LV_uncor) ~ ", prior[["LV"]], ";
-  L ~ ", prior[["L"]], ";
-  sigma_L ~ ", prior[["sigma_L"]], "; // Variance of factor loadings
-"),
-      "mglmm" = paste("
-  // Species parameter priors
-  sigmas_species ~ ", prior[["sigmas_species"]], ";
-  to_vector(z_species) ~ std_normal();
-  cor_species_chol ~ ", prior[["cor_species_chol"]], ";
-")
-    ),
-    switch(family,
-      "gaussian" = switch(shp_param, "constant" = paste("
-  //Standard deviation parameters
-  sigma ~ ", prior[["sigma"]], ";
-"), "covariate" = paste("
-  //Standard deviation parameters
-  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
-")),
-      "lognormal" = switch(shp_param, "constant" = paste("
-  //Standard deviation parameters
-  sigma ~ ", prior[["sigma"]], ";
-"), "covariate" = paste("
-  //Standard deviation parameters
-  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
-")),
-      "neg_binomial" = switch(shp_param, "constant" = paste("
-  //Scale parameter
-  kappa ~ ", prior[["kappa"]], ";
-"), "covariate" = paste("
-  //Scale parameters
-  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
-")),
-      "gamma" = switch(shp_param, "constant" = paste("
-  //Standard deviation parameters
-  shape ~ ", prior[["shape"]], ";
-"), "covariate" = paste("
-  //Standard deviation parameters
-  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
-")),
-      "bern" = "",
-      "poisson" = "",
-      "binomial" = "",
-      "zi_poisson" = switch(zi_param,"constant" = paste("
-  //zero-inflation parameter
-  zi ~ ", prior[["zi"]], ";
-"), "covariate" = paste("
-  //zero-inflation parameter
-  to_vector(zi_betas) ~ ", prior[["zi_betas"]], ";
-")),
-"zi_neg_binomial" = paste(switch(zi_param, "constant" = paste("
-  //zero-inflation parameter
-  zi ~ ", prior[["zi"]], ";
-"), "covariate" = paste("
-  //zero-inflation parameter
-  to_vector(zi_betas) ~ ", prior[["zi_betas"]], ";
-")), switch(shp_param, "constant" = paste("
-  //Scale parameter
-  kappa ~ ", prior[["kappa"]], ";
-"), "covariate" = paste("
-  //Scale parameter
-  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
-"))
-    )
-  ))
-  # model ####
+  # priors
+  model_priors <- .prior_codechunk(site_intercept, beta_param, method, family,
+                                   shp_param, zi_param, prior)
+  # model end
   model_pt2 <- if(!grepl("zi_", family) & censoring == "none"){ paste(
     "
   for(i in 1:N) Y[i,] ~ ",
@@ -425,36 +352,140 @@ ifelse(censoring == "left", "
       "gamma" = switch(shp_param,"constant" = "gamma(shape, shape ./ to_vector(mu[i,]));",
                            "covariate" = "gamma(shape[i,],shape[i,] ./ to_vector(mu[i,]));")
     )
-  )} else if(censoring == "left"){ paste("
+  )} else if(censoring == "left"){
+    .lcens_modelcode(family, shp_param)
+  } else {
+    .zi_familycode(family, zi_param, shp_param)
+  }
+ # generated quantities ####
+  generated_quantities <- paste(
+    ifelse(method == "gllvm", "
+  // Sign correct factor loadings and factors
+  matrix[D, N] LV;
+  matrix[S, D] Lambda;
+  for(d in 1:D){
+    if(Lambda_uncor[d,d] < 0){
+      Lambda[,d] = -1 * Lambda_uncor[,d];
+      LV[d,] = -1 * LV_uncor[d,];
+    } else {
+      Lambda[,d] = Lambda_uncor[,d];
+      LV[d,] = LV_uncor[d,];
+    }
+  }", "")
+  )
+
+  res <- paste(
+    "//Generated by jsdmstan\n",
+    "functions{\n",
+    model_functions,
+    "\n}\ndata{\n",
+    data,
+    "\n}\ntransformed data{\n",
+    transformed_data,
+    "\n}\nparameters{\n",
+    pars,
+    "\n}\ntransformed parameters{\n",
+    transformed_pars,
+    "\n}\nmodel{\n",
+    model, "\n", model_priors, "\n", model_pt2, "\n",
+    "\n}\ngenerated quantities{\n",
+    generated_quantities,
+    "\n}\n\n"
+  )
+
+  return(res)
+}
+
+#' @export
+#' @describeIn jsdm_stancode A printing function for jsdmstan_model objects
+#' @param x The jsdm_stancode object
+#' @param ... Currently unused
+print.jsdmstan_model <- function(x, ...) {
+  cat(x)
+}
+
+.smooth_codechunk <- function(id,amount){
+  paste0(
+  switch(amount, "none" = "",
+         "single" = paste0("
+  matrix[",id,"_nSr, ",id,"_nSr] ",id,"_K1;
+  ",id,"_K1 = rep_matrix(0, ",id,"_nSr, ",id,"_nSr);
+  vector[",id,"_nSr] ",id,"_zero;
+  ",id,"_zero = rep_vector(0, ",id,"_nSr);
+  {
+    int runi=0;
+
+    // prior for smooth
+    for (i in 1:",id,"_nsp) {
+      ",id,"_K1 += ",id,"_S1[1:",id,"_nSr, (runi+1):(runi+",id,"_nSr)] * ",id,"_sp[i];
+      runi += ",id,"_nSr;
+    }
+  }
+  ",id,"_b ~ multi_normal_prec(",id,"_zero, ", id,"_K1);"),
+         "multiple" = paste0("
+  // smoother bits
+  {
+    int off = 1;
+    int beta_off = 0;
+    // iterate over smooth terms in the model
+    for(s in 1:",id,"_nterms){
+      // initialize penalty matrix for this term to zero
+      matrix[",id,"_Sr[s], ",id,"_Sr[s]] ",id,"_K1;
+      ",id,"_K1 = rep_matrix(0, ",id,"_Sr[s], ",id,"_Sr[s]);
+      vector[",id,"_Sr[s]] ",id,"_zero;
+      ",id,"_zero = rep_vector(0, ",id,"_Sr[s]);
+
+      // iterate over penalties within term
+      for(i in 1:",id,"_Sn[s]){
+        ",id,"_K1 += ",id,"_S1[1:",id,"_Sr[s],
+                 (off + ",id,"_Sr[s]*(i-1)) : (off - 1 +(",id,"_Sr[s]*(i-1))+",id,"_Sr[s])] * ",id,"_sp[i];
+      } // end iteration over penalties within term
+
+      // sample from prior of the spline coefficients for this term
+      ",id,"_b[(beta_off+1):(beta_off + ",id,"_Sr[s])] ~ multi_normal_prec(",id,"_zero, ",id,"_K1);
+
+      off += ",id,"_Sr[s]*",id,"_Sn[s];
+      beta_off += ",id,"_Sr[s];
+
+    } // end iteration over smooth terms
+  } // end block for local variable definition
+")))
+}
+
+.lcens_modelcode <- function(family, shp_param){
+  paste("
   for (s in 1:S){
     target += ",
-  switch(family,
-         "gaussian" = switch(shp_param,"constant" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
+        switch(family,
+               "gaussian" = switch(shp_param,"constant" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
                                 mu[J_noncens[1:N_noncens[s],s],s], sigma);",
-                             "covariate" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
+                                   "covariate" = "normal_lpdf(Y[J_noncens[1:N_noncens[s],s],s] |
                                 mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
-         "lognormal" = switch(shp_param,"constant" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
+               "lognormal" = switch(shp_param,"constant" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
                                 mu[J_noncens[1:N_noncens[s],s],s], sigma);",
-                              "covariate" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
+                                    "covariate" = "lognormal_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  |
                                 mu[J_noncens[1:N_noncens[s],s],s],sigma[,s]);"),
-         "gamma" = switch(shp_param,"constant" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s] | shape[s],
+               "gamma" = switch(shp_param,"constant" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s] | shape[s],
                                shape[s] /  mu[J_noncens[1:N_noncens[s],s],s]);",
-                          "covariate" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  | shape[s],
+                                "covariate" = "gamma_lpdf(Y[J_noncens[1:N_noncens[s],s],s]  | shape[s],
                                shape[,s] / mu[J_noncens[1:N_noncens[s],s],s]);")
-         ),"
+        ),"
     target += ",
-  switch(family,
-         "gaussian" = switch(shp_param,"constant" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
-                             "covariate" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
-         "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
-                              "covariate" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s]| mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
-         "gamma" = switch(shp_param,"constant" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[s], shape[s] / mu[J_cens[1:N_cens[s],s],s]);",
-                          "covariate" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[n,s], shape[n,s] / mu[J_cens[1:N_cens[s],s],s]);")
-  ),"
+        switch(family,
+               "gaussian" = switch(shp_param,"constant" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
+                                   "covariate" = "normal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
+               "lognormal" = switch(shp_param,"constant" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s] | mu[J_cens[1:N_cens[s],s],s], sigma);",
+                                    "covariate" = "lognormal_lcdf(Y[J_cens[1:N_cens[s],s],s]| mu[J_cens[1:N_cens[s],s],s],sigma[n,s]);"),
+               "gamma" = switch(shp_param,"constant" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[s], shape[s] / mu[J_cens[1:N_cens[s],s],s]);",
+                                "covariate" = "gamma_lcdf(Y[J_cens[1:N_cens[s],s],s] | shape[n,s], shape[n,s] / mu[J_cens[1:N_cens[s],s],s]);")
+        ),"
 
   }"
   )
-  } else if(zi_param == "constant" & shp_param == "constant"){paste("
+}
+
+.zi_familycode <- function(family, zi_param, shp_param){
+  if(zi_param == "constant" & shp_param == "constant"){paste("
   pos = 1;
   neg = 1;
   for(s in 1:S){
@@ -518,49 +549,112 @@ ifelse(censoring == "left", "
     }
   }"
   )}
- # generated quantities ####
-  generated_quantities <- paste(
-    ifelse(method == "gllvm", "
-  // Sign correct factor loadings and factors
-  matrix[D, N] LV;
-  matrix[S, D] Lambda;
-  for(d in 1:D){
-    if(Lambda_uncor[d,d] < 0){
-      Lambda[,d] = -1 * Lambda_uncor[,d];
-      LV[d,] = -1 * LV_uncor[d,];
-    } else {
-      Lambda[,d] = Lambda_uncor[,d];
-      LV[d,] = LV_uncor[d,];
-    }
-  }", "")
-  )
-
-  res <- paste(
-    "//Generated by jsdmstan\n",
-    "functions{\n",
-    model_functions,
-    "\n}\ndata{\n",
-    data,
-    "\n}\ntransformed data{\n",
-    transformed_data,
-    "\n}\nparameters{\n",
-    pars,
-    "\n}\ntransformed parameters{\n",
-    transformed_pars,
-    "\n}\nmodel{\n",
-    model, "\n", model_priors, "\n", model_pt2, "\n",
-    "\n}\ngenerated quantities{\n",
-    generated_quantities,
-    "\n}\n\n"
-  )
-
-  return(res)
 }
 
-#' @export
-#' @describeIn jsdm_stancode A printing function for jsdmstan_model objects
-#' @param x The jsdm_stancode object
-#' @param ... Currently unused
-print.jsdmstan_model <- function(x, ...) {
-  cat(x)
+.prior_codechunk <- function(site_intercept, beta_param, method, family,
+                             shp_param, zi_param, prior){
+  paste(
+    ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
+  // Site-level intercept priors
+  z_a ~ std_normal();
+  sigma_a ~ ", prior[["sigma_a"]], ";
+  "), "
+  "), switch(beta_param, "cor" = paste(
+    "
+  // Species parameter priors
+  sigmas_preds ~ ", prior[["sigmas_preds"]], ";
+  to_vector(z_preds) ~ ", prior[["z_preds"]], ";
+  // covariance matrix priors
+  cor_preds ~ ", prior[["cor_preds"]], ";
+"), "unstruct" = paste(
+  "
+  // Species parameter priors
+  to_vector(betas) ~ ", prior[["betas"]],";
+  ")),
+  switch(method,
+         "gllvm" = paste("
+  // Factor priors
+  to_vector(LV_uncor) ~ ", prior[["LV"]], ";
+  L ~ ", prior[["L"]], ";
+  sigma_L ~ ", prior[["sigma_L"]], "; // Variance of factor loadings
+"),
+         "mglmm" = paste("
+  // Species parameter priors
+  sigmas_species ~ ", prior[["sigmas_species"]], ";
+  to_vector(z_species) ~ std_normal();
+  cor_species_chol ~ ", prior[["cor_species_chol"]], ";
+")
+  ),
+  switch(family,
+         "gaussian" = switch(shp_param, "constant" = paste("
+  //Standard deviation parameters
+  sigma ~ ", prior[["sigma"]], ";
+"), "covariate" = paste("
+  //Standard deviation parameters
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+")),
+         "lognormal" = switch(shp_param, "constant" = paste("
+  //Standard deviation parameters
+  sigma ~ ", prior[["sigma"]], ";
+"), "covariate" = paste("
+  //Standard deviation parameters
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+")),
+         "neg_binomial" = switch(shp_param, "constant" = paste("
+  //Scale parameter
+  kappa ~ ", prior[["kappa"]], ";
+"), "covariate" = paste("
+  //Scale parameters
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+")),
+         "gamma" = switch(shp_param, "constant" = paste("
+  //Standard deviation parameters
+  shape ~ ", prior[["shape"]], ";
+"), "covariate" = paste("
+  //Standard deviation parameters
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+")),
+         "bern" = "",
+         "poisson" = "",
+         "binomial" = "",
+         "zi_poisson" = switch(zi_param,"constant" = paste("
+  //zero-inflation parameter
+  zi ~ ", prior[["zi"]], ";
+"), "covariate" = paste("
+  //zero-inflation parameter
+  to_vector(zi_betas) ~ ", prior[["zi_betas"]], ";
+")),
+         "zi_neg_binomial" = paste(switch(zi_param, "constant" = paste("
+  //zero-inflation parameter
+  zi ~ ", prior[["zi"]], ";
+"), "covariate" = paste("
+  //zero-inflation parameter
+  to_vector(zi_betas) ~ ", prior[["zi_betas"]], ";
+")), switch(shp_param, "constant" = paste("
+  //Scale parameter
+  kappa ~ ", prior[["kappa"]], ";
+"), "covariate" = paste("
+  //Scale parameter
+  to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
+"))
+         )
+  ))
+}
+
+.smooth_datacode <- function(id, amount){
+  paste(
+    if(amount == "none"){""} else{paste0("
+  int<lower=0> ",id,"_nsp; // number of smoothing parameters
+  int<lower=0> ",id,"_ncoef; // number of non-hyperparameters
+  int<lower=0> ",id,"_nSr; // penalty dimension for smooth
+  int<lower=0> ",id,"_nSc; // penalty dimension for smooth
+  matrix[",ifelse(id == "nfs","N","N*S"),", ",id,"_ncoef] ",id,"_X;  // design matrix for smooth
+  matrix[",id,"_nSr, ",id,"_nSc] ",id,"_S1;  // penalties for smooth, as one long matrix",
+     if(amount == "multiple"){paste0("
+  int<lower=0> ",id,"_nterms;  // number of terms in the smooth model
+  array[",id,"_nterms] int<lower=0> ",id,"_Sr;
+  array[",id,"_nterms] int<lower=0> ",id,"_Sn;")
+       } else {""})
+    }
+  )
 }
