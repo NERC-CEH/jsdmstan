@@ -282,12 +282,33 @@ stan_jsdm.formula <- function(formula, data = list(), Y = NULL,
   if(length(spl_form$smooth.spec)>0){
     # split out species specific factor smooths from site-wide
     if(any(sapply(spl_form$smooth.spec, class) == "fs.smooth.spec")){
-      fs_sterms <- spl_form$smooth.spec[sapply(spl_form$smooth.spec, class) == "fs.smooth.spec"]
-      nfs_sterms <- spl_form$smooth.spec[sapply(spl_form$smooth.spec, class) != "fs.smooth.spec"]
+      fs_sterms_all <- spl_form$smooth.spec[sapply(spl_form$smooth.spec, class) == "fs.smooth.spec"]
+      fs_sterms <- list()
+      j1 <- 1
+      nfs_sterms1 <- list()
+      j2 <- 1
+      for(i in seq_along(fs_sterms_all)){
+        if("species" %in% fs_sterms_all[[i]]$term){
+          fs_sterms[[j1]] <- fs_sterms_all[[i]]
+          j1 <- j1+1
+        } else {
+          nfs_sterms1[[j2]] <- fs_sterms_all[[i]]
+          j2 <- j2+1
+        }
+      }
+      nfs_sterms <- c(spl_form$smooth.spec[sapply(spl_form$smooth.spec, class) != "fs.smooth.spec"],
+                      nfs_sterms1)
 
-      fs_data <- do.call(rbind, replicate(n = ncol(Y), data, simplify = FALSE))
-      fs_data$species <- as.factor(rep(colnames(Y),each=nrow(Y)))
-      fs_smooth <- make_smooth(fs_sterms, data = fs_data)
+      if(length(fs_sterms)>0){
+        fs_data <- do.call(rbind, replicate(n = ncol(Y), data, simplify = FALSE))
+        fs_data$species <- as.factor(rep(colnames(Y),each=nrow(Y)))
+        # print(str(fs_data))
+        fs_smooth <- make_smooth(fs_sterms, data = fs_data)
+      } else {
+        fs_smooth <- list()
+      }
+
+      # print(str(fs_smooth))
       if(length(nfs_sterms)>0){
         nfs_smooth <- make_smooth(nfs_sterms, data = data)
       } else {
@@ -834,6 +855,7 @@ make_smooth <- function(sterms, data){
     sm[[ii]] <- mgcv::smoothCon(sterms[[ii]],
                                 absorb.cons=TRUE, null.space.penalty=TRUE,
                                 data = data)[[1]]
+    # print(str(sm[[ii]]))
     # put all the penalties into one column-long matrix to unpack later
     bigS <- do.call(cbind, sm[[ii]]$S)
     # now store with all the penalties for all the terms
@@ -855,7 +877,8 @@ make_smooth <- function(sterms, data){
   })
 
   vbigS <- do.call(cbind, vbigS)
-  data_cols <- unlist(sapply(sm, "[[", "term"))
+  data_cols <- c(unlist(sapply(sm, "[[", "term")))
+  # print(str(data_cols))
   if(any(sapply(sm, "[[", "by") != "NA")){
     sm_by <- unlist(sapply(sm, "[[", "by"))
     sm_by <- sm_by[sm_by != "NA"]

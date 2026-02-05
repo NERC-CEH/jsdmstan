@@ -272,6 +272,106 @@ test_that("smoothplot works", {
   expect_length(nfs2_sp, 1)
 })
 
+# 1D non-species fs testing ####
+# simulated example from ?gam
+set.seed(0)
+## simulate data...
+f1 <- function(x,a=2,b=-1) exp(a * x)+b
+n <- 39;nf <- 13
+fac <- as.factor(rep(LETTERS[1:nf],each=3))
+x1 <- runif(39)
+a <- rnorm(nf)*.2 + 2;b <- rnorm(nf)*.5
+f <- f1(x1,a[fac],b[fac])
+fac <- factor(fac)
+y1 <- f + rnorm(n)
+y2 <- f + rnorm(n)
+y3 <- f + rnorm(n)
+## so response depends on global smooths of x0 and
+## x2, and a smooth of x1 for each level of fac.
+df <- data.frame(x1 = x1, x2 = fac)
+Y <- matrix(c(y1,y2,y3),nrow=39)
+colnames(Y) <- LETTERS[20:22]
+## fit model...
+suppressWarnings(
+  fs0_fit <- stan_jsdm(~s(x1,x2, bs = "fs"), data = df, Y = Y,
+                       family = "gaussian", method = "mglmm",
+                       chains = 2, iter = 200, refresh = 0))
+
+test_that("model runs with one fs spline", {
+  expect_s3_class(fs0_fit, "jsdmStanFit")
+
+  expect_named(fs0_fit$preds$spl_smooth$fs,
+               c("N","X","S1","nSr","nSc","nsp","Sr","Sn","nterms","ncoef","sm","sm_data"))
+
+  expect_s3_class(fs0_fit$preds$spl_smooth$fs$sm[[1]],"mgcv.smooth")
+})
+
+test_that("print works", {
+  expect_output(print(fs0_fit))
+})
+
+test_that("summary works", {
+  fs0_fit_summ <- summary(fs0_fit)
+  expect_equal(colnames(fs0_fit_summ), c(
+    "mean", "sd", "15%", "85%", "Rhat",
+    "Bulk.ESS", "Tail.ESS"
+  ))
+  fs0_fit_summ <- summary(fs0_fit,
+                          pars = "beta", regexp = TRUE,
+                          prob_quantiles = c(0.25, 0.5, 0.75)
+  )
+  expect_equal(colnames(fs0_fit_summ), c(
+    "mean", "sd", "25%", "50%", "75%", "Rhat",
+    "Bulk.ESS", "Tail.ESS"
+  ))
+  expect_match(rownames(fs0_fit_summ), "beta", all = TRUE)
+})
+
+
+test_that("nuts_params works", {
+  expect_named(nuts_params(fs0_fit), c("Chain", "Iteration", "Parameter", "Value"))
+})
+
+test_that("log_posterior works", {
+  expect_named(log_posterior(fs0_fit), c("Chain", "Iteration", "Value"))
+})
+
+test_that("rhat works", {
+  expect_type(rhat(fs0_fit), "double")
+  expect_named(rhat(fs0_fit))
+})
+
+test_that("neff_ratio works", {
+  expect_type(neff_ratio(fs0_fit), "double")
+  expect_named(neff_ratio(fs0_fit))
+})
+
+
+test_that("posterior_(lin)pred works", {
+  fs0_pred <- posterior_predict(fs0_fit, ndraws = 100)
+
+  expect_length(fs0_pred, 100)
+  expect_false(any(sapply(fs0_pred, anyNA)))
+})
+
+
+test_that("pp_check works", {
+  fs0_pp <- pp_check(fs0_fit, ndraws = 10)
+
+  expect_s3_class(fs0_pp, "gg")
+  expect_length(fs0_pp, 1)
+})
+
+test_that("smoothplot works", {
+  fs0_sp <- smoothplot(fs0_fit, ndraws = 10)
+
+  expect_s3_class(fs0_sp[[1]], "gg")
+
+  fs0_sp <- smoothplot(fs0_fit, ndraws = 10, summarise = "mean")
+
+  expect_s3_class(fs0_sp[[1]], "gg")
+})
+
 
 # 1D fs testing ####
 # simulated example from ?gam
