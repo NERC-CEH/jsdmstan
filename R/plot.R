@@ -704,31 +704,28 @@ corrplot <- function(object, species = NULL,
 #'   summary. Can also be given as the name of a function (e.g. \code{"mean"}).
 #'   Note that this summarisation only occurs over the number of draws
 #'   specified.
+#' @param type Whether to return plot on the link scale (default) or the
+#'   response scale
+#' @param facet_args Argument passed to [ggplot2::facet_wrap()], specified as a
+#'   list
+#' @param select_smooths Which plots to include, given either as \code{NULL}
+#'   (i.e. plot all smooths) or as a list containing two numeric vectors named
+#'   "site" and "species" representing the indices of the site-specific smooths
+#'   to plot and the species-specific smooths to plot
 #'
 #' @returns a list of ggplot objects
 #'
 #' @export
 smoothplot <- function(object, ndraws = 20, alpha = 0.4,
-                       draw_ids = NULL, summarise = NULL){
+                       draw_ids = NULL, summarise = NULL,
+                       type = "link", facet_args = list(), select_smooths = NULL){
   # get smooth terms and extract them
   if(!("spl_smooth" %in% names(object$preds)))
     stop("Model must have at least one smooth term")
+  type <- match.arg(type, c("link","response"))
   pl_list <- list()
   if(length(object$preds$spl_smooth$nfs)>0){
-    datamins <- sapply(object$preds$spl_smooth$nfs$sm_data, min)
-    datamax <- sapply(object$preds$spl_smooth$nfs$sm_data, max)
-    if (length(datamins) == 1){
-      preddata <- matrix(nrow = 200, ncol = 1)
-      preddata[,1] <- seq(datamins[1],datamax[1],length.out=200)
-    } else if(length(datamins) == 2) {
-      preddata1 <- seq(datamins[1],datamax[1],length.out=50)
-      preddata2 <- seq(datamins[2],datamax[2],length.out=50)
-      preddata <- expand.grid(preddata1,preddata2)
-    } else {
-      stop("smoothplot can only work with one or two numeric predictors in spline")
-    }
-    colnames(preddata) <- names(datamins)
-    preddata <- as.data.frame(preddata)
+    # preddata <- .smooth_dataprep(object$preds$spl_smooth$nfs$sm_data)
 
     betas <- extract(object, pars="nfs_b")[["nfs_b"]]
     n_iter <- dim(betas)[1]
@@ -737,23 +734,29 @@ smoothplot <- function(object, ndraws = 20, alpha = 0.4,
     betas <- betas[draw_id, ]
 
     off <- 0
+    select_ind <- 0
 
-    # allpred <- c()
     # looping over terms
     for(i in seq_along(object$preds$spl_smooth$nfs$sm)){
+      select_ind <- select_ind + 1
+      if(!is.null(select_smooths)){
+        if(!select_ind %in% select_smooths$site){
+          next
+        }
+      }
+
       ndf <- object$preds$spl_smooth$nfs$sm[[i]]$df
 
-      # make projection matrix
-      Xp <- mgcv::PredictMat(object$preds$spl_smooth$nfs$sm[[i]], preddata)
+      if(inherits(object$preds$spl_smooth$nfs$sm[[i]],
+                  "random.effect")){
+        preddata <- unique(object$preds$spl_smooth$nfs$sm_data[,object$preds$spl_smooth$nfs$sm[[i]]$term,drop=FALSE])
+        # make projection matrix
+        Xp <- mgcv::PredictMat(object$preds$spl_smooth$nfs$sm[[i]],preddata)
 
-      # make predictions (fiddly indexing)
-      smoo <- Xp %*% t(betas[, (off+1):(off+ndf)])
-      off <- off+ndf
-      smoo <- as.data.frame(smoo)
-
-      # put the covariate values into the data
-      nfscov <- object$preds$spl_smooth$nfs$sm[[i]]$term
-      if(length(nfscov) == 1){
+        # make predictions (fiddly indexing)
+        smoo <- Xp %*% t(betas[, (off+1):(off+ndf)])
+        off <- off+ndf
+        smoo <- as.data.frame(smoo)
         smoo$cov <- preddata[[object$preds$spl_smooth$nfs$sm[[i]]$term]]
 
         smoo <- reshape2::melt(smoo, id ="cov")
@@ -766,79 +769,150 @@ smoothplot <- function(object, ndraws = 20, alpha = 0.4,
           smoo$variable <- "summary"
           alpha <- 1
         }
+        if(type == "response"){
+          if(object$family$family %in%
+             c("poisson","lognormal","neg_binomial","zi_poisson",
+               "zi_neg_binomial","gamma")){
+            smoo$value <- exp(smoo$value)
+          } else  if(object$family$family %in% c("binomial","bernoulli")){
+            smoo$value <- inv_logit(smoo$value)
+          }
+        }
 
-        # add some other labels
         term <- paste0(object$preds$spl_smooth$nfs$sm[[i]]$term, collapse = "__")
 
-        # allpred <- rbind(allpred, smoo)
         # plot by term
         pl_list[[i]] <- ggplot2::ggplot(smoo) +
-          ggplot2::geom_line(ggplot2::aes(x = .data[["cov"]],
-                                          y = .data[["value"]],
-                                          group = .data[["variable"]]),
-                             alpha = alpha) +
+          ggplot2::geom_jitter(ggplot2::aes(x = .data[["cov"]],
+                                          y = .data[["value"]]),
+                             alpha = alpha, width = 0.1) +
+          # ggplot2::stat_summary(ggplot2::aes(x = .data[["cov"]],
+          #                                    y = .data[["value"]]),
+          #                       fun.data = "mean_se") +
           bayesplot::bayesplot_theme_get() +
+          ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90, hjust = 1, vjust = 0)) +
           ggplot2::labs(x = term)
-      } else if (length(nfscov) == 2) {
-        smoo$cov1 <- preddata[[nfscov[1]]]
-        smoo$cov2 <- preddata[[nfscov[2]]]
 
-        smoo <- reshape2::melt(smoo, id =c("cov1","cov2"))
 
-        if(!is.null(summarise)){
-          smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov1"]],
-                                                                smoo[["cov2"]]),
-                                   FUN = summarise)
-          smoo$cov1 <- smoo$Group.1
-          smoo$cov2 <- smoo$Group.2
-          smoo$value <- smoo$x
-          smoo$variable <- "summary"
-        }
+      } else if("fac" %in% names(object$preds$spl_smooth$nfs$sm[[i]])){
+        preddata <- .smooth_dataprep(object$preds$spl_smooth$nfs$sm_data[,object$preds$spl_smooth$nfs$sm[[i]]$term,drop=FALSE])
 
-        # add some other labels
-        term <- paste0(nfscov, collapse = "__")
+        ndf <- object$preds$spl_smooth$nfs$sm[[i]]$bs.dim
+        nfs_fac <- object$preds$spl_smooth$nfs$sm[[i]]$fterm
+        nfslevels <- levels(object$preds$spl_smooth$nfs$sm_data[[nfs_fac]])
+        preddata_withlevels <- do.call(rbind,
+                                       replicate(length(nfslevels), preddata,
+                                                 simplify = FALSE))
+        preddata_withlevels[[nfs_fac]] <- as.factor(rep(nfslevels,each=nrow(preddata)))
 
-        # allpred <- rbind(allpred, smoo)
-        # plot by term
-        pl_list[[i]] <- ggplot2::ggplot(smoo) +
-          ggplot2::geom_tile(ggplot2::aes(x = .data[["cov1"]],
-                                          y = .data[["cov2"]],
-                                          fill = .data[["value"]])) +
-          bayesplot::bayesplot_theme_get() +
-          ggplot2::labs(x = nfscov[1],y = nfscov[2]) +
-          ggplot2::scale_fill_distiller(palette = "RdBu", type = "div")
-        if(is.null(summarise)){
-          pl_list[[i]] <- pl_list[[i]] +
-            ggplot2::facet_wrap(~.data[["variable"]])
-        }
+        # make projection matrix
+        Xp <- mgcv::PredictMat(object$preds$spl_smooth$nfs$sm[[i]], preddata_withlevels)
+
+        # make predictions (fiddly indexing)
+        smoo <- Xp %*% t(betas[, (off+1):(off+ndf)])
+        off <- off+ndf
+        smoo <- as.data.frame(smoo)
+
+        # put the covariate values into the data
+        nfscov <- object$preds$spl_smooth$nfs$sm[[i]]$term[object$preds$spl_smooth$nfs$sm[[i]]$term != nfs_fac]
+
+        pl_list[[i]] <- .smooth_factorplot(fscov = nfscov, smoo = smoo,
+                                           preddata_withlevels = preddata_withlevels,
+                                           summarise = summarise, fs_fac = nfs_fac,
+                                           alpha= alpha, type = type,
+                                           family =object$family$family,
+                                           facet_args = facet_args)
+
       } else{
-        stop("smoothplot can only work with one or two numeric predictors")
+        preddata <- .smooth_dataprep(object$preds$spl_smooth$nfs$sm_data[,object$preds$spl_smooth$nfs$sm[[i]]$term,drop=FALSE])
+        # make projection matrix
+        Xp <- mgcv::PredictMat(object$preds$spl_smooth$nfs$sm[[i]], preddata)
+
+        # make predictions (fiddly indexing)
+        smoo <- Xp %*% t(betas[, (off+1):(off+ndf)])
+        off <- off+ndf
+        smoo <- as.data.frame(smoo)
+
+        # put the covariate values into the data
+        nfscov <- object$preds$spl_smooth$nfs$sm[[i]]$term
+        if(length(nfscov) == 1){
+          smoo$cov <- preddata[[object$preds$spl_smooth$nfs$sm[[i]]$term]]
+
+          smoo <- reshape2::melt(smoo, id ="cov")
+
+          if(!is.null(summarise)){
+            smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov"]]),
+                                     FUN = summarise)
+            smoo$cov <- smoo$Group.1
+            smoo$value <- smoo$x
+            smoo$variable <- "summary"
+            alpha <- 1
+          }
+          if(type == "response"){
+            if(object$family$family %in%
+               c("poisson","lognormal","neg_binomial","zi_poisson",
+                 "zi_neg_binomial","gamma")){
+              smoo$value <- exp(smoo$value)
+            } else  if(object$family$family %in% c("binomial","bernoulli")){
+              smoo$value <- inv_logit(smoo$value)
+            }
+          }
+
+          # add some other labels
+          term <- paste0(object$preds$spl_smooth$nfs$sm[[i]]$term, collapse = "__")
+
+          # allpred <- rbind(allpred, smoo)
+          # plot by term
+          pl_list[[i]] <- ggplot2::ggplot(smoo) +
+            ggplot2::geom_line(ggplot2::aes(x = .data[["cov"]],
+                                            y = .data[["value"]],
+                                            group = .data[["variable"]]),
+                               alpha = alpha) +
+            bayesplot::bayesplot_theme_get() +
+            ggplot2::labs(x = term)
+        } else if (length(nfscov) == 2) {
+          smoo$cov1 <- preddata[[nfscov[1]]]
+          smoo$cov2 <- preddata[[nfscov[2]]]
+
+          smoo <- reshape2::melt(smoo, id =c("cov1","cov2"))
+
+          if(!is.null(summarise)){
+            smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov1"]],
+                                                                  smoo[["cov2"]]),
+                                     FUN = summarise)
+            smoo$cov1 <- smoo$Group.1
+            smoo$cov2 <- smoo$Group.2
+            smoo$value <- smoo$x
+            smoo$variable <- "summary"
+          }
+
+          # add some other labels
+          term <- paste0(nfscov, collapse = "__")
+
+          # allpred <- rbind(allpred, smoo)
+          # plot by term
+          pl_list[[i]] <- ggplot2::ggplot(smoo) +
+            ggplot2::geom_tile(ggplot2::aes(x = .data[["cov1"]],
+                                            y = .data[["cov2"]],
+                                            fill = .data[["value"]])) +
+            bayesplot::bayesplot_theme_get() +
+            ggplot2::labs(x = nfscov[1],y = nfscov[2]) +
+            ggplot2::scale_fill_distiller(palette = "RdBu", type = "div")
+          if(is.null(summarise)){
+            facet_args$facets <- ~.data[["variable"]]
+            pl_list[[i]] <- pl_list[[i]] +
+              ggplot2::facet_wrap(facet_args)
+          }
+        } else{
+          stop("smoothplot can only work with one or two numeric predictors")
+        }
       }
     }
 
   }
   fs_pl_list <- list()
   if(length(object$preds$spl_smooth$fs)>0){
-    sm_data_num <-
-      object$preds$spl_smooth$fs$sm_data[,sapply(object$preds$spl_smooth$fs$sm_data,
-                                                 is.numeric),
-                                         drop=FALSE]
-    datamins <- sapply(sm_data_num, min)
-    datamax <- sapply(sm_data_num, max)
-    if (length(datamins) == 1){
-      preddata <- matrix(nrow = 200, ncol = 1)
-      preddata[,1] <- seq(datamins[1],datamax[1],length.out=200)
-    } else if(length(datamins) == 2) {
-      preddata1 <- seq(datamins[1],datamax[1],length.out=50)
-      preddata2 <- seq(datamins[2],datamax[2],length.out=50)
-      preddata <- expand.grid(preddata1,preddata2)
-    } else {
-      stop("smoothplot can only work with one or two numeric predictors in spline")
-    }
-    colnames(preddata) <- names(datamins)
-    preddata <- as.data.frame(preddata)
-
-
+    # preddata <- .smooth_dataprep(object$preds$spl_smooth$fs$sm_data)
 
     betas <- extract(object, pars="fs_b")[["fs_b"]]
     n_iter <- dim(betas)[1]
@@ -847,10 +921,18 @@ smoothplot <- function(object, ndraws = 20, alpha = 0.4,
     betas <- betas[draw_id, ]
 
     off <- 0
+    select_ind <- 0
 
-    # allpred <- c()
     # looping over terms
     for(i in seq_along(object$preds$spl_smooth$fs$sm)){
+      select_ind <- select_ind + 1
+      if(!is.null(select_smooths)){
+        if(!select_ind %in% select_smooths$species){
+          next
+        }
+      }
+
+      preddata <- .smooth_dataprep(object$preds$spl_smooth$fs$sm_data[,object$preds$spl_smooth$fs$sm[[i]]$term,drop=FALSE])
       ndf <- object$preds$spl_smooth$fs$sm[[i]]$bs.dim
 
       fs_fac <- object$preds$spl_smooth$fs$sm[[i]]$fterm
@@ -870,82 +952,126 @@ smoothplot <- function(object, ndraws = 20, alpha = 0.4,
 
       # put the covariate values into the data
       fscov <- object$preds$spl_smooth$fs$sm[[i]]$term[object$preds$spl_smooth$fs$sm[[i]]$term != fs_fac]
-      if(length(fscov) == 1) {
-        smoo$cov <- preddata_withlevels[[fscov]]
-        smoo$group <- preddata_withlevels[[fs_fac]]
 
-        smoo <- reshape2::melt(smoo, id =c("cov","group"))
-
-
-        if(!is.null(summarise)){
-          smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov"]],smoo[["group"]]),
-                                   FUN = summarise)
-          smoo$cov <- smoo$Group.1
-          smoo$group <- smoo$Group.2
-          smoo$value <- smoo$x
-          smoo$variable <- "summary"
-          alpha <- 1
-        }
-
-        # add some other labels
-        term <- paste0(fscov, collapse = "__")
-
-        # allpred <- rbind(allpred, smoo)
-        # plot by term
-        fs_pl_list[[i]] <- ggplot2::ggplot(smoo) +
-          ggplot2::geom_line(ggplot2::aes(x = .data[["cov"]],
-                                          y = .data[["value"]],
-                                          group = .data[["variable"]]),
-                             alpha = alpha) +
-          bayesplot::bayesplot_theme_get() +
-          ggplot2::facet_wrap(~group) +
-          ggplot2::labs(x = term)
-      } else if (length(fscov) == 2) {
-        smoo$cov1 <- preddata_withlevels[[fscov[1]]]
-        smoo$cov2 <- preddata_withlevels[[fscov[2]]]
-        smoo$group <- preddata_withlevels[[fs_fac]]
-
-        smoo <- reshape2::melt(smoo, id =c("cov1","cov2","group"))
-
-        if(!is.null(summarise)){
-          smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov1"]],
-                                                                smoo[["cov2"]],
-                                                                smoo[["group"]]),
-                                   FUN = summarise)
-          smoo$cov1 <- smoo$Group.1
-          smoo$cov2 <- smoo$Group.2
-          smoo$group <- smoo$Group.3
-          smoo$value <- smoo$x
-          smoo$variable <- "summary"
-        }
-
-
-        # add some other labels
-        term <- paste0(fscov, collapse = "__")
-
-        # allpred <- rbind(allpred, smoo)
-        # plot by term
-        fs_pl_list[[i]] <- ggplot2::ggplot(smoo) +
-          ggplot2::geom_tile(ggplot2::aes(x = .data[["cov1"]],
-                                          y = .data[["cov2"]],
-                                          fill = .data[["value"]])) +
-          bayesplot::bayesplot_theme_get() +
-          ggplot2::facet_grid(group~.data[["variable"]]) +
-          ggplot2::labs(x = fscov[1],y=fscov[2]) +
-          ggplot2::scale_fill_distiller(palette = "RdBu", type = "div")
-        if(is.null(summarise)){
-          pl_list[[i]] <- pl_list[[i]] +
-            ggplot2::facet_grid(group~.data[["variable"]])
-        } else {
-          pl_list[[i]] <- pl_list[[i]] +
-            ggplot2::facet_wrap(~group)
-        }
-      } else{
-        stop("smoothplot can only work with one or two numeric predictors")
-      }
+      fs_pl_list[[i]] <- .smooth_factorplot(fscov = fscov, smoo = smoo,
+                                            preddata_withlevels = preddata_withlevels,
+                                            summarise = summarise, fs_fac = fs_fac,
+                                            alpha = alpha, type = type,
+                                            family =object$family$family,
+                                            facet_args = facet_args)
     }
 
   }
   return(c(pl_list,fs_pl_list))
 }
 
+.smooth_dataprep <- function(object_data){
+  sm_data_num <- object_data[,sapply(object_data,is.numeric),
+                             drop=FALSE]
+  datamins <- sapply(sm_data_num, min)
+  datamax <- sapply(sm_data_num, max)
+  if (length(datamins) == 1){
+    preddata <- matrix(nrow = 200, ncol = 1)
+    preddata[,1] <- seq(datamins[1],datamax[1],length.out=200)
+  } else if(length(datamins) == 2) {
+    preddata1 <- seq(datamins[1],datamax[1],length.out=50)
+    preddata2 <- seq(datamins[2],datamax[2],length.out=50)
+    preddata <- expand.grid(preddata1,preddata2)
+  } else {
+    stop("smoothplot can only work with one or two numeric predictors in spline")
+  }
+  colnames(preddata) <- names(datamins)
+  preddata <- as.data.frame(preddata)
+  return(preddata)
+}
+
+.smooth_factorplot <- function(fscov, smoo, preddata_withlevels, summarise,
+                               fs_fac, alpha, type, family, facet_args){
+  if(length(fscov) == 1) {
+    smoo$cov <- preddata_withlevels[[fscov]]
+    smoo$group <- preddata_withlevels[[fs_fac]]
+
+    smoo <- reshape2::melt(smoo, id =c("cov","group"))
+
+
+    if(!is.null(summarise)){
+      smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov"]],smoo[["group"]]),
+                               FUN = summarise)
+      smoo$cov <- smoo$Group.1
+      smoo$group <- smoo$Group.2
+      smoo$value <- smoo$x
+      smoo$variable <- "summary"
+      alpha <- 1
+    }
+    if(type == "response"){
+      if(family %in%
+         c("poisson","lognormal","neg_binomial","zi_poisson",
+           "zi_neg_binomial","gamma")){
+        smoo$value <- exp(smoo$value)
+      } else  if(family %in% c("binomial","bernoulli")){
+        smoo$value <- inv_logit(smoo$value)
+      }
+    }
+
+
+    # add some other labels
+    term <- paste0(fscov, collapse = "__")
+    facet_args$facets <- ~group
+
+    # allpred <- rbind(allpred, smoo)
+    # plot by term
+    fs_pl <- ggplot2::ggplot(smoo) +
+      ggplot2::geom_line(ggplot2::aes(x = .data[["cov"]],
+                                      y = .data[["value"]],
+                                      group = .data[["variable"]]),
+                         alpha = alpha) +
+      bayesplot::bayesplot_theme_get() +
+      ggplot2::facet_wrap(facet_args) +
+      ggplot2::labs(x = term)
+  } else if (length(fscov) == 2) {
+    smoo$cov1 <- preddata_withlevels[[fscov[1]]]
+    smoo$cov2 <- preddata_withlevels[[fscov[2]]]
+    smoo$group <- preddata_withlevels[[fs_fac]]
+
+    smoo <- reshape2::melt(smoo, id =c("cov1","cov2","group"))
+
+    if(!is.null(summarise)){
+      smoo <- stats::aggregate(smoo[,c("value")], by = list(smoo[["cov1"]],
+                                                            smoo[["cov2"]],
+                                                            smoo[["group"]]),
+                               FUN = summarise)
+      smoo$cov1 <- smoo$Group.1
+      smoo$cov2 <- smoo$Group.2
+      smoo$group <- smoo$Group.3
+      smoo$value <- smoo$x
+      smoo$variable <- "summary"
+    }
+
+
+    # add some other labels
+    term <- paste0(fscov, collapse = "__")
+
+    # allpred <- rbind(allpred, smoo)
+    # plot by term
+    fs_pl <- ggplot2::ggplot(smoo) +
+      ggplot2::geom_tile(ggplot2::aes(x = .data[["cov1"]],
+                                      y = .data[["cov2"]],
+                                      fill = .data[["value"]])) +
+      bayesplot::bayesplot_theme_get() +
+      ggplot2::labs(x = fscov[1],y=fscov[2]) +
+      ggplot2::scale_fill_distiller(palette = "RdBu", type = "div")
+    if(is.null(summarise)){
+      facet_args$facets <- group~.data[["variable"]]
+      fs_pl <- fs_pl +
+        ggplot2::facet_grid(facet_args)
+    } else {
+      facet_args$facets <- ~group
+      fs_pl <- fs_pl +
+        ggplot2::facet_wrap(facet_args)
+    }
+  } else{
+    stop("smoothplot can only work with one or two numeric predictors")
+  }
+
+  return(fs_pl)
+}

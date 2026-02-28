@@ -4,7 +4,16 @@
 \alias{smoothplot}
 \title{Plot the smooth effect of any spline within a model}
 \usage{
-smoothplot(object, ndraws = 20, alpha = 0.4, draw_ids = NULL, summarise = NULL)
+smoothplot(
+  object,
+  ndraws = 20,
+  alpha = 0.4,
+  draw_ids = NULL,
+  summarise = NULL,
+  type = "link",
+  facet_args = list(),
+  select_smooths = NULL
+)
 }
 \arguments{
 \item{object}{The jsdmStanFit model object}
@@ -19,6 +28,17 @@ smoothplot(object, ndraws = 20, alpha = 0.4, draw_ids = NULL, summarise = NULL)
 summary. Can also be given as the name of a function (e.g. \code{"mean"}).
 Note that this summarisation only occurs over the number of draws
 specified.}
+
+\item{type}{Whether to return plot on the link scale (default) or the
+response scale}
+
+\item{facet_args}{Argument passed to \code{\link[ggplot2:facet_wrap]{ggplot2::facet_wrap()}}, specified as a
+list}
+
+\item{select_smooths}{Which plots to include, given either as \code{NULL}
+(i.e. plot all smooths) or as a list containing two numeric vectors named
+"site" and "species" representing the indices of the site-specific smooths
+to plot and the species-specific smooths to plot}
 }
 \value{
 a list of ggplot objects

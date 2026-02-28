@@ -333,7 +333,8 @@ ifelse(censoring == "left", "
   )
   # priors
   model_priors <- .prior_codechunk(site_intercept, beta_param, method, family,
-                                   shp_param, zi_param, prior)
+                                   shp_param, zi_param, prior,
+                                   site_smooth, species_smooth)
   # model end
   model_pt2 <- if(!grepl("zi_", family) & censoring == "none"){ paste(
     "
@@ -552,8 +553,17 @@ print.jsdmstan_model <- function(x, ...) {
 }
 
 .prior_codechunk <- function(site_intercept, beta_param, method, family,
-                             shp_param, zi_param, prior){
+                             shp_param, zi_param, prior,
+                             site_smooth, species_smooth){
   paste(
+  ifelse(site_smooth != "none", paste("
+  // site-smooth smoothing parameter prior
+  nfs_sp ~ ", prior[["sp"]], ";
+  "),""),
+  ifelse(species_smooth != "none", paste("
+  // species-smooth smoothing parameter prior
+  fs_sp ~ ", prior[["sp"]], ";
+  "),""),
     ifelse(site_intercept %in% c("ungrouped","grouped"), paste("
   // Site-level intercept priors
   z_a ~ std_normal();

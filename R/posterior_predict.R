@@ -150,7 +150,9 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
       smoo <- matrix(nrow=nrow(nfs_predmat[[1]]),
                      ncol=length(object$preds$spl_smooth$nfs$sm))
       for(i in seq_along(object$preds$spl_smooth$nfs$sm)){
-        ndf <- object$preds$spl_smooth$nfs$sm[[i]]$df
+        ndf <- ifelse("fac" %in% names(object$preds$spl_smooth$nfs$sm[[i]]),
+                      object$preds$spl_smooth$nfs$sm[[i]]$bs.dim,
+                      object$preds$spl_smooth$nfs$sm[[i]]$df)
         smoo[,i] <- nfs_predmat[[i]] %*% t(model_est$nfs_b[d, (off+1):(off+ndf),drop=FALSE])
         off <- off+ndf
       }

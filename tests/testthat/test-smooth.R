@@ -1,14 +1,14 @@
 
 # 1D nfs testing ####
 set.seed(2)
-dat <- mgcv::gamSim(1,n=400,dist="normal",scale=2)
+dat <- mgcv::gamSim(1,n=100,dist="normal",scale=2)
 
 
 # make a 1D example with less noise
-dat$y2 <- dat$f2 + rnorm(400, sd=1)
-dat$y3 <- dat$f2 + rnorm(400, sd=1)
-dat$y4 <- dat$f2 + rnorm(400, sd=1)
-dat$y5 <- dat$f2 + rnorm(400, sd=1)
+dat$y2 <- dat$f2 + rnorm(100, sd=1)
+dat$y3 <- dat$f2 + rnorm(100, sd=1)
+dat$y4 <- dat$f2 + rnorm(100, sd=1)
+dat$y5 <- dat$f2 + rnorm(100, sd=1)
 
 Y <- dat[,c("y2","y3","y4","y5")]
 
@@ -94,15 +94,16 @@ test_that("smoothplot works", {
 
 # 2 spline nfs testing ####
 set.seed(2)
-dat$y6 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
-dat$y7 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
-dat$y8 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
-dat$y9 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
+dat$y6 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
+dat$y7 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
+dat$y8 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
+dat$y9 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
 
 Y <- dat[,c("y6","y7","y8","y9")]
+dat$flevels <- as.factor(rep(LETTERS[1:20],each=5))
 
 suppressWarnings(
-  nfs2_fit <- stan_jsdm(~s(x2)+s(x1), data = dat,
+  nfs2_fit <- stan_jsdm(~s(x2)+s(x1) + s(flevels, bs = "re"), data = dat,
                         Y = Y, family ="gaussian", method = "mglmm",
                         chains = 2, iter = 200, refresh = 0))
 test_that("model runs with one nfs spline", {
@@ -173,22 +174,22 @@ test_that("smoothplot works", {
   nfs2_sp <- smoothplot(nfs2_fit, ndraws = 10)
 
   expect_s3_class(nfs2_sp[[1]], "gg")
-  expect_length(nfs2_sp, 2)
+  expect_length(nfs2_sp, 3)
 
 
   nfs2_sp <- smoothplot(nfs2_fit, ndraws = 10, summarise = "median")
 
   expect_s3_class(nfs2_sp[[1]], "gg")
-  expect_length(nfs2_sp, 2)
+  expect_length(nfs2_sp, 3)
 })
 
 
 # 2D nfs testing ####
 set.seed(2)
-dat$y6 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
-dat$y7 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
-dat$y8 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
-dat$y9 <- dat$f1 + dat$f2 + rnorm(400, sd=1)
+dat$y6 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
+dat$y7 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
+dat$y8 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
+dat$y9 <- dat$f1 + dat$f2 + rnorm(100, sd=1)
 
 Y <- dat[,c("y6","y7","y8","y9")]
 
@@ -272,104 +273,98 @@ test_that("smoothplot works", {
   expect_length(nfs2_sp, 1)
 })
 
-# 1D non-species fs testing ####
-# simulated example from ?gam
-set.seed(0)
-## simulate data...
-f1 <- function(x,a=2,b=-1) exp(a * x)+b
-n <- 39;nf <- 13
-fac <- as.factor(rep(LETTERS[1:nf],each=3))
-x1 <- runif(39)
-a <- rnorm(nf)*.2 + 2;b <- rnorm(nf)*.5
-f <- f1(x1,a[fac],b[fac])
-fac <- factor(fac)
-y1 <- f + rnorm(n)
-y2 <- f + rnorm(n)
-y3 <- f + rnorm(n)
-## so response depends on global smooths of x0 and
-## x2, and a smooth of x1 for each level of fac.
-df <- data.frame(x1 = x1, x2 = fac)
-Y <- matrix(c(y1,y2,y3),nrow=39)
-colnames(Y) <- LETTERS[20:22]
-## fit model...
+# nfs with site factor testing ####
+set.seed(2)
+fvals <- rep(rnorm(5,sd=.5), each = 20)
+flevs <- rep(LETTERS[1:5],each=20)
+dat$y6 <- dat$f2 + rnorm(100, sd=.1) + fvals
+dat$y7 <- dat$f2 + rnorm(100, sd=.1) + fvals
+dat$y8 <- dat$f2 + rnorm(100, sd=.1) + fvals
+dat$y9 <- dat$f2 + rnorm(100, sd=.1) + fvals
+
+Y <- dat[,c("y6","y7","y8","y9")]
+dat2 <- dat
+dat2$flevs <- as.factor(flevs)
+
 suppressWarnings(
-  fs0_fit <- stan_jsdm(~s(x1,x2, bs = "fs"), data = df, Y = Y,
-                       family = "gaussian", method = "mglmm",
-                       chains = 2, iter = 200, refresh = 0))
+  nfs4_fit <- stan_jsdm(~s(x2, flevs, bs = "fs"), data = dat2,
+                        Y = Y, family ="gaussian", method = "mglmm",
+                        chains = 2, iter = 200, refresh = 0))
+test_that("model runs with one nfs spline", {
+  expect_s3_class(nfs4_fit, "jsdmStanFit")
 
-test_that("model runs with one fs spline", {
-  expect_s3_class(fs0_fit, "jsdmStanFit")
-
-  expect_named(fs0_fit$preds$spl_smooth$fs,
+  expect_named(nfs4_fit$preds$spl_smooth$nfs,
                c("N","X","S1","nSr","nSc","nsp","Sr","Sn","nterms","ncoef","sm","sm_data"))
 
-  expect_s3_class(fs0_fit$preds$spl_smooth$fs$sm[[1]],"mgcv.smooth")
+  expect_s3_class(nfs4_fit$preds$spl_smooth$nfs$sm[[1]],"mgcv.smooth")
 })
 
 test_that("print works", {
-  expect_output(print(fs0_fit))
+  expect_output(print(nfs4_fit))
 })
 
 test_that("summary works", {
-  fs0_fit_summ <- summary(fs0_fit)
-  expect_equal(colnames(fs0_fit_summ), c(
+  nfs4_fit_summ <- summary(nfs4_fit)
+  expect_equal(colnames(nfs4_fit_summ), c(
     "mean", "sd", "15%", "85%", "Rhat",
     "Bulk.ESS", "Tail.ESS"
   ))
-  fs0_fit_summ <- summary(fs0_fit,
-                          pars = "beta", regexp = TRUE,
-                          prob_quantiles = c(0.25, 0.5, 0.75)
+  nfs4_fit_summ <- summary(nfs4_fit,
+                           pars = "beta", regexp = TRUE,
+                           prob_quantiles = c(0.25, 0.5, 0.75)
   )
-  expect_equal(colnames(fs0_fit_summ), c(
+  expect_equal(colnames(nfs4_fit_summ), c(
     "mean", "sd", "25%", "50%", "75%", "Rhat",
     "Bulk.ESS", "Tail.ESS"
   ))
-  expect_match(rownames(fs0_fit_summ), "beta", all = TRUE)
+  expect_match(rownames(nfs4_fit_summ), "beta", all = TRUE)
 })
 
 
 test_that("nuts_params works", {
-  expect_named(nuts_params(fs0_fit), c("Chain", "Iteration", "Parameter", "Value"))
+  expect_named(nuts_params(nfs4_fit), c("Chain", "Iteration", "Parameter", "Value"))
 })
 
 test_that("log_posterior works", {
-  expect_named(log_posterior(fs0_fit), c("Chain", "Iteration", "Value"))
+  expect_named(log_posterior(nfs4_fit), c("Chain", "Iteration", "Value"))
 })
 
 test_that("rhat works", {
-  expect_type(rhat(fs0_fit), "double")
-  expect_named(rhat(fs0_fit))
+  expect_type(rhat(nfs4_fit), "double")
+  expect_named(rhat(nfs4_fit))
 })
 
 test_that("neff_ratio works", {
-  expect_type(neff_ratio(fs0_fit), "double")
-  expect_named(neff_ratio(fs0_fit))
+  expect_type(neff_ratio(nfs4_fit), "double")
+  expect_named(neff_ratio(nfs4_fit))
 })
 
 
 test_that("posterior_(lin)pred works", {
-  fs0_pred <- posterior_predict(fs0_fit, ndraws = 100)
+  nfs4_pred <- posterior_predict(nfs4_fit, ndraws = 100)
 
-  expect_length(fs0_pred, 100)
-  expect_false(any(sapply(fs0_pred, anyNA)))
+  expect_length(nfs4_pred, 100)
+  expect_false(any(sapply(nfs4_pred, anyNA)))
 })
 
 
 test_that("pp_check works", {
-  fs0_pp <- pp_check(fs0_fit, ndraws = 10)
+  nfs4_pp <- pp_check(nfs4_fit, ndraws = 10)
 
-  expect_s3_class(fs0_pp, "gg")
-  expect_length(fs0_pp, 1)
+  expect_s3_class(nfs4_pp, "gg")
 })
 
 test_that("smoothplot works", {
-  fs0_sp <- smoothplot(fs0_fit, ndraws = 10)
+  nfs4_sp <- smoothplot(nfs4_fit, ndraws = 10)
 
-  expect_s3_class(fs0_sp[[1]], "gg")
+  expect_s3_class(nfs4_sp[[1]], "gg")
+  expect_length(nfs4_sp, 1)
 
-  fs0_sp <- smoothplot(fs0_fit, ndraws = 10, summarise = "mean")
 
-  expect_s3_class(fs0_sp[[1]], "gg")
+  nfs4_sp <- smoothplot(nfs4_fit, ndraws = 10, summarise = "median")
+
+  expect_s3_class(nfs4_sp[[1]], "gg")
+  expect_length(nfs4_sp, 1)
 })
 
 

@@ -22,7 +22,8 @@ jsdm_prior(
   shape = "gamma(1,1)",
   zi = "beta(1,1)",
   zi_betas = "normal(0,1)",
-  shp_betas = "normal(0,1)"
+  shp_betas = "normal(0,1)",
+  sp = "cauchy(0,1)"
 )
 
 \method{print}{jsdmprior}(x, ...)
@@ -85,6 +86,9 @@ zero-inflation on the logit scale}
 \item{shp_betas}{For gaussian or negative binomial with environmental effects
 upon the family parameter (i.e. sigma or kappa), the covariate effects on
 the family parameter on the log scale}
+
+\item{sp}{Prior upon the smoothing parameter for any smooths (shared across
+both site-specific and species-specific smooths)}
 
 \item{x}{Object of class \code{jsdmprior}}
 
