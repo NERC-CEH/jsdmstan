@@ -17,7 +17,7 @@ knitr::opts_chunk$set(
 
 Censored data occurs where the observation falls either below or above some limit of detection. When the data falls below some limit of detection this is referred to as left-censoring, while when it falls above some limit of detection it is referred to as right-censoring. Interval censoring occurs when you know the upper and lower limit of the datapoint but not the actual value.
 
-The `jsdmstan` package supports left-censoring in three families, the Gaussian (or normal) distribution , the lognormal distribution and the gamma distribution. Data can be simulated with left-censoring, which will return both the censored and uncensored response matrix. For fitting censored models, jsdmstan requires a matrix of the reponse plus an index matrix that says where in the matrix censoring occurs. For left-censoring the index matrix should be 1 when left-censored or 0 when not censored.
+The `jsdmstan` package supports left-censoring in three families, the Gaussian (or normal) distribution , the lognormal distribution and the gamma distribution. Data can be simulated with left-censoring, which will return both the censored and uncensored response matrix. For fitting censored models, jsdmstan requires a matrix of the response plus an index matrix that says where in the matrix censoring occurs. For left-censoring the index matrix should be 1 when left-censored or 0 when not censored.
 
 
 ```{r setup}
@@ -70,13 +70,13 @@ We can also see if the model did well at recovering the parameters used within t
 ```{r}
 mcmc_plot(cens_mod, plotfun = "recover_hist", pars = "sigma",
           true = cens_dat$pars$sigma)
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]"), 
           true = cens_dat$pars$betas[1,])
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[2,",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[2,",1:15,"]"),
           true = cens_dat$pars$betas[2,])
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[3,",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[3,",1:15,"]"),
           true = cens_dat$pars$betas[3,])
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:15,"]"),
           true = cens_dat$pars$sigmas_species)
 
 ```

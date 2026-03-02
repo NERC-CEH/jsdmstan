@@ -1,0 +1,134 @@
+---
+title: "Fitting generalised additive models within jsdmstan"
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+```{r setup}
+library(jsdmstan)
+```
+
+# Background
+
+The `jsdmstan` package supports the fitting of non-linear and random effects through using the generalised additive modelling (GAM) approach as represented within the `mgcv` R package (available on [CRAN](https://cran.r-project.org/package=mgcv); Wood, 2011). See [Wood (2025)](https://doi.org/10.1146/annurev-statistics-112723-034249) for an overview of the GAM method. This means that the user can specify splines by using the formula argument to `stan_jsdm()` and including an `s()` call within that formula to specify the spline structure. This can be done either at the site-level (where multiple basis functions are supported) or at the species-level by fitting a factor-smooth to species. Examples of this in practice are shown below.
+
+# Site-specific splines
+
+```{r}
+# 2 spline nfs testing ####
+set.seed(2)
+dat <- mgcv::gamSim(1,n=100,dist="normal",scale=2)
+dat$flevels <- as.factor(rep(LETTERS[1:5],each=20))
+dat$fvals <- rep(rnorm(5, sd = .5),each=20)
+
+dat$y6 <- dat$f2 + dat$fvals + rnorm(100, sd=.5)
+dat$y7 <- dat$f2 + dat$fvals + rnorm(100, sd=.5)
+dat$y8 <- dat$f2 + dat$fvals + rnorm(100, sd=.5)
+dat$y9 <- dat$f2 + dat$fvals + rnorm(100, sd=.5)
+
+Y <- dat[,c("y6","y7","y8","y9")]
+```
+
+Model fit, specifying priors for beta (representing the intercept only, in this case) based upon the data:
+
+```{r}
+nfs_fit <- stan_jsdm(~s(x2) + s(flevels, bs = "re"), data = dat,
+                     Y = Y, family ="gaussian", method = "mglmm",
+                     prior = jsdm_prior(betas = "normal(3,1)"),
+                     iter = 1000)
+```
+There's a couple of warnings on ESS, so we'll check to see what is going on by printing the model object to the console:
+
+```{r}
+nfs_fit
+```
+
+There are several parameters with ESS < 500, but the ESS is always over 400 which should be fine for our purposes. Now we can look at model recovery of the data, using the standard jsdmstan functions. We'll just take a look to see if the model recovers the individual species distributions: 
+
+```{r}
+multi_pp_check(nfs_fit)
+```
+
+The model seems to recover the data well. We can also plot out the smooth effects using the `smoothplot()` function. This returns a list of ggplot2 objects including plots for each smooth fitted. For smooths such as the default thin-plate regression spline or e.g. a cyclic cubic regression spline this will take the form of a series of lines representing different draws from the model. For random effect splines this takes the form of a jittered point plot of the random effect values plotted against the random effect categories. The number of draws can be varied, and a summary line added to the line plots if required.
+
+```{r}
+smoothplot(nfs_fit)
+```
+
+To demonstrate some of the smoothplot options, here we'll plot the average smooth from 1000 draws for the first smooth (not the random effect):
+
+```{r}
+smoothplot(nfs_fit, summarise = mean, ndraws = 1000, 
+           select_smooths = list(site = 1))
+```
+
+
+
+
+# Species- and site-specific factor smooths
+
+Simulate data, based upon the factor-smooth example in the `mgcv::gam()` documentation:
+
+```{r}
+set.seed(0)
+## simulate data...
+f1 <- function(x,a=2,b=-1) exp(a * x)+b
+n <- 500;nf <- 6
+fac <- as.factor(rep(LETTERS[1:nf],each=50))
+x1 <- rep(runif(50),nf)
+a <- rnorm(nf)*.2 + 2;b <- rnorm(nf)*.5
+f <- f1(x1,a[fac],b[fac])
+fac <- factor(fac)
+y <- f + rnorm(n)
+```
+
+So response depends on a smooth of x1 for each level of fac, which we now convert the data into wide format:
+
+```{r}
+df <- data.frame(x1 = x1[1:50])
+Y <- matrix(y, nrow = 50)
+colnames(Y) <- LETTERS[1:10]
+```
+
+We fit the model by specifying `species` as the factor within a factor-smooth model. Species doesn't need to be in the original dataframe (and obviously cannot be!) as `jsdmstan` recognises what is going on and sorts it all out under the hood. Note that if `species` is a column name in the original dataframe it will be ignored and instead the model fit to vary across the columns of Y. Specifying any other column name as the factor within the factor-smooth means that jsdmstan will fit a site-specific factor instead.
+
+```{r}
+fs1_fit <- stan_jsdm(~s(x1, species, bs = "fs"), data = df, Y = Y,
+                     family = "gaussian", method = "mglmm", iter = 1000)
+```
+
+There is one warning about effective sample size, so we can print the model object to see which parameters had low ESS:
+
+```{r}
+fs1_fit
+```
+
+An effective sample size of over 200 seems like it should be fine for our purposes here, although you may want to run for more iterations if this was to be used for more than instructional purposes.
+
+The recovery of the data can be evaluated by using functions such as `pp_check()` or `multi_pp_check()`. This model seems to recover the data well.
+
+```{r}
+multi_pp_check(fs1_fit)
+```
+
+For factor smooths the `smoothplot()` function returns a ggplot2 object facetted by the factor (here species, but within the site-specific factor smooths this could be any factor specified by the user). 
+
+```{r}
+smoothplot(fs1_fit)
+```
+
+
+# Comments
+
+A mix of site-specific and species-specific smooths can also be fit, as can many different types of smooth basis functions. Not all types of smooth basis functions have been tested yet, and it is entirely possible that some smooths will be fit that cannot be plotted or predicted correctly from - please raise an issue at https://github.com/NERC-CEH/jsdmstan/issues if you run into any problems or have a type of smooth that you'd like to be able to fit but cannot.
+
+# References
+
+Wood, S.N. (2011) Fast stable restricted maximum likelihood and marginal likelihood estimation of semiparametric generalized linear models. *Journal of the Royal Statistical Society (B)* 73(1):3-36
+
+Wood, S.N. (2025) Generalized Additive Models. *Annual Review Statistics and Its Application.* 12:497-526. https://doi.org/10.1146/annurev-statistics-112723-034249
