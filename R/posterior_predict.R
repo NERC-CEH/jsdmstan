@@ -270,8 +270,9 @@ posterior_predict.jsdmStanFit <- function(object, newdata = NULL,
       stop("draw_ids must be a vector of positive integers")
     }
   }
-  n_iter <- length(object$fit@stan_args)*(object$fit@stan_args[[1]]$iter -
-                                            object$fit@stan_args[[1]]$warmup)
+  n_iter <- length(object$fit@stan_args)*(
+    (object$fit@stan_args[[1]]$iter - object$fit@stan_args[[1]]$warmup)/
+      object$fit@stan_args[[1]]$thin)
   draw_id <- draw_id_check(draw_ids = draw_ids, n_iter = n_iter, ndraws = ndraws)
 
 
