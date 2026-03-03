@@ -1,6 +1,6 @@
 Package: jsdmstan
 Title: Fitting jSDMs in Stan
-Version: 0.5.0
+Version: 0.5.0.0502
 Authors@R: 
     person("Fiona", "Seaton", , "fseaton@ceh.ac.uk", role = c("aut", "cre"),
            comment = c(ORCID = "0000-0002-2022-7451"))
@@ -25,6 +25,7 @@ Imports:
     bayesplot,
     reshape2,
     loo,
+    mgcv,
     rlang
 SystemRequirements: GNU make
 Suggests: 
@@ -33,6 +34,7 @@ Suggests:
     rmarkdown,
     ggplot2
 Config/testthat/edition: 3
+Config/testthat/parallel: true
 VignetteBuilder: knitr
 URL: https://nerc-ceh.github.io/jsdmstan/
 Config/Needs/website: rmarkdown

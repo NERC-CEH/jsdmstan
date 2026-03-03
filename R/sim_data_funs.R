@@ -604,6 +604,7 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       )
     }
   }
+  colnames(Y) <- paste0("S", 1:S)
 
   if(any(apply(Y, 2, function(x) all(x == 0)))){
     message(paste("Y contains an entirely empty column, which will not work for",

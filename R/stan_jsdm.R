@@ -115,6 +115,10 @@
 #'@param init Initialisation values for the sampling, see [rstan::sampling()].
 #'  If unspecified and \code{method = "mglmm"} then set to \code{"0"}.
 #'
+#'@param spl_smooth The construction of the spline process, do not supply
+#'  directly as user but instead include a spline within the formula interface
+#'  as would be provided in [mgcv::gam()]
+#'
 #'@param ... Arguments passed to [rstan::sampling()]
 #'
 #'@return A \code{jsdmStanFit} object, comprising a list including the StanFit
@@ -158,6 +162,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               censoring = "none", censor_points = NULL, cens_ID = NULL,
                               zi_param = "constant", zi_X = NULL,
                               shp_param = "constant", shp_X = NULL,
+                              spl_smooth = NULL,
                               save_data = TRUE, iter = 4000, init = NULL, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial", "zi_poisson",
@@ -207,6 +212,15 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
   }
   if(site_intercept == "grouped" & is.null(site_groups) & is.null(dat_list))
     stop("If site_intercept is grouped then groups must be supplied to site_groups")
+  if(!is.null(spl_smooth)){
+    species_smooth <- ifelse(length(spl_smooth$fs) == 0, "none",
+                             ifelse(spl_smooth$fs$nterms > 1,"multiple", "single"))
+    site_smooth <- ifelse(length(spl_smooth$nfs) == 0, "none",
+                          ifelse(spl_smooth$nfs$nterms > 1,"multiple", "single"))
+  } else{
+    site_smooth <- "none"
+    species_smooth <- "none"
+  }
 
   # validate data
   data_list <- validate_data(
@@ -215,7 +229,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     dat_list = dat_list,
     family = family, method = method, Ntrials = Ntrials,
     shp_X = shp_X, zi_X = zi_X,
-    censoring = censoring, censor_points = censor_points, cens_ID = cens_ID
+    censoring = censoring, censor_points = censor_points, cens_ID = cens_ID,
+    spl_smooth = spl_smooth
   )
 
   # Create stancode
@@ -223,7 +238,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     family = family,
     method = method, prior = prior,
     site_intercept = site_intercept, censoring = censoring,
-    beta_param = beta_param, zi_param = zi_param, shp_param = shp_param
+    beta_param = beta_param, zi_param = zi_param, shp_param = shp_param,
+    species_smooth = species_smooth, site_smooth = site_smooth
   )
 
   # Compile model
@@ -248,7 +264,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     model_fit = model_fit, method = method,
     data_list = data_list,
     species_intercept = species_intercept,
-    family = family, save_data = save_data
+    family = family, save_data = save_data,
+    spl_smooth = spl_smooth
   )
 
   return(model_output)
@@ -260,6 +277,54 @@ stan_jsdm.formula <- function(formula, data = list(), Y = NULL,
                               zi_formula = NULL, shp_formula = NULL,
                               zi_param = "constant",
                               shp_param = "constant", ...) {
+  # identify if there is a spline formula in this
+  spl_form <- mgcv::interpret.gam(formula)
+  if(length(spl_form$smooth.spec)>0){
+    # split out species specific factor smooths from site-wide
+    if(any(sapply(spl_form$smooth.spec, class) == "fs.smooth.spec")){
+      fs_sterms_all <- spl_form$smooth.spec[sapply(spl_form$smooth.spec, class) == "fs.smooth.spec"]
+      fs_sterms <- list()
+      j1 <- 1
+      nfs_sterms1 <- list()
+      j2 <- 1
+      for(i in seq_along(fs_sterms_all)){
+        if("species" %in% fs_sterms_all[[i]]$term){
+          fs_sterms[[j1]] <- fs_sterms_all[[i]]
+          j1 <- j1+1
+        } else {
+          nfs_sterms1[[j2]] <- fs_sterms_all[[i]]
+          j2 <- j2+1
+        }
+      }
+      nfs_sterms <- c(spl_form$smooth.spec[sapply(spl_form$smooth.spec, class) != "fs.smooth.spec"],
+                      nfs_sterms1)
+
+      if(length(fs_sterms)>0){
+        fs_data <- do.call(rbind, replicate(n = ncol(Y), data, simplify = FALSE))
+        fs_data$species <- as.factor(rep(colnames(Y),each=nrow(Y)))
+        # print(str(fs_data))
+        fs_smooth <- make_smooth(fs_sterms, data = fs_data)
+      } else {
+        fs_smooth <- list()
+      }
+
+      # print(str(fs_smooth))
+      if(length(nfs_sterms)>0){
+        nfs_smooth <- make_smooth(nfs_sterms, data = data)
+      } else {
+        nfs_smooth <- list()
+      }
+      spl_smooth <- list(fs = fs_smooth,
+                         nfs = nfs_smooth)
+    } else{
+      spl_smooth <- list(fs = list(),
+                         nfs = make_smooth(spl_form$smooth.spec, data = data))
+    }
+    formula <- spl_form$pf
+  } else {
+    spl_smooth <- NULL
+  }
+
   mf <- stats::model.frame(formula = formula, data = data)
   X <- stats::model.matrix(attr(mf, "terms"), data = mf)
   if (!is.null(stats::model.response(mf))) {
@@ -325,7 +390,8 @@ stan_jsdm.formula <- function(formula, data = list(), Y = NULL,
 
   est <- stan_jsdm.default(X, Y = Y, species_intercept = FALSE,
                            shp_X = fX, zi_X = zX,
-                           shp_param = shp_param, zi_param = zi_param, ...)
+                           shp_param = shp_param, zi_param = zi_param,
+                           spl_smooth = spl_smooth, ...)
   est$call <- match.call()
   est$formula <- formula
   est
@@ -386,7 +452,8 @@ stan_gllvm.formula <- function(formula, data = list(), ...) {
 validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept,
                           method, site_groups, Ntrials,
-                          zi_X, shp_X, censoring, censor_points, cens_ID) {
+                          zi_X, shp_X, censoring, censor_points, cens_ID,
+                          spl_smooth) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -516,6 +583,36 @@ validate_data <- function(Y, D, X, species_intercept,
         stop("Number of rows of shp_X must be equal to number of rows of X")
       }
     }
+    if(!is.null(spl_smooth)){
+      if(length(spl_smooth$fs)>0){
+        data_list$fs_nsp <- spl_smooth$fs$nsp
+        data_list$fs_ncoef <- spl_smooth$fs$ncoef
+        data_list$fs_nSr <- spl_smooth$fs$nSr
+        data_list$fs_nSc <- spl_smooth$fs$nSc
+        data_list$fs_X <- spl_smooth$fs$X
+        data_list$fs_S1 <- spl_smooth$fs$S1
+        data_list$fs_sm <- spl_smooth$fs$sm
+        if(spl_smooth$fs$nterms>1){
+          data_list$fs_nterms <- spl_smooth$fs$nterms
+          data_list$fs_Sr <- spl_smooth$fs$Sr
+          data_list$fs_Sn <- spl_smooth$fs$Sn
+        }
+      }
+      if(length(spl_smooth$nfs)>0){
+        data_list$nfs_nsp <- spl_smooth$nfs$nsp
+        data_list$nfs_ncoef <- spl_smooth$nfs$ncoef
+        data_list$nfs_nSr <- spl_smooth$nfs$nSr
+        data_list$nfs_nSc <- spl_smooth$nfs$nSc
+        data_list$nfs_X <- spl_smooth$nfs$X
+        data_list$nfs_S1 <- spl_smooth$nfs$S1
+        data_list$nfs_sm <- spl_smooth$nfs$sm
+        if(spl_smooth$nfs$nterms>1){
+          data_list$nfs_nterms <- spl_smooth$nfs$nterms
+          data_list$nfs_Sr <- spl_smooth$nfs$Sr
+          data_list$nfs_Sn <- spl_smooth$nfs$Sn
+        }
+      }
+    }
   } else {
     if (!all(c("Y", "K", "S", "N", "X") %in% names(dat_list))) {
       stop("If supplying data as a list must have entries Y, K, S, N, X")
@@ -635,7 +732,7 @@ validate_data <- function(Y, D, X, species_intercept,
 }
 
 model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept,
-                                 family, save_data) {
+                                 family, save_data, spl_smooth) {
   # Turn into jsdmStanFit
   sites <- if (!is.null(rownames(data_list$Y))) {
     rownames(data_list$Y)
@@ -648,12 +745,15 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
     as.character(1:ncol(data_list$Y))
   }
   preds <- if (!is.null(colnames(data_list$X))) {
-    colnames(data_list$X)
+    list(fixef = colnames(data_list$X))
   } else {
-    as.character(1:ncol(data_list$X))
+    list(fixef = as.character(1:ncol(data_list$X)))
   }
-  if (isTRUE(species_intercept) & !("(Intercept)" %in% preds)) {
-    preds <- c("(Intercept)", preds)
+  if (isTRUE(species_intercept) & !("(Intercept)" %in% preds$fixef)) {
+    preds$fixef <- c("(Intercept)", preds$fixef)
+  }
+  if(!is.null(spl_smooth)){
+    preds$spl_smooth <- spl_smooth
   }
   dat <- if (isTRUE(save_data)) {
     data_list
@@ -729,4 +829,74 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
   class(model_output) <- "jsdmStanFit"
 
   return(model_output)
+}
+
+#' Generate Stan code for a smoother from mgcv
+#'
+#' This function creates Stan code for an `mgcv` smoother. It is (roughly)
+#' based on [mgcv::jagam].
+#'
+#' @param sterms a smooth term as generated by [[mgcv::interpret.gam]]
+#' @param data a `data.frame` that contains all the variables in `sterms`
+#' @return a `list` of data to give to Stan
+#' @author David L Miller
+#' @keywords internal
+make_smooth <- function(sterms, data){
+
+
+  # now need to construct for each term
+  # sterms <- mgcv::interpret.gam(formula)$smooth.spec
+  sm <- list()
+  vbigS <- list()
+  Sr <- c()
+  Sn <- c()
+  X <- c()
+
+  for(ii in seq_along(sterms)){
+    sm[[ii]] <- mgcv::smoothCon(sterms[[ii]],
+                                absorb.cons=TRUE, null.space.penalty=TRUE,
+                                data = data)[[1]]
+    # print(str(sm[[ii]]))
+    # put all the penalties into one column-long matrix to unpack later
+    bigS <- do.call(cbind, sm[[ii]]$S)
+    # now store with all the penalties for all the terms
+    vbigS[[sterms[[ii]]$label]] <- bigS
+
+    # size of the penalties for this term
+    Sr <- c(Sr, dim(sm[[ii]]$S[[1]])[1])
+    # number of penalties in this term
+    Sn <- c(Sn, length(sm[[ii]]$S))
+
+    # design matrix
+    X <- cbind(X, sm[[ii]]$X)
+  }
+
+
+  bigmatr <- max(Sr)
+  vbigS <- lapply(vbigS, \(x){
+    rbind(x, matrix(0, nrow=bigmatr-nrow(x), ncol=ncol(x)))
+  })
+
+  vbigS <- do.call(cbind, vbigS)
+  data_cols <- c(unlist(sapply(sm, "[[", "term")))
+  # print(str(data_cols))
+  if(any(sapply(sm, "[[", "by") != "NA")){
+    sm_by <- unlist(sapply(sm, "[[", "by"))
+    sm_by <- sm_by[sm_by != "NA"]
+    data_cols <- c(data_cols, sm_by)
+  }
+
+  # gather the data
+  list(N = nrow(data),
+       X=X,
+       S1=vbigS,
+       nSr=nrow(vbigS),
+       nSc=ncol(vbigS),
+       nsp=sum(Sn),
+       Sr=Sr,
+       Sn=Sn,
+       nterms=length(sterms),
+       ncoef = ncol(X),
+       sm = sm,
+       sm_data = data[,data_cols,drop=FALSE])
 }

@@ -40,7 +40,7 @@ jsdmStanFit_empty <- function() {
     family = jsdmStanFamily_empty(),
     species = character(),
     sites = character(),
-    preds = character(),
+    preds = list(),
     data_list = list(),
     n_latent = integer()
   )
@@ -78,7 +78,7 @@ print.jsdmStanFit <- function(x, ...) {
   }, "\n",
   "  Number of species: ", length(x$species), "\n",
   "  Number of sites: ", length(x$sites), "\n",
-  "  Number of predictors: ", length(x$preds), "\n",
+  "  Number of predictors: ", length(x$preds$fixed), "\n",
   print(x$family),
   "\n",
   "Model run on ", length(x$fit@stan_args), " chains with ",

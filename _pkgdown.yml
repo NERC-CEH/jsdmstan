@@ -52,6 +52,7 @@ reference:
   - corrplot
   - envplot
   - ordiplot
+  - smoothplot
   - mcmc_plot.jsdmStanFit
   - plot.jsdmStanFit
 - title: Posterior prediction

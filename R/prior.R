@@ -68,6 +68,8 @@
 #' @param shp_betas For gaussian or negative binomial with environmental effects
 #'   upon the family parameter (i.e. sigma or kappa), the covariate effects on
 #'   the family parameter on the log scale
+#' @param sp Prior upon the smoothing parameter for any smooths (shared across
+#'   both site-specific and species-specific smooths)
 #'
 #' @return An object of class \code{"jsdmprior"} taking the form of a named list
 #' @export
@@ -92,7 +94,8 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
                        shape = "gamma(1,1)",
                        zi = "beta(1,1)",
                        zi_betas = "normal(0,1)",
-                       shp_betas = "normal(0,1)") {
+                       shp_betas = "normal(0,1)",
+                       sp = "cauchy(0,1)") {
   res <- list(
     sigmas_preds = sigmas_preds, z_preds = z_preds, cor_preds = cor_preds,
     betas = betas, sigma_a = sigma_a,
@@ -100,7 +103,7 @@ jsdm_prior <- function(sigmas_preds = "normal(0,1)",
     cor_species = cor_species, cor_species_chol = cor_species_chol,
     LV = LV, L = L, sigma_L = sigma_L,
     sigma = sigma, kappa = kappa, shape = shape, zi = zi,
-    zi_betas = zi_betas, shp_betas = shp_betas
+    zi_betas = zi_betas, shp_betas = shp_betas, sp = sp
   )
   if (!(all(sapply(res, is.character)))) {
     stop("All arguments must be supplied as character vectors")
@@ -123,11 +126,11 @@ print.jsdmprior <- function(x, ...) {
       "site_intercept",
       rep("mglmm", 3),
       rep("gllvm", 3),
-      "gaussian", "neg_binomial","gamma",rep("zero_inflation",2), "family"
+      "gaussian", "neg_binomial","gamma",rep("zero_inflation",2), "family","smooth"
     ),
     Constraint = c(
       "lower=0", rep("none", 4), rep("lower=0", 1),
-      rep("none", 4), rep("lower=0", 4),"lower=0,upper=1","none","none"
+      rep("none", 4), rep("lower=0", 4),"lower=0,upper=1","none","none","lower=1e-16"
     ),
     Prior = unlist(unname(x))
   )
