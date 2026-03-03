@@ -48,7 +48,7 @@ colnames(gauss_sim_data$Y) <- LETTERS[1:16]
 rownames(gauss_sim_data$Y) <- paste0("Site", 1:60)
 suppressWarnings(gauss_fit <- stan_gllvm(
   dat_list = gauss_sim_data, family = "gaussian",
-  refresh = 0, iter = 1000, chains = 2
+  refresh = 0, iter = 1000, chains = 2, thin = 2
 ))
 
 
@@ -79,7 +79,7 @@ test_that("jsdm_statsummary returns correct form of output", {
                          species = 1:5,
                          summary_stat = function(x) quantile(x, 0.1)
     )),
-    c(1000, 60)
+    c(500, 60)
   )
   expect_equal(
     dim(jsdm_statsummary(gauss_fit, ndraws = 30, calc_over = "species")),
@@ -87,7 +87,7 @@ test_that("jsdm_statsummary returns correct form of output", {
   )
   test_stat <- jsdm_statsummary(gauss_fit,
                                 post_type = "predict",
-                                draw_ids = seq(1, 1000, 100)
+                                draw_ids = seq(1, 500, 50)
   )
   expect_false(anyNA(test_stat))
 })
