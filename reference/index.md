@@ -92,6 +92,9 @@ as well as more general model summaries
 - [`ordiplot()`](https://nerc-ceh.github.io/jsdmstan/reference/ordiplot.md)
   : Plotting an ordination plot for a GLLVM model
 
+- [`smoothplot()`](https://nerc-ceh.github.io/jsdmstan/reference/smoothplot.md)
+  : Plot the smooth effect of any spline within a model
+
 - [`mcmc_plot()`](https://nerc-ceh.github.io/jsdmstan/reference/mcmc_plot.jsdmStanFit.md)
   :
 

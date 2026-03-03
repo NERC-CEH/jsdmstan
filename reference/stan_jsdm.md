@@ -31,6 +31,7 @@ stan_jsdm(
   zi_X = NULL,
   shp_param = "constant",
   shp_X = NULL,
+  spl_smooth = NULL,
   save_data = TRUE,
   iter = 4000,
   init = NULL,
@@ -167,6 +168,12 @@ stan_jsdm(
   intercept column (identified by all values being equal to one), one
   will be added to the front of the matrix. Overridden by `shp_formula`
   when formula approach is used.
+
+- spl_smooth:
+
+  The construction of the spline process, do not supply directly as user
+  but instead include a spline within the formula interface as would be
+  provided in [`mgcv::gam()`](https://rdrr.io/pkg/mgcv/man/gam.html)
 
 - save_data:
 

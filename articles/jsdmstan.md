@@ -158,7 +158,7 @@ mglmm_fit
 #>  Model type: mglmm
 #>   Number of species: 8
 #>   Number of sites: 75
-#>   Number of predictors: 3
+#>   Number of predictors: 0
 #> 
 #> Model run on 4 chains with 4000 iterations per chain (2000 warmup).
 #> 
@@ -416,7 +416,7 @@ gllvm_fit
 #>  Model type: gllvm with 2 latent variables
 #>   Number of species: 12
 #>   Number of sites: 50
-#>   Number of predictors: 2
+#>   Number of predictors: 0
 #> 
 #> Model run on 4 chains with 4000 iterations per chain (2000 warmup).
 #> 

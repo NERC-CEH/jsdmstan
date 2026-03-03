@@ -4,8 +4,9 @@ pkgdown_sha: ~
 articles:
   articles/censoring: censoring.html
   jsdmstan: jsdmstan.html
+  articles/splines: splines.html
   articles/zero-inflation: zero-inflation.html
-last_built: 2026-01-20T14:14Z
+last_built: 2026-03-03T12:26Z
 urls:
   reference: https://nerc-ceh.github.io/jsdmstan/reference
   article: https://nerc-ceh.github.io/jsdmstan/articles

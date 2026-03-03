@@ -88,7 +88,7 @@ nb_mod
 #> Model type: gllvm with 2 latent variables
 #>   Number of species: 8
 #>   Number of sites: 100
-#>   Number of predictors: 2
+#>   Number of predictors: 0
 #> 
 #> Model run on 4 chains with 2000 iterations per chain (1000 warmup).
 #> 
@@ -188,7 +188,7 @@ zip_mod
 #> Model type: mglmm
 #>   Number of species: 6
 #>   Number of sites: 500
-#>   Number of predictors: 1
+#>   Number of predictors: 0
 #> 
 #> Model run on 4 chains with 4000 iterations per chain (2000 warmup).
 #> 

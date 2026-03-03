@@ -27,7 +27,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">jsdmstan</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0.0502</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -42,6 +42,7 @@
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
 <li><a class="dropdown-item" href="../articles/censoring.html">Modelling censored data</a></li>
+    <li><a class="dropdown-item" href="../articles/splines.html">Fitting generalised additive models within jsdmstan</a></li>
     <li><a class="dropdown-item" href="../articles/zero-inflation.html">Modelling Zero Inflation and Other Family Parameters in Response to Environmental Covariates</a></li>
   </ul>
 </li>
@@ -83,7 +84,7 @@ families, the Gaussian (or normal) distribution , the lognormal
 distribution and the gamma distribution. Data can be simulated with
 left-censoring, which will return both the censored and uncensored
 response matrix. For fitting censored models, jsdmstan requires a matrix
-of the reponse plus an index matrix that says where in the matrix
+of the response plus an index matrix that says where in the matrix
 censoring occurs. For left-censoring the index matrix should be 1 when
 left-censored or 0 when not censored.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
@@ -110,8 +111,8 @@ improve runtime):</p>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).</span></span>
 <span><span class="co">#&gt; Chain 1: </span></span>
-<span><span class="co">#&gt; Chain 1: Gradient evaluation took 0.000409 seconds</span></span>
-<span><span class="co">#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.09 seconds.</span></span>
+<span><span class="co">#&gt; Chain 1: Gradient evaluation took 0.000442 seconds</span></span>
+<span><span class="co">#&gt; Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.42 seconds.</span></span>
 <span><span class="co">#&gt; Chain 1: Adjust your expectations accordingly!</span></span>
 <span><span class="co">#&gt; Chain 1: </span></span>
 <span><span class="co">#&gt; Chain 1: </span></span>
@@ -128,15 +129,15 @@ improve runtime):</p>
 <span><span class="co">#&gt; Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 1: </span></span>
-<span><span class="co">#&gt; Chain 1:  Elapsed Time: 35.179 seconds (Warm-up)</span></span>
-<span><span class="co">#&gt; Chain 1:                27.934 seconds (Sampling)</span></span>
-<span><span class="co">#&gt; Chain 1:                63.113 seconds (Total)</span></span>
+<span><span class="co">#&gt; Chain 1:  Elapsed Time: 35.363 seconds (Warm-up)</span></span>
+<span><span class="co">#&gt; Chain 1:                28.093 seconds (Sampling)</span></span>
+<span><span class="co">#&gt; Chain 1:                63.456 seconds (Total)</span></span>
 <span><span class="co">#&gt; Chain 1: </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).</span></span>
 <span><span class="co">#&gt; Chain 2: </span></span>
-<span><span class="co">#&gt; Chain 2: Gradient evaluation took 0.000239 seconds</span></span>
-<span><span class="co">#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.39 seconds.</span></span>
+<span><span class="co">#&gt; Chain 2: Gradient evaluation took 0.000261 seconds</span></span>
+<span><span class="co">#&gt; Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.61 seconds.</span></span>
 <span><span class="co">#&gt; Chain 2: Adjust your expectations accordingly!</span></span>
 <span><span class="co">#&gt; Chain 2: </span></span>
 <span><span class="co">#&gt; Chain 2: </span></span>
@@ -153,15 +154,15 @@ improve runtime):</p>
 <span><span class="co">#&gt; Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 2: </span></span>
-<span><span class="co">#&gt; Chain 2:  Elapsed Time: 35.189 seconds (Warm-up)</span></span>
-<span><span class="co">#&gt; Chain 2:                27.965 seconds (Sampling)</span></span>
-<span><span class="co">#&gt; Chain 2:                63.154 seconds (Total)</span></span>
+<span><span class="co">#&gt; Chain 2:  Elapsed Time: 35.468 seconds (Warm-up)</span></span>
+<span><span class="co">#&gt; Chain 2:                28.168 seconds (Sampling)</span></span>
+<span><span class="co">#&gt; Chain 2:                63.636 seconds (Total)</span></span>
 <span><span class="co">#&gt; Chain 2: </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).</span></span>
 <span><span class="co">#&gt; Chain 3: </span></span>
-<span><span class="co">#&gt; Chain 3: Gradient evaluation took 0.000244 seconds</span></span>
-<span><span class="co">#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.44 seconds.</span></span>
+<span><span class="co">#&gt; Chain 3: Gradient evaluation took 0.000261 seconds</span></span>
+<span><span class="co">#&gt; Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.61 seconds.</span></span>
 <span><span class="co">#&gt; Chain 3: Adjust your expectations accordingly!</span></span>
 <span><span class="co">#&gt; Chain 3: </span></span>
 <span><span class="co">#&gt; Chain 3: </span></span>
@@ -178,15 +179,15 @@ improve runtime):</p>
 <span><span class="co">#&gt; Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 3: </span></span>
-<span><span class="co">#&gt; Chain 3:  Elapsed Time: 34.711 seconds (Warm-up)</span></span>
-<span><span class="co">#&gt; Chain 3:                27.982 seconds (Sampling)</span></span>
-<span><span class="co">#&gt; Chain 3:                62.693 seconds (Total)</span></span>
+<span><span class="co">#&gt; Chain 3:  Elapsed Time: 34.968 seconds (Warm-up)</span></span>
+<span><span class="co">#&gt; Chain 3:                28.221 seconds (Sampling)</span></span>
+<span><span class="co">#&gt; Chain 3:                63.189 seconds (Total)</span></span>
 <span><span class="co">#&gt; Chain 3: </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).</span></span>
 <span><span class="co">#&gt; Chain 4: </span></span>
-<span><span class="co">#&gt; Chain 4: Gradient evaluation took 0.000244 seconds</span></span>
-<span><span class="co">#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.44 seconds.</span></span>
+<span><span class="co">#&gt; Chain 4: Gradient evaluation took 0.000253 seconds</span></span>
+<span><span class="co">#&gt; Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.53 seconds.</span></span>
 <span><span class="co">#&gt; Chain 4: Adjust your expectations accordingly!</span></span>
 <span><span class="co">#&gt; Chain 4: </span></span>
 <span><span class="co">#&gt; Chain 4: </span></span>
@@ -203,9 +204,9 @@ improve runtime):</p>
 <span><span class="co">#&gt; Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)</span></span>
 <span><span class="co">#&gt; Chain 4: </span></span>
-<span><span class="co">#&gt; Chain 4:  Elapsed Time: 34.397 seconds (Warm-up)</span></span>
-<span><span class="co">#&gt; Chain 4:                28.091 seconds (Sampling)</span></span>
-<span><span class="co">#&gt; Chain 4:                62.488 seconds (Total)</span></span>
+<span><span class="co">#&gt; Chain 4:  Elapsed Time: 34.536 seconds (Warm-up)</span></span>
+<span><span class="co">#&gt; Chain 4:                28.114 seconds (Sampling)</span></span>
+<span><span class="co">#&gt; Chain 4:                62.65 seconds (Total)</span></span>
 <span><span class="co">#&gt; Chain 4:</span></span>
 <span><span class="co">#&gt; Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.</span></span>
 <span><span class="co">#&gt; Running the chains for more iterations may help. See</span></span>
@@ -219,7 +220,7 @@ improve runtime):</p>
 <span><span class="co">#&gt; Model type: mglmm</span></span>
 <span><span class="co">#&gt;   Number of species: 15</span></span>
 <span><span class="co">#&gt;   Number of sites: 100</span></span>
-<span><span class="co">#&gt;   Number of predictors: 3</span></span>
+<span><span class="co">#&gt;   Number of predictors: 0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Model run on 4 chains with 2000 iterations per chain (1000 warmup).</span></span>
 <span><span class="co">#&gt; </span></span>
@@ -257,22 +258,22 @@ used within the data simulation:</p>
 <span><span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value `binwidth`.</span></span></code></pre></div>
 <p><img src="censoring_files/figure-html/unnamed-chunk-6-1.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"betas[1,"</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>, <span class="co">#regexp = TRUE,</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"betas[1,"</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>, </span>
 <span>          true <span class="op">=</span> <span class="va">cens_dat</span><span class="op">$</span><span class="va">pars</span><span class="op">$</span><span class="va">betas</span><span class="op">[</span><span class="fl">1</span>,<span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value `binwidth`.</span></span></code></pre></div>
 <p><img src="censoring_files/figure-html/unnamed-chunk-6-2.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"betas[2,"</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>, <span class="co">#regexp = TRUE,</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"betas[2,"</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>,</span>
 <span>          true <span class="op">=</span> <span class="va">cens_dat</span><span class="op">$</span><span class="va">pars</span><span class="op">$</span><span class="va">betas</span><span class="op">[</span><span class="fl">2</span>,<span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value `binwidth`.</span></span></code></pre></div>
 <p><img src="censoring_files/figure-html/unnamed-chunk-6-3.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"betas[3,"</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>, <span class="co">#regexp = TRUE,</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"betas[3,"</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>,</span>
 <span>          true <span class="op">=</span> <span class="va">cens_dat</span><span class="op">$</span><span class="va">pars</span><span class="op">$</span><span class="va">betas</span><span class="op">[</span><span class="fl">3</span>,<span class="op">]</span><span class="op">)</span></span>
 <span><span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value `binwidth`.</span></span></code></pre></div>
 <p><img src="censoring_files/figure-html/unnamed-chunk-6-4.png" class="r-plt" alt="" width="700"></p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sigmas_species["</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>, <span class="co">#regexp = TRUE,</span></span>
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/mcmc_plot.jsdmStanFit.html">mcmc_plot</a></span><span class="op">(</span><span class="va">cens_mod</span>, plotfun <span class="op">=</span> <span class="st">"recover_hist"</span>, pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"sigmas_species["</span>,<span class="fl">1</span><span class="op">:</span><span class="fl">15</span>,<span class="st">"]"</span><span class="op">)</span>,</span>
 <span>          true <span class="op">=</span> <span class="va">cens_dat</span><span class="op">$</span><span class="va">pars</span><span class="op">$</span><span class="va">sigmas_species</span><span class="op">)</span></span>
 <span><span class="co">#&gt; `stat_bin()` using `bins = 30`. Pick better value `binwidth`.</span></span></code></pre></div>
 <p><img src="censoring_files/figure-html/unnamed-chunk-6-5.png" class="r-plt" alt="" width="700"></p>

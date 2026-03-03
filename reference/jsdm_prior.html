@@ -11,7 +11,7 @@ family of functions and the jsdm_sim_data() functions."></head><body>
 
     <a class="navbar-brand me-2" href="../index.html">jsdmstan</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.5.0.0502</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -24,6 +24,7 @@ family of functions and the jsdm_sim_data() functions."></head><body>
 <li class="nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles"><li><a class="dropdown-item" href="../articles/censoring.html">Modelling censored data</a></li>
+    <li><a class="dropdown-item" href="../articles/splines.html">Fitting generalised additive models within jsdmstan</a></li>
     <li><a class="dropdown-item" href="../articles/zero-inflation.html">Modelling Zero Inflation and Other Family Parameters in Response to Environmental Covariates</a></li>
   </ul></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
@@ -66,7 +67,8 @@ family of functions and the <code><a href="jsdm_sim_data.html">jsdm_sim_data()</
 <span>  shape <span class="op">=</span> <span class="st">"gamma(1,1)"</span>,</span>
 <span>  zi <span class="op">=</span> <span class="st">"beta(1,1)"</span>,</span>
 <span>  zi_betas <span class="op">=</span> <span class="st">"normal(0,1)"</span>,</span>
-<span>  shp_betas <span class="op">=</span> <span class="st">"normal(0,1)"</span></span>
+<span>  shp_betas <span class="op">=</span> <span class="st">"normal(0,1)"</span>,</span>
+<span>  sp <span class="op">=</span> <span class="st">"cauchy(0,1)"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'jsdmprior'</span></span>
@@ -169,6 +171,11 @@ upon the family parameter (i.e. sigma or kappa), the covariate effects on
 the family parameter on the log scale</p></dd>
 
 
+<dt id="arg-sp">sp<a class="anchor" aria-label="anchor" href="#arg-sp"></a></dt>
+<dd><p>Prior upon the smoothing parameter for any smooths (shared across
+both site-specific and species-specific smooths)</p></dd>
+
+
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>Object of class <code>jsdmprior</code></p></dd>
 
@@ -234,6 +241,7 @@ the data simulation functions</p></div>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 15               zi    zero_inflation lower=0,upper=1            beta(1,1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 16         zi_betas    zero_inflation            none          normal(0,1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 17        shp_betas            family            none          normal(0,1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 18               sp            smooth     lower=1e-16          cauchy(0,1)</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

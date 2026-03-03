@@ -11,7 +11,7 @@ The `jsdmstan` package supports left-censoring in three families, the
 Gaussian (or normal) distribution , the lognormal distribution and the
 gamma distribution. Data can be simulated with left-censoring, which
 will return both the censored and uncensored response matrix. For
-fitting censored models, jsdmstan requires a matrix of the reponse plus
+fitting censored models, jsdmstan requires a matrix of the response plus
 an index matrix that says where in the matrix censoring occurs. For
 left-censoring the index matrix should be 1 when left-censored or 0 when
 not censored.
@@ -45,8 +45,8 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000409 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.09 seconds.
+#> Chain 1: Gradient evaluation took 0.000442 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.42 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -63,15 +63,15 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 35.179 seconds (Warm-up)
-#> Chain 1:                27.934 seconds (Sampling)
-#> Chain 1:                63.113 seconds (Total)
+#> Chain 1:  Elapsed Time: 35.363 seconds (Warm-up)
+#> Chain 1:                28.093 seconds (Sampling)
+#> Chain 1:                63.456 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 0.000239 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.39 seconds.
+#> Chain 2: Gradient evaluation took 0.000261 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.61 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -88,15 +88,15 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 35.189 seconds (Warm-up)
-#> Chain 2:                27.965 seconds (Sampling)
-#> Chain 2:                63.154 seconds (Total)
+#> Chain 2:  Elapsed Time: 35.468 seconds (Warm-up)
+#> Chain 2:                28.168 seconds (Sampling)
+#> Chain 2:                63.636 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 0.000244 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.44 seconds.
+#> Chain 3: Gradient evaluation took 0.000261 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.61 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -113,15 +113,15 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 34.711 seconds (Warm-up)
-#> Chain 3:                27.982 seconds (Sampling)
-#> Chain 3:                62.693 seconds (Total)
+#> Chain 3:  Elapsed Time: 34.968 seconds (Warm-up)
+#> Chain 3:                28.221 seconds (Sampling)
+#> Chain 3:                63.189 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 0.000244 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.44 seconds.
+#> Chain 4: Gradient evaluation took 0.000253 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.53 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -138,9 +138,9 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 34.397 seconds (Warm-up)
-#> Chain 4:                28.091 seconds (Sampling)
-#> Chain 4:                62.488 seconds (Total)
+#> Chain 4:  Elapsed Time: 34.536 seconds (Warm-up)
+#> Chain 4:                28.114 seconds (Sampling)
+#> Chain 4:                62.65 seconds (Total)
 #> Chain 4:
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
@@ -154,7 +154,7 @@ cens_mod
 #> Model type: mglmm
 #>   Number of species: 15
 #>   Number of sites: 100
-#>   Number of predictors: 3
+#>   Number of predictors: 0
 #> 
 #> Model run on 4 chains with 2000 iterations per chain (1000 warmup).
 #> 
@@ -207,7 +207,7 @@ mcmc_plot(cens_mod, plotfun = "recover_hist", pars = "sigma",
 ![](censoring_files/figure-html/unnamed-chunk-6-1.png)
 
 ``` r
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]"), 
           true = cens_dat$pars$betas[1,])
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
@@ -215,7 +215,7 @@ mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[1,",1:15,"]")
 ![](censoring_files/figure-html/unnamed-chunk-6-2.png)
 
 ``` r
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[2,",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[2,",1:15,"]"),
           true = cens_dat$pars$betas[2,])
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
@@ -223,7 +223,7 @@ mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[2,",1:15,"]")
 ![](censoring_files/figure-html/unnamed-chunk-6-3.png)
 
 ``` r
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[3,",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[3,",1:15,"]"),
           true = cens_dat$pars$betas[3,])
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```
@@ -231,7 +231,7 @@ mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("betas[3,",1:15,"]")
 ![](censoring_files/figure-html/unnamed-chunk-6-4.png)
 
 ``` r
-mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:15,"]"), #regexp = TRUE,
+mcmc_plot(cens_mod, plotfun = "recover_hist", pars = paste0("sigmas_species[",1:15,"]"),
           true = cens_dat$pars$sigmas_species)
 #> `stat_bin()` using `bins = 30`. Pick better value `binwidth`.
 ```

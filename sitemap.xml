@@ -4,6 +4,7 @@
 <url><loc>https://nerc-ceh.github.io/jsdmstan/articles/censoring.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/articles/index.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/articles/jsdmstan.html</loc></url>
+<url><loc>https://nerc-ceh.github.io/jsdmstan/articles/splines.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/articles/zero-inflation.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/authors.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/index.html</loc></url>
@@ -21,6 +22,7 @@
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-extractors.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/jsdmstan-package.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/loo.jsdmStanFit.html</loc></url>
+<url><loc>https://nerc-ceh.github.io/jsdmstan/reference/make_smooth.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/mcmc_plot.jsdmStanFit.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/multi_pp_check.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/ordiplot.html</loc></url>
@@ -34,6 +36,7 @@
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/print.jsdmStanFamily.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/print.jsdmStanFit.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/sim_helpers.html</loc></url>
+<url><loc>https://nerc-ceh.github.io/jsdmstan/reference/smoothplot.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/stan_gllvm.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/stan_jsdm.html</loc></url>
 <url><loc>https://nerc-ceh.github.io/jsdmstan/reference/stan_mglmm.html</loc></url>

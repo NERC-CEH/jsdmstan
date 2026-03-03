@@ -14,7 +14,9 @@ jsdm_stancode(
   beta_param = "cor",
   zi_param = "constant",
   shp_param = "constant",
-  censoring = "none"
+  censoring = "none",
+  site_smooth = "none",
+  species_smooth = "none"
 )
 
 # S3 method for class 'jsdmstan_model'
@@ -66,6 +68,16 @@ print(x, ...)
   If the response is left-censored (`"left"`) or not censored (default,
   `"none"`).
 
+- site_smooth:
+
+  If there is a smooth over a predictor that is constant across all
+  species, default `"none"`.
+
+- species_smooth:
+
+  If there is a factor smooth over a predictor that varies by species,
+  default `"none"`.
+
 - x:
 
   The jsdm_stancode object
@@ -109,7 +121,7 @@ jsdm_stancode(family = "gaussian", method = "gllvm")
 #>   int<lower=0> K; // Number of predictor variables
 #>   matrix[N, K] X; // Predictor matrix
 #>   
-#>   array[N,S] real Y; //Species matrix      
+#>   array[N,S] real Y; //Species matrix        
 #> }
 #> transformed data{
 #>  
@@ -130,7 +142,7 @@ jsdm_stancode(family = "gaussian", method = "gllvm")
 #>   real<lower=0> sigma_L; // variance of species loadings
 #>   // Latent variables
 #>   matrix[D, N] LV_uncor; // Per-site latent variable 
-#>   real<lower=0> sigma; // Gaussian parameters 
+#>   real<lower=0> sigma; // Gaussian parameters   
 #> }
 #> transformed parameters{
 #>  
@@ -162,12 +174,11 @@ jsdm_stancode(family = "gaussian", method = "gllvm")
 #> model{
 #>  
 #>   matrix[N,S] mu;
-#>     
+#>        
 #>   // model
-#>   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';
-#>   mu = (X * betas) + LV_sum;
-#>       
-#>  
+#>   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';  
+#>   mu =  (X * betas) +   LV_sum;      
+#>    
 #>    
 #>   // Species parameter priors
 #>   sigmas_preds ~  normal(0,1) ;
@@ -216,7 +227,7 @@ jsdm_stancode(family = "poisson", method = "mglmm")
 #>   int<lower=0> K; // Number of predictor variables
 #>   matrix[N, K] X; // Predictor matrix
 #>   
-#>   array[N,S] int<lower=0> Y; //Species matrix      
+#>   array[N,S] int<lower=0> Y; //Species matrix        
 #> }
 #> transformed data{
 #>   
@@ -231,7 +242,7 @@ jsdm_stancode(family = "poisson", method = "mglmm")
 #>   // species covariances
 #>   vector<lower=0>[S] sigmas_species;
 #>   matrix[S, N] z_species;
-#>   cholesky_factor_corr[S] cor_species_chol;  
+#>   cholesky_factor_corr[S] cor_species_chol;    
 #> }
 #> transformed parameters{
 #>  
@@ -249,11 +260,9 @@ jsdm_stancode(family = "poisson", method = "mglmm")
 #> model{
 #>  
 #>   matrix[N,S] mu;
-#>     
-#>   // model
-#>   mu = (X * betas) + u;
-#>       
-#>  
+#>          
+#>   mu =  (X * betas) +   u;      
+#>    
 #>    
 #>   // Species parameter priors
 #>   sigmas_preds ~  normal(0,1) ;

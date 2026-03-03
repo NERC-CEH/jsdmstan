@@ -27,7 +27,8 @@ jsdm_prior(
   shape = "gamma(1,1)",
   zi = "beta(1,1)",
   zi_betas = "normal(0,1)",
-  shp_betas = "normal(0,1)"
+  shp_betas = "normal(0,1)",
+  sp = "cauchy(0,1)"
 )
 
 # S3 method for class 'jsdmprior'
@@ -127,6 +128,11 @@ print(x, ...)
   family parameter (i.e. sigma or kappa), the covariate effects on the
   family parameter on the log scale
 
+- sp:
+
+  Prior upon the smoothing parameter for any smooths (shared across both
+  site-specific and species-specific smooths)
+
 - x:
 
   Object of class `jsdmprior`
@@ -196,4 +202,5 @@ pr
 #> 15               zi    zero_inflation lower=0,upper=1            beta(1,1)
 #> 16         zi_betas    zero_inflation            none          normal(0,1)
 #> 17        shp_betas            family            none          normal(0,1)
+#> 18               sp            smooth     lower=1e-16          cauchy(0,1)
 ```
