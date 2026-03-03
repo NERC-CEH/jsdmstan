@@ -840,6 +840,7 @@ model_to_jsdmstanfit <- function(model_fit, method, data_list, species_intercept
 #' @param data a `data.frame` that contains all the variables in `sterms`
 #' @return a `list` of data to give to Stan
 #' @author David L Miller
+#' @keywords internal
 make_smooth <- function(sterms, data){
 
 

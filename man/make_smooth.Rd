@@ -21,3 +21,4 @@ based on \link[mgcv:jagam]{mgcv::jagam}.
 \author{
 David L Miller
 }
+\keyword{internal}
