@@ -48,8 +48,8 @@ nfs_fit <- stan_jsdm(~s(x2) + s(flevels, bs = "re"), data = dat,
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000161 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.61 seconds.
+#> Chain 1: Gradient evaluation took 0.000162 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 1.62 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -66,15 +66,15 @@ nfs_fit <- stan_jsdm(~s(x2) + s(flevels, bs = "re"), data = dat,
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 9.335 seconds (Warm-up)
-#> Chain 1:                9.853 seconds (Sampling)
-#> Chain 1:                19.188 seconds (Total)
+#> Chain 1:  Elapsed Time: 9.385 seconds (Warm-up)
+#> Chain 1:                9.929 seconds (Sampling)
+#> Chain 1:                19.314 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 8.9e-05 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.89 seconds.
+#> Chain 2: Gradient evaluation took 9.9e-05 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 0.99 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -91,9 +91,9 @@ nfs_fit <- stan_jsdm(~s(x2) + s(flevels, bs = "re"), data = dat,
 #> Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 11.738 seconds (Warm-up)
-#> Chain 2:                10.187 seconds (Sampling)
-#> Chain 2:                21.925 seconds (Total)
+#> Chain 2:  Elapsed Time: 11.804 seconds (Warm-up)
+#> Chain 2:                10.249 seconds (Sampling)
+#> Chain 2:                22.053 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).
@@ -116,15 +116,15 @@ nfs_fit <- stan_jsdm(~s(x2) + s(flevels, bs = "re"), data = dat,
 #> Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 10.69 seconds (Warm-up)
-#> Chain 3:                10.143 seconds (Sampling)
-#> Chain 3:                20.833 seconds (Total)
+#> Chain 3:  Elapsed Time: 10.798 seconds (Warm-up)
+#> Chain 3:                10.284 seconds (Sampling)
+#> Chain 3:                21.082 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 9.2e-05 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.92 seconds.
+#> Chain 4: Gradient evaluation took 9.1e-05 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 0.91 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -141,9 +141,9 @@ nfs_fit <- stan_jsdm(~s(x2) + s(flevels, bs = "re"), data = dat,
 #> Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 11.45 seconds (Warm-up)
-#> Chain 4:                10.179 seconds (Sampling)
-#> Chain 4:                21.629 seconds (Total)
+#> Chain 4:  Elapsed Time: 11.595 seconds (Warm-up)
+#> Chain 4:                10.269 seconds (Sampling)
+#> Chain 4:                21.864 seconds (Total)
 #> Chain 4:
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
@@ -265,8 +265,8 @@ fs1_fit <- stan_jsdm(~s(x1, species, bs = "fs"), data = df, Y = Y,
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.001499 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 14.99 seconds.
+#> Chain 1: Gradient evaluation took 0.001557 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 15.57 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -283,15 +283,15 @@ fs1_fit <- stan_jsdm(~s(x1, species, bs = "fs"), data = df, Y = Y,
 #> Chain 1: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 68.082 seconds (Warm-up)
-#> Chain 1:                42.463 seconds (Sampling)
-#> Chain 1:                110.545 seconds (Total)
+#> Chain 1:  Elapsed Time: 67.97 seconds (Warm-up)
+#> Chain 1:                42.279 seconds (Sampling)
+#> Chain 1:                110.249 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 0.001321 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 13.21 seconds.
+#> Chain 2: Gradient evaluation took 0.001345 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 13.45 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -308,15 +308,15 @@ fs1_fit <- stan_jsdm(~s(x1, species, bs = "fs"), data = df, Y = Y,
 #> Chain 2: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 64.795 seconds (Warm-up)
-#> Chain 2:                42.44 seconds (Sampling)
-#> Chain 2:                107.235 seconds (Total)
+#> Chain 2:  Elapsed Time: 64.562 seconds (Warm-up)
+#> Chain 2:                42.226 seconds (Sampling)
+#> Chain 2:                106.788 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 0.001306 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 13.06 seconds.
+#> Chain 3: Gradient evaluation took 0.001333 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 13.33 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -333,15 +333,15 @@ fs1_fit <- stan_jsdm(~s(x1, species, bs = "fs"), data = df, Y = Y,
 #> Chain 3: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 64.688 seconds (Warm-up)
-#> Chain 3:                42.398 seconds (Sampling)
-#> Chain 3:                107.086 seconds (Total)
+#> Chain 3:  Elapsed Time: 64.475 seconds (Warm-up)
+#> Chain 3:                42.304 seconds (Sampling)
+#> Chain 3:                106.779 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 0.00132 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 13.2 seconds.
+#> Chain 4: Gradient evaluation took 0.001315 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 13.15 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -358,9 +358,9 @@ fs1_fit <- stan_jsdm(~s(x1, species, bs = "fs"), data = df, Y = Y,
 #> Chain 4: Iteration: 900 / 1000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 1000 / 1000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 71.877 seconds (Warm-up)
-#> Chain 4:                42.469 seconds (Sampling)
-#> Chain 4:                114.346 seconds (Total)
+#> Chain 4:  Elapsed Time: 71.699 seconds (Warm-up)
+#> Chain 4:                42.253 seconds (Sampling)
+#> Chain 4:                113.952 seconds (Total)
 #> Chain 4:
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See

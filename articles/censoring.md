@@ -45,8 +45,8 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 1).
 #> Chain 1: 
-#> Chain 1: Gradient evaluation took 0.000447 seconds
-#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.47 seconds.
+#> Chain 1: Gradient evaluation took 0.000433 seconds
+#> Chain 1: 1000 transitions using 10 leapfrog steps per transition would take 4.33 seconds.
 #> Chain 1: Adjust your expectations accordingly!
 #> Chain 1: 
 #> Chain 1: 
@@ -63,15 +63,15 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 1: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 1: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 1: 
-#> Chain 1:  Elapsed Time: 34.954 seconds (Warm-up)
-#> Chain 1:                27.763 seconds (Sampling)
-#> Chain 1:                62.717 seconds (Total)
+#> Chain 1:  Elapsed Time: 35.032 seconds (Warm-up)
+#> Chain 1:                27.842 seconds (Sampling)
+#> Chain 1:                62.874 seconds (Total)
 #> Chain 1: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 2).
 #> Chain 2: 
-#> Chain 2: Gradient evaluation took 0.000246 seconds
-#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.46 seconds.
+#> Chain 2: Gradient evaluation took 0.000259 seconds
+#> Chain 2: 1000 transitions using 10 leapfrog steps per transition would take 2.59 seconds.
 #> Chain 2: Adjust your expectations accordingly!
 #> Chain 2: 
 #> Chain 2: 
@@ -88,15 +88,15 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 2: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 2: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 2: 
-#> Chain 2:  Elapsed Time: 35.11 seconds (Warm-up)
-#> Chain 2:                27.903 seconds (Sampling)
-#> Chain 2:                63.013 seconds (Total)
+#> Chain 2:  Elapsed Time: 35.053 seconds (Warm-up)
+#> Chain 2:                27.955 seconds (Sampling)
+#> Chain 2:                63.008 seconds (Total)
 #> Chain 2: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 3).
 #> Chain 3: 
-#> Chain 3: Gradient evaluation took 0.000248 seconds
-#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.48 seconds.
+#> Chain 3: Gradient evaluation took 0.000259 seconds
+#> Chain 3: 1000 transitions using 10 leapfrog steps per transition would take 2.59 seconds.
 #> Chain 3: Adjust your expectations accordingly!
 #> Chain 3: 
 #> Chain 3: 
@@ -113,15 +113,15 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 3: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 3: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 3: 
-#> Chain 3:  Elapsed Time: 34.814 seconds (Warm-up)
-#> Chain 3:                27.842 seconds (Sampling)
-#> Chain 3:                62.656 seconds (Total)
+#> Chain 3:  Elapsed Time: 34.748 seconds (Warm-up)
+#> Chain 3:                27.904 seconds (Sampling)
+#> Chain 3:                62.652 seconds (Total)
 #> Chain 3: 
 #> 
 #> SAMPLING FOR MODEL 'anon_model' NOW (CHAIN 4).
 #> Chain 4: 
-#> Chain 4: Gradient evaluation took 0.000265 seconds
-#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.65 seconds.
+#> Chain 4: Gradient evaluation took 0.000245 seconds
+#> Chain 4: 1000 transitions using 10 leapfrog steps per transition would take 2.45 seconds.
 #> Chain 4: Adjust your expectations accordingly!
 #> Chain 4: 
 #> Chain 4: 
@@ -138,9 +138,9 @@ cens_mod <- stan_jsdm(dat_list = cens_dat, family = "lognormal", method = "mglmm
 #> Chain 4: Iteration: 1800 / 2000 [ 90%]  (Sampling)
 #> Chain 4: Iteration: 2000 / 2000 [100%]  (Sampling)
 #> Chain 4: 
-#> Chain 4:  Elapsed Time: 34.476 seconds (Warm-up)
-#> Chain 4:                28.049 seconds (Sampling)
-#> Chain 4:                62.525 seconds (Total)
+#> Chain 4:  Elapsed Time: 34.139 seconds (Warm-up)
+#> Chain 4:                27.826 seconds (Sampling)
+#> Chain 4:                61.965 seconds (Total)
 #> Chain 4:
 #> Warning: Bulk Effective Samples Size (ESS) is too low, indicating posterior means and medians may be unreliable.
 #> Running the chains for more iterations may help. See
