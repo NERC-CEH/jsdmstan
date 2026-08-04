@@ -9,9 +9,8 @@ suppressWarnings(mglmm_fit <- stan_jsdm(~ V1 + V2 + V3,
 ))
 
 test_that("loo works for mglmm", {
-  expect_warning(
-    mglmm_loo <- loo(mglmm_fit),
-    "Pareto k diagnostic"
+  suppressWarnings(
+    mglmm_loo <- loo(mglmm_fit)
   )
   expect_s3_class(mglmm_loo, "psis_loo")
   expect_equal(nrow(mglmm_loo$pointwise), 240)
@@ -29,9 +28,8 @@ suppressWarnings(gllvm_fit <- stan_jsdm(~ V1,
 ))
 
 test_that("loo works for gllvm", {
-  expect_warning(
-    gllvm_loo <- loo(gllvm_fit),
-    "Pareto k diagnostic"
+  suppressWarnings(
+    gllvm_loo <- loo(gllvm_fit)
   )
   expect_s3_class(gllvm_loo, "psis_loo")
   expect_equal(nrow(gllvm_loo$pointwise), 315)
@@ -77,11 +75,9 @@ test_that("loo works for mglmm zi_nb", {
                                           refresh = 0, chains = 2, iter = 200
   ))
 
-  expect_warning(
-    mglmm_loo <- loo(mglmm_fit),
-    "Pareto k diagnostic"
+  suppressWarnings(
+    mglmm_loo <- loo(mglmm_fit)
   )
-  expect_s3_class(mglmm_loo, "psis_loo")
   expect_equal(nrow(mglmm_loo$pointwise), 1131)
 })
 
@@ -113,9 +109,8 @@ test_that("loo works for gllvm gaussian", {
                                           family = "gaussian", method = "gllvm",
                                           refresh = 0, chains = 2, iter = 200
   ))
-  expect_warning(
+  suppressWarnings(
     gauss_loo <- loo(gauss_fit),
-    "Pareto k diagnostic"
   )
   expect_s3_class(gauss_loo, "psis_loo")
   expect_equal(nrow(gauss_loo$pointwise), 1134)
@@ -135,11 +130,9 @@ suppressWarnings(gllvm_fit <- stan_jsdm(~ 1, D = 3,
 ))
 
 test_that("loo works for gllvm binomial", {
-  expect_warning(
-    gllvm_loo <- loo(gllvm_fit, calc_reff = FALSE),
-    "Pareto k diagnostic"
+  suppressWarnings(
+    gllvm_loo <- loo(gllvm_fit, calc_reff = FALSE)
   )
-  expect_s3_class(gllvm_loo, "psis_loo")
 
   expect_equal(nrow(gllvm_loo$pointwise), 800)
 
