@@ -612,6 +612,97 @@ envplot <- function(object, include_intercept = FALSE,
                                              widths = widths))
 }
 
+
+#' Plotting trait effects
+#'
+#' This function returns a plot of the model estimated trait effects, where the
+#' X axis is the covariate effect being impacted by the trait and the Y axis is
+#' trait in question. This is based upon the model parameterisation as laid out
+#' in the HMSC framework (i.e. the overall species-specific covariate effect is
+#' determined by some combination of trait and/or phylogenetic effects).
+#'
+#' @param object The jsdmStanFit model object
+#' @param plotfun Which plot function from mcmc_plot should be used, by default
+#'   \code{"intervals"}
+#' @param nrow The number of rows within the plot
+#' @param y_labels Which plots should have annotated y axes. Needs to be given
+#'   as an integer vector
+#' @param widths The widths of the plots
+#' @param preds The predictors to be included in the plot, by default \code{NULL}
+#'   and all predictors are included. Should be specified as a vector of predictor
+#'   names or numeric indices.
+#' @param ... Other arguments that are passed to the MCMC plotting function (see
+#'  [mcmc_plot.jsdmStanFit()])
+#'
+#' @return An object of class \code{"bayesplot_grid"}, for more information see
+#'   [bayesplot::bayesplot_grid()]
+#' @export
+#'
+traitplot <- function(object,
+                    nrow = NULL, y_labels = NULL,
+                    plotfun = "intervals", widths = NULL,
+                    preds = NULL,
+                    ...){
+  if (!inherits(object, "jsdmStanFit"))
+    stop("Only objects of class jsdmStanFit are supported")
+  if(is.null(preds)){
+    preds <- object$preds$fixef
+  } else if(is.numeric(preds)){
+    if(min(preds)<1 | max(preds)>length(object$preds$fixef) |!all(is.wholenumber(preds)))
+      stop("preds must be an integer vector that corresponds to the predictor indices")
+    preds <- object$preds$fixef[preds]
+  } else if(is.character(preds)){
+    if(!all(preds %in% object$preds$fixef))
+      stop("preds must only include predictors included in model fit")
+  } else {
+    stop("preds must be either a character or integer vector")
+  }
+  pn <- get_parnames(object)
+
+  if(any(grepl("tr_G", pn))){
+    if(!is.null(object$data_list)){
+      traits <- rownames(object$data_list$Tr)
+    } else{
+      ntraits <- max(as.numeric(
+        gsub("\\]","",sapply(strsplit(
+          grep("tr_G",pn, value = TRUE),
+          ","),"[",2))))
+      traits <- paste0("trait_",seq(1,ntraits,1))
+    }
+    tr_tind <- match(traits, traits)
+
+    pl_list <- lapply(preds, function(x){
+      tr_pind <- match(x, object$preds$fixef)
+
+      suppressMessages(
+        pl <- mcmc_plot(object, plotfun = plotfun,
+                        pars = paste0("tr_G[",tr_pind,",",tr_tind,"]"), ...) +
+          ggplot2::scale_y_discrete(labels = traits) +
+          ggplot2::labs(x = x)
+      )
+      return(pl)
+    })
+  } else
+    stop("This trait parameterisation currently unsupported")
+
+  if(is.null(nrow)){
+    nrow <- ceiling(length(preds)/3)
+  }
+  if(is.null(y_labels)){
+    ppr <- ceiling(length(preds)/nrow)
+    y_labels <- 1 + ppr*seq(0,nrow-1)
+  }
+  y_nolabels <- seq_along(preds)[!seq_along(preds) %in% y_labels]
+  for(i in y_nolabels){
+    pl_list[[i]] <- pl_list[[i]] +
+      ggplot2::theme(axis.text.y = ggplot2::element_blank())
+  }
+
+  bayesplot::bayesplot_grid(plots = pl_list,
+                            grid_args = list(nrow = nrow,
+                                             widths = widths))
+}
+
 #' Plot modelled correlations between species
 #'
 #' @param object The jsdmStanFit model object

@@ -3,14 +3,22 @@
 #'This function fits joint Species Distribution models in Stan, using either a
 #'generalised linear latent variable model approach (\code{method = "gllvm"}),
 #' or a multivariate generalised linear mixed model approach (\code{method =
-#' "mglmm"}).
+#' "mglmm"}). A HMSC-type approach can also be used by including phylogeny and/or
+#'  traits, and including spatial effects using the spline formulae.
 #'
 #'@details Environmental covariate effects (\code{"betas"}) can be parameterised
-#'  in two ways. With the \code{"cor"} parameterisation all covariate effects
+#'  in three ways. With the \code{"cor"} parameterisation all covariate effects
 #'  are assumed to be constrained by a correlation matrix between the
 #'  covariates. With the \code{"unstruct"} parameterisation all covariate
 #'  effects are assumed to draw from a simple distribution with no correlation
-#'  structure. Both parameterisations can be modified using the prior object.
+#'  structure. With the \code{"hmsc"} parameterisation all covariate effects
+#'  follow the parameterisation laid out in the Hierarchical Modelling of
+#'  Species Communities approach (Ovaskeinen et al, 2017, DOI:
+#'  10.1111/ele.12757). If either phylogeny or traits are supplied, the beta
+#'  parameterisation switches to \code{"hmsc"}. Note that for a true HMSC
+#'  approach the \code{"method"} argument should also be set to \code{"none"}.
+#'  All of these parameterisations can be modified using the prior object.
+#'
 #'  Families supported are the Gaussian family, the negative binomial family,
 #'  the Poisson family, the binomial family (with number of trials specificied
 #'  using the \code{Ntrials} parameter), the Bernoulli family (the special case
@@ -119,6 +127,20 @@
 #'  directly as user but instead include a spline within the formula interface
 #'  as would be provided in [mgcv::gam()]
 #'
+#'@param phylo_C For phylogenetic models (i.e. betas are a function of
+#'  phylogenetic correlation as in HMSC approach), the correlation matrix between
+#'  species. Needs to be a symmetric S by S matrix with diagonal 1. Including
+#'  this overrides the \code{beta_param} argument. The default value is
+#'  \code{NULL}, i.e. no phylogenetic correlation included in model.
+#'
+#'@param trait_data For trait-based models (i.e. betas are a function of
+#'  trait-based similarities as in HMSC approach), a matrix of trait values per
+#'  species. Needs to be a numeric matrix with number of rows equal to the
+#'  number of traits and number of columns equal to the number of species. If
+#'  provided in the opposite orientation it will be rotated, with a message
+#'  given. Including this overrides the \code{beta_param} argument. The default
+#'  value is \code{NULL}, i.e. no trait information included in model.
+#'
 #'@param ... Arguments passed to [rstan::sampling()]
 #'
 #'@return A \code{jsdmStanFit} object, comprising a list including the StanFit
@@ -162,12 +184,12 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
                               censoring = "none", censor_points = NULL, cens_ID = NULL,
                               zi_param = "constant", zi_X = NULL,
                               shp_param = "constant", shp_X = NULL,
-                              spl_smooth = NULL,
+                              spl_smooth = NULL, phylo_C = NULL, trait_data = NULL,
                               save_data = TRUE, iter = 4000, init = NULL, ...) {
   family <- match.arg(family, c("gaussian", "bernoulli", "poisson",
                                 "neg_binomial","binomial", "zi_poisson",
                                 "zi_neg_binomial","lognormal","gamma"))
-  beta_param <- match.arg(beta_param, c("cor", "unstruct"))
+  beta_param <- match.arg(beta_param, c("cor", "unstruct","hmsc"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
   site_intercept <- match.arg(site_intercept, c("none", "grouped", "ungrouped"))
@@ -221,6 +243,16 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     site_smooth <- "none"
     species_smooth <- "none"
   }
+  if(is.null(phylo_C)){
+    phylogeny <- "none"
+  } else{
+    phylogeny <- "phylo"
+  }
+  if(is.null(trait_data)){
+    traits <- "none"
+  } else{
+    traits <- "traits"
+  }
 
   # validate data
   data_list <- validate_data(
@@ -230,7 +262,7 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     family = family, method = method, Ntrials = Ntrials,
     shp_X = shp_X, zi_X = zi_X,
     censoring = censoring, censor_points = censor_points, cens_ID = cens_ID,
-    spl_smooth = spl_smooth
+    spl_smooth = spl_smooth, phylo_C = phylo_C, trait_data = trait_data
   )
 
   # Create stancode
@@ -239,7 +271,8 @@ stan_jsdm.default <- function(X = NULL, Y = NULL, species_intercept = TRUE, meth
     method = method, prior = prior,
     site_intercept = site_intercept, censoring = censoring,
     beta_param = beta_param, zi_param = zi_param, shp_param = shp_param,
-    species_smooth = species_smooth, site_smooth = site_smooth
+    species_smooth = species_smooth, site_smooth = site_smooth,
+    phylogeny = phylogeny, traits = traits
   )
 
   # Compile model
@@ -453,7 +486,7 @@ validate_data <- function(Y, D, X, species_intercept,
                           dat_list, family, site_intercept,
                           method, site_groups, Ntrials,
                           zi_X, shp_X, censoring, censor_points, cens_ID,
-                          spl_smooth) {
+                          spl_smooth, phylo_C, trait_data) {
   method <- match.arg(method, c("gllvm", "mglmm"))
 
   # do things if data not given as list:
@@ -612,6 +645,38 @@ validate_data <- function(Y, D, X, species_intercept,
           data_list$nfs_Sn <- spl_smooth$nfs$Sn
         }
       }
+    }
+    if(!is.null(phylo_C)){
+      if(!is.matrix(phylo_C))
+        stop("phylo_C must be given as a correlation matrix")
+      if(!all(dim(phylo_C) == S))
+        stop("phylo_C must be given as a correlation matrix with dimensions equal to number of species")
+      if(!all(diag(phylo_C) == 1))
+        stop("phylo_C must be given as a species correlation matrix (problem: diagonal != 1)")
+      if(min(phylo_C) < -1)
+        stop("phylo_C must be given as a species correlation matrix (problem: minimum below -1)")
+      if(max(phylo_C) > 1)
+        stop("phylo_C must be given as a species correlation matrix (problem: maximum above 1)")
+      data_list$C <- phylo_C
+    }
+    if(!is.null(trait_data)){
+      if(!is.matrix(trait_data)){
+        trait_data <- as.matrix(trait_data)
+      }
+      if(ncol(trait_data) != S){
+        if(nrow(trait_data) == S){
+          trait_data <- t(trait_data)
+          message(paste("Number of columns of trait_data did not match number of species",
+                        "but number of rows did, transposing trait_data matrix"))
+        } else{
+          stop("trait_data must be given as a matrix with number of columns equal to number of species")
+        }
+      }
+      if(!is.numeric(trait_data)){
+        stop("trait_data must be provided as a numeric matrix")
+      }
+      data_list$N_tr <- nrow(trait_data)
+      data_list$Tr <- trait_data
     }
   } else {
     if (!all(c("Y", "K", "S", "N", "X") %in% names(dat_list))) {

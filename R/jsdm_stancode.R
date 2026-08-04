@@ -32,9 +32,15 @@
 #' @param censoring If the response is left-censored (\code{"left"}) or not
 #'   censored (default, \code{"none"}).
 #' @param site_smooth If there is a smooth over a predictor that is constant
-#'   across all species, default \code{"none"}.
+#'   across all species, one of \code{c("none", "single", "multiple")}, default
+#'   \code{"none"}.
 #' @param species_smooth If there is a factor smooth over a predictor that
-#'   varies by species, default \code{"none"}.
+#'   varies by species, one of \code{c("none", "single", "multiple")}, default
+#'   \code{"none"}.
+#' @param phylogeny If the beta parameterisation includes a phylogenetic effect,
+#'   one of \code{"phylo"} or \code{"none"} (default).
+#' @param traits If the beta parameterisation includes a trait effect,
+#'   one of \code{"traits"} or \code{"none"} (default).
 #'
 #' @return A character vector of Stan code, class "jsdmstan_model"
 #' @export
@@ -47,20 +53,26 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
                           site_intercept = "none",
                           beta_param = "cor", zi_param = "constant",
                           shp_param = "constant", censoring = "none",
-                          site_smooth = "none", species_smooth = "none") {
+                          site_smooth = "none", species_smooth = "none",
+                          phylogeny = "none", traits = "none") {
   # checks
   family <- match.arg(family, c("gaussian","normal", "bernoulli", "poisson",
                                 "neg_binomial","binomial","zi_poisson",
                                 "zi_neg_binomial","lognormal","gamma","beta"))
   family <- ifelse(family == "normal", "gaussian", family)
-  method <- match.arg(method, c("gllvm", "mglmm"))
-  beta_param <- match.arg(beta_param, c("cor","unstruct"))
+  method <- match.arg(method, c("gllvm", "mglmm","none"))
+  beta_param <- match.arg(beta_param, c("cor","unstruct","hmsc"))
   site_intercept <- match.arg(site_intercept, c("none","grouped","ungrouped"))
   zi_param <- match.arg(zi_param, c("constant","covariate"))
   shp_param <- match.arg(shp_param, c("constant","covariate"))
   censoring <- match.arg(censoring, c("none","left"))
   site_smooth <- match.arg(site_smooth, c("none", "single", "multiple"))
   species_smooth <- match.arg(species_smooth, c("none", "single", "multiple"))
+  phylogeny <- match.arg(phylogeny, c("none", "phylo"))
+  traits <- match.arg(traits, c("none", "traits"))
+  if(phylogeny == "phylo" | traits == "traits"){
+    beta_param <- "hmsc"
+  }
   if(shp_param == "covariate" & family %in% c("poisson","bernoulli","binomial",
                                                  "zi_poisson"))
     stop(paste("Modelling the family parameter in response to data only works",
@@ -74,7 +86,8 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
     method = method, family = family,
     phylo = FALSE, prior = prior, site_intercept = site_intercept,
     beta_param = beta_param, zi_param = zi_param, shp_param = shp_param,
-    censoring = censoring, site_smooth = site_smooth, species_smooth = species_smooth
+    censoring = censoring, site_smooth = site_smooth, species_smooth = species_smooth,
+    phylogeny = phylogeny, traits = traits
   )
   class(scode) <- c("jsdmstan_model", "character")
   return(scode)
@@ -83,7 +96,7 @@ jsdm_stancode <- function(method, family, prior = jsdm_prior(),
 
 .modelcode <- function(method, family, phylo, prior, site_intercept,
                        beta_param, zi_param, shp_param, censoring,
-                       site_smooth, species_smooth) {
+                       site_smooth, species_smooth, phylogeny, traits) {
   model_functions <- "
 "
   # data ####
@@ -141,7 +154,12 @@ ifelse(censoring == "left", "
   array[N,S] int<lower=0> J_cens; //Indices of cens across all species
   array[N,S] int<lower=0> J_noncens; //Indices of noncens across all species",""),
 .smooth_datacode("nfs", site_smooth),
-.smooth_datacode("fs", species_smooth)
+.smooth_datacode("fs", species_smooth),
+ifelse(phylogeny == "phylo", "
+  corr_matrix[S] C; // Phylogeny correlation",""),
+ifelse(traits == "traits", "
+  int<lower=0> N_tr; // Number of traits
+  matrix[N_tr,S] Tr; // Trait matrix","")
 )
 
   # transformed data ####
@@ -169,7 +187,11 @@ ifelse(censoring == "left", "
   matrix[K, S] z_preds;
   // covariance matrix on betas by predictors
   corr_matrix[K] cor_preds;", "unstruct" = "
-  matrix[K, S] betas;")
+  matrix[K, S] betas;","hmsc" = "
+  //betas are influenced by phylogeny and/or traits as in hmsc
+  cholesky_factor_corr[K] cor_preds_L;
+  vector<lower=0>[K] sigmas_preds;
+  matrix[K,S] z_preds;")
   mglmm_spcov_pars <- "
   // species covariances
   vector<lower=0>[S] sigmas_species;
@@ -220,21 +242,32 @@ ifelse(censoring == "left", "
   speciessmooth_pars <- ifelse(species_smooth=="none","","
   vector[fs_ncoef] fs_b; // smooth coefs
   vector<lower=1e-16>[fs_nsp] fs_sp; // smoothing parameters")
+  phylo_pars <- ifelse(phylogeny == "phylo", "
+  real<lower=0,upper=1> phylo_fraction;","")
+  traits_pars <- ifelse(traits == "traits", "
+  matrix[K,N_tr] tr_G;","")
 
   pars <- paste(
     site_inter_par, species_pars,
     switch(method,
       "gllvm" = gllvm_pars,
-      "mglmm" = mglmm_spcov_pars
+      "mglmm" = mglmm_spcov_pars,
+      "none" = ""
     ),
-    var_pars,sitesmooth_pars,speciessmooth_pars
+    var_pars,sitesmooth_pars,speciessmooth_pars,phylo_pars,traits_pars
   )
 
   # transformed parameters ####
   transformed_pars <- paste(if(beta_param == "cor"){ "
   // covariance matrix on betas by preds
   matrix[K, S] betas;
-  "} else {""}, switch(method,
+  "} else if(beta_param == "hmsc"){"
+  // Parameters for beta parameterisation in HMSC format
+  matrix[K,S] betas;
+  cholesky_factor_cov[K] cov_preds_L;
+  cholesky_factor_corr[S] cor_species_L;"
+
+  } else {""}, switch(method,
     "gllvm" = "
   // Construct factor loading matrix
   matrix[S, D] Lambda_uncor;
@@ -263,7 +296,12 @@ ifelse(censoring == "left", "
   "
   ), if(beta_param == "cor") {"
   betas = diag_pre_multiply(sigmas_preds, cor_preds) * z_preds;
-"} else {""})
+"} else if(beta_param == "hmsc") { paste("
+  cov_preds_L = quad_form_diag(cor_preds_L,sigmas_preds);", ifelse(phylogeny == "phylo","
+  cor_species_L = cholesky_decompose(phylo_fraction * C + (1-phylo_fraction) * identity_matrix(S));",""),"
+  betas =",ifelse(traits == "traits", "tr_G*Tr +",""),"cov_preds_L * z_preds",
+  ifelse(phylogeny == "phylo","*cor_species_L'",""),";
+  ")} else {""})
 
 
   model_pt1 <- paste(if(species_smooth == "none"){""} else{"
@@ -280,7 +318,8 @@ ifelse(censoring == "left", "
          "gllvm" = "
   // model
   matrix[N, S] LV_sum = ((Lambda_uncor * sigma_L) * LV_uncor)';",
-         "mglmm" = ""),
+         "mglmm" = "",
+         "none" = ""),
   if(site_intercept == "grouped"){"
   {
     vector[ngrp] theta = z_a * sigma_a;
@@ -289,11 +328,12 @@ ifelse(censoring == "left", "
     }
   }"
   } else {""},"
-  mu =", ifelse(site_intercept == "none","","alpha +"),"(X * betas) +",
-  ifelse(site_smooth == "none","", "nfs_Xb +"),
-  ifelse(species_smooth == "none","", "fs_Xb +"),
-  switch(method, "gllvm" = "LV_sum;",
-         "mglmm" = "u;"))
+  mu =", ifelse(site_intercept == "none","","alpha +"),"(X * betas)",
+  ifelse(site_smooth == "none","", "+ nfs_Xb"),
+  ifelse(species_smooth == "none","", "+ fs_Xb"),
+  switch(method, "gllvm" = "+ LV_sum;",
+         "mglmm" = "+ u;",
+         "none" = ";"))
 
   # model ####
   model <- paste("
@@ -334,7 +374,8 @@ ifelse(censoring == "left", "
   # priors
   model_priors <- .prior_codechunk(site_intercept, beta_param, method, family,
                                    shp_param, zi_param, prior,
-                                   site_smooth, species_smooth)
+                                   site_smooth, species_smooth,
+                                   phylogeny, traits)
   # model end
   model_pt2 <- if(!grepl("zi_", family) & censoring == "none"){ paste(
     "
@@ -554,7 +595,8 @@ print.jsdmstan_model <- function(x, ...) {
 
 .prior_codechunk <- function(site_intercept, beta_param, method, family,
                              shp_param, zi_param, prior,
-                             site_smooth, species_smooth){
+                             site_smooth, species_smooth,
+                             phylogeny, traits){
   paste(
   ifelse(site_smooth != "none", paste("
   // site-smooth smoothing parameter prior
@@ -580,7 +622,16 @@ print.jsdmstan_model <- function(x, ...) {
   "
   // Species parameter priors
   to_vector(betas) ~ ", prior[["betas"]],";
-  ")),
+  "), "hmsc" = paste(
+    "
+  // Species parameter priors
+  sigmas_preds ~ ", prior[["sigmas_preds"]], ";
+  to_vector(z_preds) ~ ", prior[["z_preds"]], ";
+  // covariance matrix priors
+  cor_preds_L ~ ", prior[["cor_preds_L"]], ";
+"
+  )
+  ),
   switch(method,
          "gllvm" = paste("
   // Factor priors
@@ -593,7 +644,8 @@ print.jsdmstan_model <- function(x, ...) {
   sigmas_species ~ ", prior[["sigmas_species"]], ";
   to_vector(z_species) ~ std_normal();
   cor_species_chol ~ ", prior[["cor_species_chol"]], ";
-")
+"),
+         "none" = ""
   ),
   switch(family,
          "gaussian" = switch(shp_param, "constant" = paste("
@@ -648,7 +700,18 @@ print.jsdmstan_model <- function(x, ...) {
   to_vector(shp_betas) ~ ", prior[["shp_betas"]], ";
 "))
          )
-  ))
+  ),
+  switch(phylogeny,
+         "none" = "",
+         "phylo" = paste("
+  // fraction explained by phylogeny
+  phylo_fraction ~ ", prior[["phylo"]],";
+")),
+  switch(traits,
+         "none" = "",
+         "traits" = paste("
+  to_vector(tr_G)  ~", prior[["traits"]],";
+" )))
 }
 
 .smooth_datacode <- function(id, amount){

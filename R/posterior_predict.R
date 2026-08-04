@@ -183,7 +183,8 @@ posterior_linpred.jsdmStanFit <- function(object, transform = FALSE,
 
     mu <- switch(method,
       "gllvm" = LV_sum + newdata %*% model_est$betas[d, , ] + alpha + nfs + fs,
-      "mglmm" = newdata %*% model_est$betas[d, , ] + alpha + u_ij + nfs + fs
+      "mglmm" = newdata %*% model_est$betas[d, , ] + alpha + u_ij + nfs + fs,
+      "none" = newdata %*% model_est$betas[d, , ] + alpha + nfs + fs,
     )
     if (isTRUE(transform)) {
       mu <- apply(mu, 1:2, function(x) {

@@ -129,6 +129,8 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
   } else{
     shp_X <- NULL
   }
+  phylo_C <- object$data_list$phylo_C
+  trait_data <- object$data_list$trait_data
 
   species_intercept <- "(Intercept)" %in% colnames(object$data_list$X)
 
@@ -168,7 +170,7 @@ update.jsdmStanFit <- function(object, newY = NULL, newX = NULL, newD = NULL,
     family = family, method = method, Ntrials = Ntrials,
     zi_X = zi_X, shp_X = shp_X,
     censoring = censoring, censor_points = censor_points, cens_ID = cens_ID,
-    spl_smooth = spl_smooth
+    spl_smooth = spl_smooth, phylo_C = phylo_C, trait_data = trait_data
   )
 
   # get original stan model

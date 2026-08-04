@@ -279,7 +279,8 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       "student_t",
       "cauchy",
       "gamma",
-      "beta"
+      "beta",
+      "uniform"
     )
   }))) {
     stop(paste(
@@ -303,12 +304,14 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       "student_t" = "rstudentt",
       "cauchy" = "rcauchy",
       "gamma" = "rgamma",
-      "beta" = "rbeta"
+      "beta" = "rbeta",
+      "uniform" = "runif"
     )
     fun_arg1 <- switch(x,
       "sigmas_preds" = K + 1 * species_intercept,
       "z_preds" = (K + 1 * species_intercept) * S,
       "cor_preds" = K + 1 * species_intercept,
+      "cor_preds_L" = K + 1 * species_intercept,
       "betas" = (K + 1 * species_intercept) * S,
       "sigma_a" = 1,
       "sigmas_species" = S,
@@ -322,7 +325,9 @@ jsdm_sim_data <- function(S, N = NULL, D = NULL, K = 0L, family,
       "zi" = S,
       "zi_betas" = S*(ZI_K+1),
       "shp_betas" = ifelse(response %in% c("gaussian", "lognormal"),
-                           SHP_K + 1,S*(SHP_K + 1))
+                           SHP_K + 1,S*(SHP_K + 1)),
+      "phylo" = S,
+      "traits" = S*K
     )
     fun_args <- as.list(c(fun_arg1, as.numeric(unlist(y[[1]][[1]])[-1])))
 
