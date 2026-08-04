@@ -28,7 +28,7 @@ stan_mglmm(X, ...)
 covariates. Ignored in favour of data when formula approach is used to
 specify model.}
 
-\item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
+\item{...}{Arguments passed to \code{\link[rstan:sampling]{rstan::sampling()}}}
 
 \item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
 assumed to be species}

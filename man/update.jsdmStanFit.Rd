@@ -42,7 +42,7 @@ data will also be set to newX.}
 \item{save_data}{Whether to save the data in the jsdmStanFit object, by default
 \code{TRUE}}
 
-\item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
+\item{...}{Arguments passed to \code{\link[rstan:sampling]{rstan::sampling()}}}
 }
 \value{
 An object of class \code{jsdmStanFit}

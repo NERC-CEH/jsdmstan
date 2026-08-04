@@ -24,7 +24,7 @@ Student T distribution}
 
 \item{scale}{The phi parameter that controls overdispersion of the negative
 binomial distribution (see details for description), or the scale parameter used
-within the inverse gamma distribution (see \code{\link[stats:GammaDist]{stats::rgamma()}})}
+within the inverse gamma distribution (see \code{\link[stats:rgamma]{stats::rgamma()}})}
 
 \item{eta}{The shape parameter of the LKJ distribution}
 
@@ -32,7 +32,7 @@ within the inverse gamma distribution (see \code{\link[stats:GammaDist]{stats::r
 decomposition, by default \code{FALSE}}
 
 \item{shape}{The shape parameter of the inverse gamma distribution (see
-\code{\link[stats:GammaDist]{stats::rgamma()}})}
+\code{\link[stats:rgamma]{stats::rgamma()}})}
 
 \item{df}{The degrees of freedom parameter within the Student T distribution (see
 details)}
@@ -64,5 +64,5 @@ google mailing list. (see link
 
 The alternative parameterisation of the Student T distribution is by mean (mu) and
 scale (sigma) to be consistent with the Stan parameterisation rather than the
-parameterisation in \code{\link[stats:TDist]{stats::rt()}}.
+parameterisation in \code{\link[stats:rt]{stats::rt()}}.
 }

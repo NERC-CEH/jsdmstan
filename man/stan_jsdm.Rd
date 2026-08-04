@@ -29,6 +29,8 @@ stan_jsdm(X, ...)
   shp_param = "constant",
   shp_X = NULL,
   spl_smooth = NULL,
+  phylo_C = NULL,
+  trait_data = NULL,
   save_data = TRUE,
   iter = 4000,
   init = NULL,
@@ -51,7 +53,7 @@ stan_jsdm(X, ...)
 covariates. Ignored in favour of data when formula approach is used to
 specify model.}
 
-\item{...}{Arguments passed to \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}}
+\item{...}{Arguments passed to \code{\link[rstan:sampling]{rstan::sampling()}}}
 
 \item{Y}{Matrix of species by sites. Rows are assumed to be sites, columns are
 assumed to be species}
@@ -126,13 +128,27 @@ formula approach is used.}
 directly as user but instead include a spline within the formula interface
 as would be provided in \code{\link[mgcv:gam]{mgcv::gam()}}}
 
+\item{phylo_C}{For phylogenetic models (i.e. betas are a function of
+phylogenetic correlation as in HMSC approach), the correlation matrix between
+species. Needs to be a symmetric S by S matrix with diagonal 1. Including
+this overrides the \code{beta_param} argument. The default value is
+\code{NULL}, i.e. no phylogenetic correlation included in model.}
+
+\item{trait_data}{For trait-based models (i.e. betas are a function of
+trait-based similarities as in HMSC approach), a matrix of trait values per
+species. Needs to be a numeric matrix with number of rows equal to the
+number of traits and number of columns equal to the number of species. If
+provided in the opposite orientation it will be rotated, with a message
+given. Including this overrides the \code{beta_param} argument. The default
+value is \code{NULL}, i.e. no trait information included in model.}
+
 \item{save_data}{If the data used to fit the model should be saved in the
 model object, by default TRUE.}
 
 \item{iter}{A positive integer specifying the number of iterations for each
 chain, default 4000.}
 
-\item{init}{Initialisation values for the sampling, see \code{\link[rstan:stanmodel-method-sampling]{rstan::sampling()}}.
+\item{init}{Initialisation values for the sampling, see \code{\link[rstan:sampling]{rstan::sampling()}}.
 If unspecified and \code{method = "mglmm"} then set to \code{"0"}.}
 
 \item{formula}{The formula of covariates that the species means are modelled
@@ -158,15 +174,23 @@ See \link{jsdmStanFit} for details.
 This function fits joint Species Distribution models in Stan, using either a
 generalised linear latent variable model approach (\code{method = "gllvm"}),
 or a multivariate generalised linear mixed model approach (\code{method =
-"mglmm"}).
+"mglmm"}). A HMSC-type approach can also be used by including phylogeny and/or
+traits, and including spatial effects using the spline formulae.
 }
 \details{
 Environmental covariate effects (\code{"betas"}) can be parameterised
-in two ways. With the \code{"cor"} parameterisation all covariate effects
+in three ways. With the \code{"cor"} parameterisation all covariate effects
 are assumed to be constrained by a correlation matrix between the
 covariates. With the \code{"unstruct"} parameterisation all covariate
 effects are assumed to draw from a simple distribution with no correlation
-structure. Both parameterisations can be modified using the prior object.
+structure. With the \code{"hmsc"} parameterisation all covariate effects
+follow the parameterisation laid out in the Hierarchical Modelling of
+Species Communities approach (Ovaskeinen et al, 2017, DOI:
+10.1111/ele.12757). If either phylogeny or traits are supplied, the beta
+parameterisation switches to \code{"hmsc"}. Note that for a true HMSC
+approach the \code{"method"} argument should also be set to \code{"none"}.
+All of these parameterisations can be modified using the prior object.
+
 Families supported are the Gaussian family, the negative binomial family,
 the Poisson family, the binomial family (with number of trials specificied
 using the \code{Ntrials} parameter), the Bernoulli family (the special case

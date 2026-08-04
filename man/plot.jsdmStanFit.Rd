@@ -25,7 +25,7 @@
 \item{pars}{The parameters to plot, by default a random sample of twenty of the
 parameters fit within the model}
 
-\item{combo}{Which combination of plot types within \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}
+\item{combo}{Which combination of plot types within \code{\link[bayesplot:mcmc_combo]{bayesplot::mcmc_combo()}}
 to use, by default \code{c("dens", "trace")}}
 
 \item{N}{The number of plots per page, default \code{5}}
@@ -49,17 +49,17 @@ parnames, by default \code{FALSE}}
 \item{newpage}{Whether the first plot should be plotted on a new page, by default
 \code{TRUE}}
 
-\item{...}{Arguments passed to \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}}
+\item{...}{Arguments passed to \code{\link[bayesplot:mcmc_combo]{bayesplot::mcmc_combo()}}}
 }
 \value{
 An invisible list of the plots#
 }
 \description{
 This function takes parameters from the jsdmStanfit object and plots them using
-the \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}function from the \pkg{bayesplot} package.
+the \code{\link[bayesplot:mcmc_combo]{bayesplot::mcmc_combo()}}function from the \pkg{bayesplot} package.
 }
 \details{
-This acts as an interface to the \code{\link[bayesplot:MCMC-combos]{bayesplot::mcmc_combo()}}
+This acts as an interface to the \code{\link[bayesplot:mcmc_combo]{bayesplot::mcmc_combo()}}
 function, with the default being to plot a density plot and a trace plot for
 each parameter specified, although this can be changed by setting the
 \code{combo} argument. These jSDM models have a lot of parameters so selecting a

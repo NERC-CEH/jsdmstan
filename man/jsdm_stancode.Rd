@@ -15,7 +15,9 @@ jsdm_stancode(
   shp_param = "constant",
   censoring = "none",
   site_smooth = "none",
-  species_smooth = "none"
+  species_smooth = "none",
+  phylogeny = "none",
+  traits = "none"
 )
 
 \method{print}{jsdmstan_model}(x, ...)
@@ -50,10 +52,18 @@ varies by environmental covariates (\code{"covariate"}).}
 censored (default, \code{"none"}).}
 
 \item{site_smooth}{If there is a smooth over a predictor that is constant
-across all species, default \code{"none"}.}
+across all species, one of \code{c("none", "single", "multiple")}, default
+\code{"none"}.}
 
 \item{species_smooth}{If there is a factor smooth over a predictor that
-varies by species, default \code{"none"}.}
+varies by species, one of \code{c("none", "single", "multiple")}, default
+\code{"none"}.}
+
+\item{phylogeny}{If the beta parameterisation includes a phylogenetic effect,
+one of \code{"phylo"} or \code{"none"} (default).}
+
+\item{traits}{If the beta parameterisation includes a trait effect,
+one of \code{"traits"} or \code{"none"} (default).}
 
 \item{x}{The jsdm_stancode object}
 

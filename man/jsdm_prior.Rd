@@ -9,6 +9,7 @@ jsdm_prior(
   sigmas_preds = "normal(0,1)",
   z_preds = "normal(0,1)",
   cor_preds = "lkj_corr(1)",
+  cor_preds_L = "lkj_corr_cholesky(1)",
   betas = "normal(0,1)",
   sigma_a = "normal(0,1)",
   sigmas_species = "normal(0,1)",
@@ -23,7 +24,9 @@ jsdm_prior(
   zi = "beta(1,1)",
   zi_betas = "normal(0,1)",
   shp_betas = "normal(0,1)",
-  sp = "cauchy(0,1)"
+  sp = "cauchy(0,1)",
+  phylo = "uniform(0,1)",
+  traits = "normal(0,1)"
 )
 
 \method{print}{jsdmprior}(x, ...)
@@ -37,15 +40,18 @@ constrained to be positive (default standard normal)}
 \item{cor_preds}{The correlation matrix on the covariate effects (npred by
 npred correlation matrix) (default \code{"lkj_corr(1)"})}
 
-\item{betas}{If covariate effects are unstructured, the prior on the
-covariate effects}
+\item{cor_preds_L}{The correlation matrix on the covariate effects (Cholesky
+decomposition of a npred by npred correlation matrix) (default
+\code{"lkj_corr_cholesky(1)"})}
+
+\item{betas}{If covariate effects are unstructured, the prior on the covariate
+effects}
 
 \item{sigma_a}{The standard deviation of the site level intercepts,
 constrained to be positive and default prior is half standard normal}
 
-\item{sigmas_species}{For MGLMM method, the standard deviations of the
-species covariances, constrained to be positive (default half standard
-normal)}
+\item{sigmas_species}{For MGLMM method, the standard deviations of the species
+covariances, constrained to be positive (default half standard normal)}
 
 \item{cor_species}{For MGLMM method (data simulation only), the correlation
 between species as the nspecies by nspecies correlation matrix (default
@@ -74,10 +80,9 @@ parameter. Constrained to be positive (default standard normal)}
 \item{shape}{For gamma response, the shape parameter. Constrained to be
 positive (default gamma(0.1,0.1))}
 
-\item{zi}{For zero-inflated poisson or negative binomial with no
-environmental covariate effects upon the zero-inflation, the proportion of
-inflated zeros (default beta distribution with both alpha and beta
-parameters set to 1).}
+\item{zi}{For zero-inflated poisson or negative binomial with no environmental
+covariate effects upon the zero-inflation, the proportion of inflated zeros
+(default beta distribution with both alpha and beta parameters set to 1).}
 
 \item{zi_betas}{For zero-inflated poisson or negative binomial with
 environmental effects upon the zero-inflation, the covariate effects on the
@@ -90,6 +95,10 @@ the family parameter on the log scale}
 \item{sp}{Prior upon the smoothing parameter for any smooths (shared across
 both site-specific and species-specific smooths)}
 
+\item{phylo}{Prior upon the fraction of information explained by phylogeny}
+
+\item{traits}{Prior upon the}
+
 \item{x}{Object of class \code{jsdmprior}}
 
 \item{...}{Currently unused}
@@ -99,8 +108,8 @@ An object of class \code{"jsdmprior"} taking the form of a named list
 }
 \description{
 This function creates all of the potential priors used within a
-\code{jsdmstan} model and can be used as the input to all \code{\link[=stan_jsdm]{stan_jsdm()}}
-family of functions and the \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} functions.
+\code{jsdmstan} model and can be used as the input to all \code{\link[=stan_jsdm]{stan_jsdm()}} family
+of functions and the \code{\link[=jsdm_sim_data]{jsdm_sim_data()}} functions.
 }
 \details{
 Each prior has to be specified as a character string corresponding to the
